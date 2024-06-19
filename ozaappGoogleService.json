@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "ozaapp-project",
+  "private_key_id": "935289398947940fdddd50fe71fae2d3a17fa60a",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQD2X4zjixvGAnS/\nWyumOES8VN91QEYUEOeIG5iIzOpsFRdCbB9XMBBLags8rqIa+OHFgQDG/ZF5XC+g\ngazU1g62N4QwQofoYJqN7OGwlHz9ChJfLSiao+KpaKTu+lR/jjBs1Yn99rIv001I\nod4ko7kVEJIMRgEsYVGsuKAcAm93jDogmO7Fy3at5E9xWFah028PHdhth/IUNN0n\nP5JmBGrDpSqhBDnXwzaXnmN1gF+33LeMwPmaks3C/WQ6u7fIEzdS1MDtT4+D34VJ\nrd8BqaH37uN7o4piW9zAoKEYcWbW1b+/IGMqdh1YCFWOb/6E9zhHWv3M6j8fWK+3\n0l3rBCKHAgMBAAECggEAR8z99tx2KiVSF+h+lpEkewxzGS0znyp0B4cfU5MAqKIW\n5r0y/wpbXVcY0kUEqj6pMZGQg+2nJUq3+JuCHn8Jx5HzXMsu54qr0DveZENKD8aN\nJx62jCbB6mQ8WQcsdAYg17792b05HdYDWm0OG/h4+oobPidytRfhoSgnRTJygNCT\nRyQQUujWvR+uvdXs3jhfCHx5IJAE6vb73xe6dB4+zRiWtQj0VrU8tCI/ZbDFh9Es\nLVM9mU6/ffutsNTXGzT0k3J8UeAGpSRoIKRFkdQ+QtA2u2WXrKD78uVpqSNO/BBC\noI/lCc62SLvYOYH3iAxbfI1toBlOnCJJDynOvXiDYQKBgQD9F9k8mat4j5pky8xt\nzzYEJ/KtolET2+dBC7eITl2ujkIEBcb114zwC4+uuIzHbd3ZaKUcVkR+lF1sXv7q\nNtTVAJHLbigPWPUhOG65Uso7HQmJGbT3lo9vnzL0jIM/aV6c7sk92g+LUBamiVuO\nkPdR2xuiyJHEWVfUs/5NjGKp4QKBgQD5M/GVkdXPHN54I/Bwi2YhqVoEfitJpi36\n0MrNNYZoNEvg1u36nVHtnCYkP9B0ZK+XxdK1hlqJNZ6ErpgZLropWeFwM2nJkBrE\nZcphPXtL7TtzJN4zOemtqc3Zmg0gukHlD0NHyrX8IkDfP2HossJ1QG0IQbpSgOII\nF3I4QTTpZwKBgQDi1CzuEwuK0akeDUj6YWuX7fWhiIgBtGRd95JVp2ZuuzCPSl42\nlyjJOpNblCsX0W+zGgZgjzB0AaR5K+prHxlAjXIdUGy21JNdYqZZkcmNkUiqh0+Z\nVmbXM2cHpac7fcQ+AgR6WqTzxqOGPjTAYUxHIIh0LC34O9pr16Vi+x6yAQKBgBr/\nYaDOl9dETWW+nwHSWFI1QqdR8+aatkiB7jalIdaQM9g78LRB7upLDGbI8xBpCAzt\nRZKc55oN0QqWz6uKwGhScHXzW/aWQhAc5vv56S2kmdgzmk76azKBPufgJKPzCciD\nCsrwTx7tpxGIkFbhZufE/wrx8/mUNOijgaBOkCjpAoGBAKvicmkMsPoyBY8SCZUR\n/be0Itsw82DeA4OSt4T5ykClnJaVN+BcVesdZqYIrsKpYah8xCPnHUPE1PATQJVm\nMNU/TPfCQ/aQQagrTmDnmJBpfIY7o9/Fwy+StDrPHVa4MBqdAiZA2LzI88EHEN1m\njnU33Lwuf0Xf3JMyGcSvHMYd\n-----END PRIVATE KEY-----\n",
+  "client_email": "ozaapp-project-service@ozaapp-project.iam.gserviceaccount.com",
+  "client_id": "110981721575697785575",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/ozaapp-project-service%40ozaapp-project.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

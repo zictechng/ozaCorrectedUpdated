@@ -1,0 +1,444 @@
+import React, { useContext, useState, useEffect}  from 'react';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, RefreshControl } from 'react-native';
+import { gs,colors } from '../styles';
+import { useIsFocused } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
+import { Feather, Ionicons,} from '@expo/vector-icons';
+import moment from "moment";
+import background from '../assets/images/money_ex.png';
+import { PaymentIcon } from 'react-native-payment-icons';
+import { NumberValueFormat } from '../components/formatValue';
+import WalletChartData from '../model/walletChartData';
+import { AuthContext } from '../contextAPI/authContext';
+import client from '../contextAPI/client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BarChart, LineChart, PieChart, PopulationPyramid } from "react-native-gifted-charts";
+import { ActivityIndicator } from 'react-native';
+
+const WalletScreen = ({navigation}) => {
+    const isFocused = useIsFocused();
+    
+    const {userToken, userInfo, setUserInfo} = useContext(AuthContext);
+    const [isLoading, setIsLoading] = useState(false)
+    const [isWalletLoading, setIsWalletLoading] = useState(false)
+    const [walletHistory, setWalletHistory] = useState([])
+    const [walletBalance, setWalletBalance] = useState([])
+    const [walletTotalBalance, setWalletTotalBalance] = useState()
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const [weeklyData, setWeeklyData] = useState('');
+    const [monthlyData, setMonthlyData] = useState('');
+    const [yearlyData, setYearlyData] = useState('');
+    const [chartLoading, setChartLoading] = useState(false);
+    const [chartDetails, setChartDetails] = useState(false);
+
+    
+    // fetching all history base on paypal transaction with pagination
+    const getWalletHistory = async() =>{
+         setIsLoading(true);
+          try {
+            const res = await client.get('/api/history-wallet/'+userInfo.userData.tag_id,{
+                headers: {
+                    'Authorization': 'Bearer '+userToken,
+                        }
+                })
+            //console.log("response: " + res);
+          if(res.data.length > 0){
+            setWalletHistory(res.data)
+             }
+          else{
+            console.log('No record found')
+          }
+
+          } catch (error) {
+            console.log(error.message);
+          } finally {
+            setIsLoading(false);
+           }
+         }
+
+       // fetching all history base on paypal transaction with pagination
+    const getWalletBalance = async() =>{
+        setIsWalletLoading(true);
+         try {
+           const res = await client.get('/api/user_Wallet_summary/'+userInfo.userData.tag_id,{
+               headers: {
+                   'Authorization': 'Bearer '+userToken,
+                    }
+               })
+           
+            if(res.data.msg =='201'){
+            let result = res.data.feedback;
+            setWalletBalance(result)
+            //console.log("response: " + JSON.stringify( res.data.feedback));
+            }
+         else{
+           console.log('No record found')
+         }
+
+         } catch (error) {
+           console.log(error.message);
+         } finally {
+            setIsWalletLoading(false);
+          }    
+        }
+  
+    // const walletID = () =>{
+    //     if(walletBalance[1]?._id == 'Approved'){
+    //         setWalletTotalBalance(walletBalance[1]?.totalAmount)
+    //         }
+    //     }
+
+    // refresh user details from db after any operation into the database
+    const RefreshUserDetails = async()=>{
+      //console.log("Refresh ID ", data)
+    try {
+        const res = await client.get('/api/userProfileMobile/'+userInfo.userData._id,{
+          headers: {
+              'Authorization': 'Bearer '+userToken,
+                  }
+          })
+        if(res.data.msg == '200'){
+          const userDetails = res.data; 
+          const appDataInfo = res.data.appData;
+          //console.log('User Details fetch local storage ', res.data)
+          AsyncStorage.setItem('userInfo', JSON.stringify(userDetails));
+          AsyncStorage.setItem('AppSettingData', JSON.stringify(appDataInfo));
+         }
+         let userInfoDetails = await AsyncStorage.getItem('userInfo');
+         let appInfoDetails = await AsyncStorage.getItem('AppSettingData');
+            userInfoDetails = JSON.parse(userInfoDetails)
+            appInfoDetails = JSON.parse(appInfoDetails)
+        if(userInfoDetails){
+          setUserInfo(userInfoDetails);
+         // console.log('User Details fetch local storage ')
+        }
+        else{
+            console.log("something went wrong while fetching user details")
+        }
+    } catch (error) {
+        console.log( 'fetching user information failed ', error.message)
+    }   
+  }
+
+  // get latest transaction details
+const fetchData = async()=>{
+  myId = userInfo.userData._id
+  if(myId == '' || myId == null){
+   console.log('Access denied')
+   return console.log('Access denied')
+  }
+  setChartLoading(true)
+   try{
+
+   const recentChart = await client.get('/api/chart_transactions/'+myId,{
+       headers: {
+           'Authorization': 'Bearer '+userToken,
+               }
+       })
+       if(recentChart.data.msg =='201'){
+        let result = recentChart.data;
+        const objArr = recentChart.data; 
+        setWeeklyData(result.weekly) 
+        setMonthlyData(result.monthly)
+        setYearlyData(result.yearly)
+         //console.log('Yes ', result.yearly) 
+         if(result.weekly == '0' && result.monthly == '0' && result.yearly == '0') {
+          setChartDetails(true);
+         } 
+         else if(result.weekly != '0' || result.monthly != '0' || result.yearly != '0' ) {
+          setChartDetails(false);
+         } 
+       }
+       else if(recentChart.data.status == '402'){
+           //console.log('Login failed')
+           return
+       }
+       else if(recentChart.data.status == '404'){
+           console.log('No chart data ',)
+        }
+       else{
+           console.log('chart balance')
+       }
+       }catch (e){
+       console.log(e.message);
+       }
+       
+       finally{
+        setChartLoading(false);
+       }
+       
+   }
+
+   useEffect(() =>{
+    getWalletBalance()
+    getWalletHistory();
+    RefreshUserDetails();
+    fetchData()
+    //walletID()
+  },[isFocused])
+   //console.log('Weekly ', weeklyData)
+        //page refreshing function goes here
+      const handleRefresh = React.useCallback(() => {
+        setIsRefreshing(true);
+        RefreshUserDetails()
+        getWalletBalance()
+        getWalletHistory()
+        fetchData()
+        setTimeout(() => {
+        setIsRefreshing(false);
+        }, 1000);
+      }, []);
+     
+      const data=[{value:weeklyData == '0' ? 0: weeklyData, label: 'Weekly'}, {value:monthlyData == '0'? 0: monthlyData, label:'Monthly'}, {value:yearlyData == '0' ? 0 : yearlyData, label:'Yearly'}]
+         
+  return (
+    <View style={{flex:1, backgroundColor:colors.primaryColor2}}>
+        <SafeAreaView style={{flex:1}}>
+
+        <StatusBar style='light' />
+
+                <View style={gs.homeHeaderRow}>
+                    <View style={{justifyContent:'space-between', flexDirection:'row'}}>
+                        <TouchableOpacity
+                        onPress={() => navigation.goBack()}>
+                            <View style={[gs.homeSideMenu, {borderWidth: 0}]} >
+                                <Ionicons name='arrow-back' size={23} color={colors.textColor} />
+                            </View>
+                        </TouchableOpacity>
+
+                        <Text style={styles.profileTitle}>My Wallet</Text>
+                        <Text></Text>
+                        {/* <TouchableOpacity style={gs.homeSideMenu}>
+                            <Feather name='bell' size={20} color={colors.textColor}/>
+                            
+                        </TouchableOpacity> */}
+                    </View>
+                    <View style={{marginBottom:30}}></View>
+                 </View>
+            
+            <View style={{backgroundColor:colors.bgColor, flex:1,}}>
+                        
+            <ScrollView showsVerticalScrollIndicator={false} style={{paddingHorizontal:20}}
+            refreshControl={
+                <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+              }>
+              
+              <View style={{flex: 1, borderRadius:8, marginTop:15, backgroundColor:colors.primaryColor1,
+              shadowRadius:5, shadowColor:'#000', shadowOffset:{width: 0,
+                  height:2,}, shadowOpacity: 0.23, elevation: 1, height: 80}}>
+                  <ImageBackground source={background} resizeMode='cover' imageStyle={{opacity: 0.3}} style={{flex:1}}>
+                      
+                      <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8}}>
+
+                              <View style={{marginHorizontal:10, marginTop:10}}>
+                                  <Text style={{fontFamily:'_semiBold', fontSize:13, color:colors.bgColor}}>Current Wallet Balance </Text>
+                                  <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textColor, marginBottom: 8}}>
+                                    {/* <NumberValueFormat value={walletBalance[0]?.totalAmount? walletBalance[0]?.totalAmount : '0.0'} /> */}
+                                    <NumberValueFormat value={userInfo.userData.amount? userInfo.userData.amount : '0.0'} />
+                                    </Text>
+                              </View>
+                              <View style={{marginHorizontal:5, flexDirection:'row', alignItems:'center' }}>
+                                  <TouchableOpacity onPress={() =>navigation.navigate('FundAccount')}>
+                                  <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.textColor}}>Add Fund</Text>
+                                  </TouchableOpacity>
+                                  
+                                  <PaymentIcon type='master' width={30}/>
+                              </View>
+                      </View>
+                  </ImageBackground>
+                  
+              </View>
+
+                    {/* Wallet Chart data goes here */}
+                    
+                        <View style={styles.chartView}>
+                            {/* <WalletChartData /> */}
+                              <View style={{marginTop: 20}}></View>
+                                {chartLoading ? <ActivityIndicator size={'large'} color={colors.primaryColor1} />
+                                :
+                                  ! chartDetails &&
+                                    <BarChart
+                                        key={'xyz'}
+                                        hideRules={true}
+                                        barBorderTopLeftRadius ={5}
+                                        barBorderTopRightRadius ={5}
+                                        xAxisColor ="lightgrey"
+                                        frontColor="#1D2667"
+                                        yAxisColor ="lightgrey"
+                                        noOfSections={5}
+                                        height={250}
+                                        spacing={25}
+                                        isAnimated ={true}
+                                        animationDuration={800}
+                                        animationEasing={'Easing.ease'}
+                                        barWidth={41}
+                                        data = {data}
+                                        xAxisLabelTextStyle={styles.chartText}
+                                    />
+                                  }
+                                    
+                        </View>
+
+                    {/* recent added fund map list here */}
+                   
+   
+                    {!isLoading && walletHistory.map((item, index) => (
+                    <TouchableOpacity style={[styles.historyMainView,{ marginBottom:15}]} onPress={()=>{}}
+                    key={index}>
+                            <View style={styles.historyView}>
+                             <View style={{marginHorizontal:10, marginTop:5, flexDirection:'row'}}>
+                             <Feather name="arrow-up-left" size={30} color="#09d97b"/>
+                                  <View style={{flexDirection:'column'}}>
+                                    <Text style={styles.historyTextDate}>{moment(item.creditOn).format("DD/MM/YYYY hh:mm:ss")}</Text>
+                                    <Text style={[styles.historyTextStatus, {marginRight:5}]}>{item.fund_type}</Text>
+                                  </View>
+                                    
+                              </View>
+                                <View style={styles.historyViewIn}>
+                                    <View style={{flexDirection:'column'}}>
+                                    <Text style={styles.historyAmtText}><NumberValueFormat value={item.amount} /></Text>
+                                    <Text style={[styles.historyTextStatus, {fontSize:10, marginBottom:-10}]}>{item.fund_status}</Text>
+                                    </View>
+                                   
+                                </View>
+                                
+                            </View>
+                                
+                    </TouchableOpacity>
+                        ))}
+                        {!chartLoading && walletHistory.length < 1 &&<View>
+                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor, textAlign:'center'}}>No recent transaction at the moment</Text>
+                        </View>}
+
+              </ScrollView>
+            </View>
+
+    </SafeAreaView>
+     </View>
+  );
+}
+
+const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#fff',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    chartText:{
+      fontFamily:'_regular', 
+      fontSize:14, 
+      color:colors.darkBg
+    },
+    actionButton:{
+        width:100, 
+        height:30, 
+        borderRadius:20, 
+        backgroundColor:colors.primaryColor1, 
+        alignItems:'center',
+        },
+    buttonSellText:{
+      color:colors.textColor, 
+      fontFamily:'_semiBold', 
+      fontSize:15
+    },
+    chartView:{
+        justifyContent:'center', 
+        alignItems:'center', 
+        padding:10, 
+        borderRadius: 10
+    },
+    recentChartText:{
+        fontFamily:'_semiBold', 
+        fontSize:14, 
+        color:colors.textSecColor
+    },
+    homeHeaderRow:{
+        backgroundColor:'transparent', 
+        marginTop:40, 
+        marginHorizontal:15
+      },
+      homeSideMenu:{
+        borderRadius: 8, 
+        borderWidth: 2, 
+        backgroundColor:colors.primaryColor2, 
+        width:30, 
+        alignItems:'center', 
+        justifyContent:'center'
+      },
+      profileTitle:{
+        color:colors.textColor,
+        fontSize:20,
+        marginLeft: -20,
+        fontFamily: '_semiBold',
+      },
+
+      signInButton: {
+        width: '100%',
+        height: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 10,
+        flexDirection: 'row',
+         backgroundColor: colors.primaryColor1
+    },
+
+    textSign:{
+        fontFamily:'_semiBold',
+        fontSize: 17,
+        color: colors.textColor
+    },
+
+    recentTranView:{
+        flex: 1, 
+        justifyContent:'space-between', 
+        flexDirection:'row', 
+        marginBottom: 5, 
+        marginTop: 20
+    },
+    recentTranText:{
+        fontFamily:'_regular', 
+        fontSize:14, 
+        color:colors.lightBg
+    },
+    historyMainView:{
+        flex: 1, 
+        borderRadius:10, 
+        backgroundColor:colors.textColor,
+        height: 70,
+        justifyContent:'center'
+    },
+    historyView:{
+        flexDirection:'row', 
+        justifyContent:'space-between', 
+        marginBottom:2
+    },
+    historyTextDate:{
+        fontFamily:'_semiBold', 
+        fontSize:13, 
+        color:colors.textSecColor,
+        marginLeft:5
+    },
+    historyTextStatus:{
+        fontFamily:'_bold', 
+        fontSize:13, 
+        color:colors.lightHl, 
+        marginBottom: 8,
+        marginRight: 5,
+    },
+    historyViewIn:{
+        marginHorizontal:5, 
+        flexDirection:'row', 
+        alignItems:'center'
+    },
+    historyAmtText:{
+        fontFamily:'_semiBold', 
+        fontSize:17, 
+        color:colors.lightBg
+    }
+
+})
+
+
+export default WalletScreen;
