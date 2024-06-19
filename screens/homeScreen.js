@@ -38,7 +38,6 @@ import BottomSheet from 'react-native-simple-bottom-sheet';
 import paypalImage from '../assets/images/paypal2.png';
 import payoonerImage from '../assets/images/payooner3.png';
 import bitcoinImage from '../assets/images/bitcoin1.png';
-import moneyImage from '../assets/images/money_ex.png';
 import SellBottomSheet from '../components/sellBottomSheet';
 import BuyBottomSheet from '../components/buyBottomSheet';
 import RateBottomSheet from '../components/rateBottomSheet';
@@ -49,7 +48,6 @@ import FirstWord from '../components/firstWord';
 import { 
     AppModeModal,
     CheckRegistrationStage,  
-    ConfirmPaymentModal,  
     NumberValueFormat, 
     ShowLogoutModal, 
     ShowUpdateModal, 
@@ -60,7 +58,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NumberDollarValueFormat } from '../components/formatDollarValue';
 import { noticeData } from '../components/errorNotice';
 import HTMLView from 'react-native-htmlview';
-import { BarChart, LineChart, PieChart, PopulationPyramid } from "react-native-gifted-charts";
+import { BarChart } from "react-native-gifted-charts";
 import Carousel from 'react-native-snap-carousel';
 
 const HomeScreen = ({navigation}) =>{
