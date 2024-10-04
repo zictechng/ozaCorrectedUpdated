@@ -38,7 +38,7 @@ const LandPageScreen = ({navigation}) => {
     try {
       setILoading(true);
       let otpDetails = await AsyncStorage.getItem('userOTP');
-        
+        //console.log('User Code ', otpDetails)
         let userOtpDetails = JSON.parse(otpDetails)
         if(userOtpDetails){
           setUserEmail(userOtpDetails.email)

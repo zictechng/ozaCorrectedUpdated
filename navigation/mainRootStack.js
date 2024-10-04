@@ -1,6 +1,7 @@
 import React, {useContext, useEffect, useState} from 'react';
 import { Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useIsFocused } from '@react-navigation/native';
 import HomeStack from './homeStack';
 import BankDetailsScreen from '../screens/bankDetailsScreen';
@@ -29,9 +30,19 @@ import PrivacyPolicyScreen from '../screens/privacyPolicyScreen';
 import TermsConditionsScreen from '../screens/term_conditionScreen';
 import SignupStepScreen from '../screens/signupStepScreen';
 import UploadProofAddress from '../screens/uploadAddress';
+import UploadPaymentProof from '../screens/uploadPaymentProof';
+import WithdrawFund from '../screens/withdraw';
+import OpenCamera from '../screens/openCamera';
+import Verify2faCamera from '../screens/verify2faCamera';
+import TransactionsDetails from '../screens/transactionDetails';
+import SendFundScreen from '../screens/sendFundScreen';
+import ReferralScreen from '../screens/referralScreen';
+import InboxMessageScreen from '../screens/inboxMessageScreen';
+import ProfileScreen from '../screens/profileScreen';
 
 
 const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 const MainRootStack = ({navigation}) =>{
   const isFocused = useIsFocused();
@@ -58,6 +69,7 @@ const MainRootStack = ({navigation}) =>{
       };
      
   return (
+
     <Stack.Navigator screenOptions={{headerShown:false}}>
       <Stack.Group screenOptions={{ animation: 'slide_from_bottom'}}>
 
@@ -67,13 +79,11 @@ const MainRootStack = ({navigation}) =>{
         component={HomeStack}>
       </Stack.Screen>
       </Stack.Group>
-      <Stack.Group screenOptions={Platform.OS == 'ios'? { presentation: 'modal'}: { animation: 'slide_from_bottom'}}>
+      <Stack.Group screenOptions={{ animation: 'slide_from_right'}}>
         <Stack.Screen 
         name='BankDetails'
         component={BankDetailsScreen}
-        options={() => ({
-          presentation: 'modal'
-        })}/>
+        />
         
       </Stack.Group>
       
@@ -104,6 +114,14 @@ const MainRootStack = ({navigation}) =>{
       <Stack.Group  screenOptions={{ animation: 'slide_from_bottom'}}>
       <Stack.Screen 
       screenOptions={{animation: 'slide_from_bottom'}}
+      name='UserCamera'
+      component={OpenCamera}
+      />
+      </Stack.Group>
+
+      <Stack.Group  screenOptions={{ animation: 'slide_from_bottom'}}>
+      <Stack.Screen 
+      screenOptions={{animation: 'slide_from_bottom'}}
       name='Verify2faces'
       component={Verify2faAccountScreen}
       />
@@ -113,6 +131,14 @@ const MainRootStack = ({navigation}) =>{
       <Stack.Screen 
       name='UploadProofAddress'
       component={UploadProofAddress}>
+      </Stack.Screen>
+      </Stack.Group>
+
+      <Stack.Group screenOptions={Platform.OS == 'ios'?{ presentation: ''}:{
+        animation: 'slide_from_bottom',}}>
+      <Stack.Screen 
+      name='SendFund'
+      component={SendFundScreen}>
       </Stack.Screen>
       </Stack.Group>
 
@@ -146,6 +172,75 @@ const MainRootStack = ({navigation}) =>{
         screenOptions={{animation: 'slide_from_right'}}
         name='FundingNextPage'
         component={FundAccountNextScreen}
+        />
+        </Stack.Group>
+
+        <Stack.Group  screenOptions={{ animation: 'slide_from_right'}}>
+        <Stack.Screen 
+        screenOptions={{animation: 'slide_from_right'}}
+        name='Add-fund'
+        component={FundAccountScreen}
+        />
+        </Stack.Group>
+
+        <Stack.Group screenOptions={Platform.OS == 'ios'?{ presentation: ''}:{
+        animation: 'slide_from_bottom',}}>
+        <Stack.Screen 
+        screenOptions={{animation: 'slide_from_right'}}
+        name='FundAccount'
+        component={FundAccountScreen}
+        />
+        </Stack.Group>
+
+        <Stack.Group  screenOptions={Platform.OS == 'ios'?{ presentation: ''}:{
+        animation: 'slide_from_bottom',}}>
+        <Stack.Screen 
+        screenOptions={{animation: 'slide_from_right'}}
+        name='Referrals'
+        component={ReferralScreen}
+        />
+        </Stack.Group>
+
+        <Stack.Group  screenOptions={Platform.OS == 'ios'?{ presentation: ''}:{
+        animation: 'slide_from_bottom',}}>
+        <Stack.Screen 
+        screenOptions={{animation: 'slide_from_right'}}
+        name='Messages'
+        component={InboxMessageScreen}
+        />
+        </Stack.Group>
+
+        <Stack.Group screenOptions={{ animation: 'slide_from_right'}}>
+        <Stack.Screen 
+        screenOptions={{animation: 'slide_from_right'}}
+        name='Message'
+        component={InboxMessageScreen}
+        />
+        </Stack.Group>
+
+        <Stack.Group  screenOptions={Platform.OS == 'ios'?{ presentation: 'slide_from_bottom'}:{
+        animation: 'slide_from_bottom',}}>
+        <Stack.Screen 
+        screenOptions={{animation: 'slide_from_right'}}
+        name='Profile'
+        component={ProfileScreen}
+        />
+        </Stack.Group>
+        
+
+        <Stack.Group  screenOptions={{ animation: 'slide_from_right'}}>
+        <Stack.Screen 
+        screenOptions={{animation: 'slide_from_right'}}
+        name='TranDetails'
+        component={TransactionsDetails}
+        />
+        </Stack.Group>
+
+        <Stack.Group  screenOptions={{ animation: 'slide_from_right'}}>
+        <Stack.Screen 
+        screenOptions={{animation: 'slide_from_right'}}
+        name='withdraw-fund'
+        component={WithdrawFund}
         />
         </Stack.Group>
 
@@ -221,7 +316,7 @@ const MainRootStack = ({navigation}) =>{
         />
         </Stack.Group>
 
-        <Stack.Group  screenOptions={{ animation: 'slide_from_bottom'}}>
+        <Stack.Group screenOptions={{ animation: 'slide_from_right'}}>
         <Stack.Screen 
         name='DocumentView'
         component={DocumentScreen}
@@ -267,9 +362,25 @@ const MainRootStack = ({navigation}) =>{
         component={SignupStepScreen}
         />
         </Stack.Group>
+
+        <Stack.Group screenOptions={{ animation: 'slide_from_right'}}>
+        <Stack.Screen 
+        screenOptions={{animation: 'slide_from_right'}}
+        name='OpeCamera'
+        component={Verify2faCamera}
+        />
+        </Stack.Group>
+
+        <Stack.Group screenOptions={{ animation: 'slide_from_right'}}>
+        <Stack.Screen 
+        screenOptions={{animation: 'slide_from_right'}}
+        name='UploadPaymentProof'
+        component={UploadPaymentProof}
+        />
+        </Stack.Group>
         
         
-</Stack.Navigator>
+    </Stack.Navigator>
   );
 }
 

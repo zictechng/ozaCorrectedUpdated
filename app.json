@@ -3,7 +3,7 @@
     "name": "Oza App",
     "slug": "oza_app",
     "description": "A simple, efficient, reliable, secure and profitable way to sell paypal, payoneer, bitcoin and pay bills with virtual funds",
-    "version": "2.0.4",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -30,8 +30,9 @@
       "config": {
         "screenOffTimeout": 10000,
         "permissions": [
-          "WAKE_LOCK"
-        ]
+          "WAKE_LOCK",
+          "CAMERA"
+          ]
       },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -45,8 +46,8 @@
         "android.permission.ACCESS_MEDIA_LOCATION",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.zictech.ozaapp",
-      "versionCode": 7
+      "package": "com.ozaapp.mobile",
+      "versionCode": 2
     },
     "plugins": [
       [
@@ -54,12 +55,14 @@
         {
           "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
           "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
-          "isAccessMediaLocationEnabled": true,
-          "cameraPermission": "Allow $(PRODUCT_NAME) to open the camera"
+         "isAccessMediaLocationEnabled": true,
+          "cameraPermission": "Allow $(PRODUCT_NAME) to open the camera",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+          "recordAudioAndroid": true
         }
       ],
       "expo-font"
-    ],
+      ],
     "web": {
       "favicon": "./assets/favicon.png"
     },

@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, SafeAreaView, Pressable } from 'react-native';
 import { gs,colors } from '../styles';
 import { useIsFocused } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
@@ -31,12 +31,12 @@ const SuccessfulScreen = ({route, navigation}) => {
 
                         {/* <Text style={styles.profileTitle}>Succcessful</Text> */}
                         <Text></Text>
-                        <TouchableOpacity onPress={() =>navigation.replace('Home')}>
+                        {/* <TouchableOpacity onPress={() =>navigation.replace('Home')}>
                           <View style={[gs.homeSideMenu, {borderColor: colors.textColor, width:30}]}>
-                          <Ionicons name='close' size={25} color={colors.textColor}/>
+                          <Ionicons name='close' size={30} color={colors.textColor}/>
                          </View>
                             
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
                     </View>
                    
                 </View>
@@ -48,15 +48,15 @@ const SuccessfulScreen = ({route, navigation}) => {
                 <Text style={{fontFamily:'_semiBold', fontSize:20, color:colors.textColor}}>Successful</Text>
 
                 <View style={{marginHorizontal: 15, marginVertical:30}}>
-                    <Text style={{fontFamily:'_semiBold', fontSize:16, color:colors.bgColor}}>Your transaction was successful! Thank you for choosing {appSettingDetails.app_name? appSettingDetails.app_name: ''}.</Text>
+                    <Text style={{fontFamily:'_semiBold', fontSize:16, color:colors.bgColor}}>Your transfer was successful! {`\n`}Thank you for choosing {appSettingDetails.app_name? appSettingDetails.app_name: ''}.</Text>
                 </View>
             </View>
           </SafeAreaView>
           <CustomButton 
                 buttonStyle={styles.actionButton}
                 textStyle={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}
-                textLabel={'New Transaction'}
-                buttonAction={() => navigation.goBack()}
+                textLabel={'Okay'}
+                buttonAction={() => navigation.navigate('Home')}
             />
      </View>
   );

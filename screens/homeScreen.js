@@ -1,6 +1,6 @@
-import React , {useContext, useCallback, useState, useEffect, useMemo, useRef } from 'react';
-import { ALERT_TYPE, Dialog, Toast } from 'react-native-alert-notification';
-import { useIsFocused, useFocusEffect} from '@react-navigation/native';
+import React , {useContext, useCallback, useState, useEffect, useRef } from 'react';
+import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
+import { useIsFocused} from '@react-navigation/native';
 import { 
     Dimensions, 
     View, 
@@ -9,16 +9,12 @@ import {
     ScrollView,
     SafeAreaView,
     TouchableOpacity, 
-    Modal, 
-    Image, 
     ImageBackground,
     RefreshControl,
     StatusBar, 
-    Alert,
-    Button,
     ActivityIndicator,
-    Linking,
-    Pressable} from 'react-native';
+    Linking
+} from 'react-native';
 import Collapsible from 'react-native-collapsible';
 //import { StatusBar } from 'expo-status-bar';
 import { Ionicons, Feather, Entypo } from '@expo/vector-icons';
@@ -30,13 +26,11 @@ import {windowWidth } from '../utils/Dimensions'
 import BannerSlider from '../components/BannerSlider';
 import moment from "moment";
 import { sliderData } from '../model/data';
-import ChartData from '../model/chartData';
-import BottomWarning from '../components/bottomWarning';
-import { useNavigation } from '@react-navigation/native';
 import RBSheet from "react-native-raw-bottom-sheet";
 import BottomSheet from 'react-native-simple-bottom-sheet';
 import paypalImage from '../assets/images/paypal2.png';
 import payoonerImage from '../assets/images/payooner3.png';
+import signupImage from '../assets/images/paypal2.png';
 import bitcoinImage from '../assets/images/bitcoin1.png';
 import SellBottomSheet from '../components/sellBottomSheet';
 import BuyBottomSheet from '../components/buyBottomSheet';
@@ -60,6 +54,7 @@ import { noticeData } from '../components/errorNotice';
 import HTMLView from 'react-native-htmlview';
 import { BarChart } from "react-native-gifted-charts";
 import Carousel from 'react-native-snap-carousel';
+import MoreBottomSheet from '../components/moreBottomSheet';
 
 const HomeScreen = ({navigation}) =>{
     const isFocused = useIsFocused();
@@ -145,6 +140,7 @@ const HomeScreen = ({navigation}) =>{
       
     const refSellRBSheet = useRef();
     const refBuyRBSheet = useRef();
+    const refMoreRBSheet = useRef();
     // function that show only first name // First words in a sentence
     const myName = FirstWord(userInfo.userData?.display_name);
     //console.log('Application details ', appSettingDetails.app_payoneer_sale)
@@ -386,6 +382,53 @@ const HomeScreen = ({navigation}) =>{
             }
        }
 
+        // get bonus rates
+        const getBonusRate = async()=>{
+            //console.log("Refresh ID ", data)
+          try {
+              const res = await client.get('/api/bonus_rate')
+              if(res.data.msg == '200'){
+                const dataBillRate = res.data; 
+                AsyncStorage.setItem('businessRate', JSON.stringify( dataBillRate));
+               }
+               let dataRate = await AsyncStorage.getItem('businessRate');
+               dataRate = JSON.parse(dataRate)
+              
+          } catch (error) {
+              console.log( 'fetching user information failed ', error)
+          }   
+        }
+        // add fund link
+      const addFundBtn =() =>{
+            refMoreRBSheet.current.close();
+            navigation.navigate('Add-fund',
+            {
+            pageName:'FundAccount',
+            categoryType: 'Funding',
+            })
+            }
+
+    // withdraw link
+    const WithdrawBtn =() =>{
+        refMoreRBSheet.current.close();
+        navigation.navigate('withdraw-fund',
+        {
+        pageName:'WithdrawFund',
+        categoryType: 'Withdraw',
+        })
+        }
+
+    // wallet link
+    const walletBtn =() =>{
+        refMoreRBSheet.current.close();
+        navigation.navigate('Wallet',
+        {
+        pageName:'wallet',
+        categoryType: 'Funding',
+        })
+        }
+        
+
 // get app settings here
  _AppSystemSettings().then((res) => {
     // yes user can not login
@@ -466,6 +509,7 @@ const HomeScreen = ({navigation}) =>{
             }
         }
         checkForUpdate();
+        getBonusRate();
 
         //console.log(('Home ' ,userInfo.userData))
          if(isFocused && checkRegStage != 'true'){
@@ -488,10 +532,10 @@ const HomeScreen = ({navigation}) =>{
 
 // this function will be called and redirect user to google app store to download new version
     const openPlayStore = () => {
-        Linking.openURL('market://details?id=com.zictech.ozaapp')
+        Linking.openURL('market://details?id=com.ozaapp.mobile')
           .catch(() => {
             // Fallback if Google Play Store is not available
-            Linking.openURL('https://play.google.com/store/apps/details?id=com.zictech.ozaapp');
+            Linking.openURL('https://play.google.com/store/apps/details?id=com.ozaapp.mobile');
           });
        };
 
@@ -536,11 +580,9 @@ const HomeScreen = ({navigation}) =>{
                 {!appMode &&
                 <>
                  <HeaderMenu 
-                buttonHome={<TouchableOpacity onPress={() =>navigation.openDrawer()}>
-                    <View style={gs.homeSideMenu}>
-                        <Entypo name='sweden' size={23} color={colors.textColor}/>
-                    </View>
-                        </TouchableOpacity>}
+                buttonHome={
+                            <Text style={styles.loginTitle}>Hi {myName},</Text>
+                        }
 
                 buttonLeft={<TouchableOpacity style={gs.homeSideMenu} onPress={() =>navigation.navigate('Message')} >
                 <Feather name='bell' size={20} color={colors.textColor}/>
@@ -549,7 +591,7 @@ const HomeScreen = ({navigation}) =>{
                 </TouchableOpacity>}/>
                 
                 <View style={[styles.LoginDivTitle, {marginHorizontal:20}]}>
-                     <Text style={styles.loginTitle}>Hi {myName},</Text>
+                     {/* <Text style={styles.loginTitle}>Hi {myName},</Text> */}
                     <HTMLView
                         value={appSettingDetails?.app_short_name}
                         stylesheet={styles.loginTitleDesc}/>
@@ -595,13 +637,15 @@ const HomeScreen = ({navigation}) =>{
                             <Text style={styles.buttonSellText}>Sell</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.actionButtonAdd} onPress={() =>addFundNavigation()}>
-                            <Text style={styles.buttonAddText}>Add</Text>
-                        </TouchableOpacity>
-
                         <TouchableOpacity style={styles.actionButtonBuy} onPress={() => refBuyRBSheet.current.open()}>
                             <Text style={styles.buttonBuyText}>Buy</Text>
                         </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.actionButtonMore} onPress={() =>refMoreRBSheet.current.open()}>
+                            <Text style={styles.buttonAddText}><Ionicons name='ellipsis-horizontal'/></Text>
+                        </TouchableOpacity>
+
+                       
                     </View>
 
                       {/* Chart data goes here */}
@@ -668,7 +712,7 @@ const HomeScreen = ({navigation}) =>{
                             
                         </View> */}
                     </View>
-
+                   
                     <Carousel 
                         ref={(c) => { this._carousel = c; }}
                         data={sliderData}
@@ -702,7 +746,9 @@ const HomeScreen = ({navigation}) =>{
                     <View style={[styles.historyMainView2,{ marginBottom:15}]}>
                     {!noTransaction && recentTranData?.map((item, index) => (
                         
-                        <TouchableOpacity style={styles.historyView} onPress={()=>navigation.navigate('History')}
+                        <TouchableOpacity style={styles.historyView} onPress={()=>navigation.navigate('TranDetails', {
+                            record_id:item._id
+                          })}
                         key={index}>
                             <View style={{marginHorizontal:10, marginTop:15,}}>
                                 <Text style={styles.historyTextDate}>{moment(item.creditOn).format("DD/MM/YYYY hh:mm:ss")}</Text>
@@ -723,9 +769,47 @@ const HomeScreen = ({navigation}) =>{
                     {noTransaction &&<View style={{marginBottom:30}}>
                         <Text style={{fontFamily:'_regular', fontSize:12, color:colors.textSecColor, textAlign:'center'}}>No recent transaction at the moment</Text>
                     </View>}
+                    
+                    {/* show if user profile is not complete */}
+                    {completeRegData &&
+                    <View style={{marginBottom: 20, marginTop:20}}>
+                        <View style={{backgroundColor:'#DCF2EA', height:150, borderRadius:20}}>
+                        <View style={{justifyContent:'flex-end', alignItems:'flex-end'}}>
+                            <TouchableOpacity style={styles.closeBnt}
+                            onPress={() => {closeIncompleteRegistration()}}>
+                                <View style={styles.closeBtnView}>
+                                    <Ionicons name="close" size={20} color={colors.textColor}/>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                            <View style={{flexDirection:'row', marginTop: 5, marginHorizontal:5, alignItems:'center'}}>
+                            <Ionicons name="information-circle-outline" size={24} color={colors.blackColor1}/>
+                                <Text style={{marginLeft: 5, fontFamily:'_bold', fontSize:14, color:colors=='#1D2667'? '#fff':'#51534D'}}>
+                                    Incomplete Profile
+                                </Text>
+                            </View>
+                            <View style={{marginVertical:8, marginHorizontal:8}}>
+                                <Text style={{marginLeft: 5, fontFamily:'_regular', fontSize:12, color:colors=='#1D2667'? '#fff':'#51534D'}}>
+                                    Please, complete your account registration process to remove restrictions in your account.
+                                </Text>
+                            </View>
 
-                    <View style={{marginTop:10, marginBottom:30}}>
+                            <View style={{justifyContent:'center', alignItems:'center', marginBottom:50, marginTop:8}}>
+                        
+                            <TouchableOpacity onPress={() => navigation.navigate('SignupSteps')}
+                                    style={{borderRadius:50, borderColor:colors.greenColor, width:90, height:40, borderWidth:1, justifyContent:'center', alignItems:'center', marginBottom:40}}>
+                                    <Text style={{color:colors.blackColor1, fontFamily:'_semiBold', fontSize:14}}>Okay</Text>
+                            </TouchableOpacity>
+                        </View>
+                                            
+                        </View>
+
                     </View>
+                    }
+
+                    <View style={{marginTop:10, marginBottom:10}}>
+                    </View>
+
                 </ScrollView>
 
                 {/* Bottom sheet here when sell button is click */}
@@ -805,8 +889,46 @@ const HomeScreen = ({navigation}) =>{
                         {/* create custom component and add it */}
                 </RBSheet>
 
+                {/* More bottom sheet */}
+                <RBSheet
+                    ref={refMoreRBSheet}
+                    closeOnDragDown={true}
+                    closeOnPressMask={true}
+                    openDuration={500}
+                    closeDuration={400}
+                    height={350}
+                    closeOnPressBack={true}
+                    keyboardAvoidingViewEnabled={true}
+                    customStyles={{
+                    container:{
+                        backgroundColor: colors.bgColor,
+                    },
+                    draggableIcon: {
+                        backgroundColor: "#000"
+                    }
+                    }}>
+                    <MoreBottomSheet 
+                        titleText={'More'}
+                        titleStyle={{fontFamily:'_semiBold', fontSize:25, color:colors.textBlack}}
+                        buttonStyle={styles.bottomSheetButton}
+                        iconType1={<Feather name='plus-circle' style={{fontSize:20}} />}
+                        iconType2={<Feather name='minus-circle' style={{fontSize:20}} />}
+                        iconType3={<Ionicons name='wallet-outline' style={{fontSize:20}} />}
+                        imageStyle={styles.bottomSheetImageStyle}
+                        buttonTextStyle={styles.bottomSheetButtonText}
+                        buttonLabel_paypal={'Fund Account'}
+                        buttonLabel_payooner={'Withdraw Funds'}
+                        buttonLabel_bitcoin={'Wallet'}
+                        onPress1={() => addFundBtn()}
+                        onPress2={() => WithdrawBtn()}
+                        onPress3={() => walletBtn()}
+                    />
+                        
+                        {/* create custom component and add it */}
+                </RBSheet>
+
                 {/* Show current rate here... */}
-                <BottomSheet isOpen={false}
+                {/* <BottomSheet isOpen={false}
                     sliderMinHeight={25}
                     wrapperStyle={{
                             backgroundColor: colors.textColor,
@@ -831,30 +953,10 @@ const HomeScreen = ({navigation}) =>{
                     </ScrollView>
                     )}
 
-                </BottomSheet>
+                </BottomSheet> */}
 
                 {/* show if user profile is not complete */}
-                {completeRegData && <BottomWarning 
-                closeBtn={<View style={{justifyContent:'flex-end', alignItems:'flex-end'}}>
-                            <TouchableOpacity style={styles.closeBnt}
-                            onPress={() => {closeIncompleteRegistration()}}>
-                                <View style={styles.closeBtnView}>
-                                    <Ionicons name="close" size={25} color={colors.textColor}/>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                    }
-                icon={<Ionicons name="information-circle-outline" size={24} color={colors.textColor}/>}
-                title={'Incomplete Profile'}
-                subTitle={'Please, complete your account registration process to remove restrictions in your account.'}
-                buttonText={'Okay'}
-                buttonTextStyle={{color:colors.textColor, fontFamily:'_semiBold', fontSize:14}}
-                buttonStyle={{borderRadius:50, borderColor:colors.lightGreenColor1, width:60, height:30, borderWidth:1, justifyContent:'center', alignItems:'center', marginBottom:20}}
-                titleStyle={{marginLeft: 5, fontFamily:'_bold', fontSize:15, color:colors.bgColor}}
-                subTitleStyle={{marginLeft: 5, fontFamily:'_regular', fontSize:12, color:colors.textColor}}
-                onPress={() => navigation.navigate('SignupSteps')}
-                bgColor={{backgroundColor:colors.primaryColor1}}
-                />}
+                
 
                 {/* Call Logout modal function */}
                 <ShowLogoutModal 
@@ -899,8 +1001,8 @@ const styles = StyleSheet.create({
     closeBnt:{
         borderRadius:50, 
         borderWidth:2, 
-        borderColor:colors.primaryColor1, 
-        backgroundColor:colors.primaryColor1, 
+        borderColor:colors.lightGreenColor1, 
+        backgroundColor:colors.lightGreenColor1, 
         marginHorizontal: 10
     },
     closeBtnView:{
@@ -910,7 +1012,7 @@ const styles = StyleSheet.create({
         backgroundColor:colors.primaryColor1, 
         justifyContent:'center', 
         alignItems:'center', 
-        marginTop:-20
+        marginTop:-15
 },
     balanceStyle:{
         flex: 1, 
@@ -943,7 +1045,8 @@ const styles = StyleSheet.create({
         marginBottom: 8
     },
     actionButtonView:{
-        flex:1, height:100, 
+        flex:1, 
+        height:100, 
         justifyContent:'center', 
         alignItems:'center', 
         padding:10, 
@@ -952,18 +1055,18 @@ const styles = StyleSheet.create({
         marginBottom: 30
     },
     actionButton:{
-        width:90, 
-        height:40, 
-        borderRadius:20, 
+        width:95, 
+        height:45, 
+        borderRadius:50, 
         backgroundColor:colors.primaryColor1, 
         justifyContent:'center', 
         alignItems:'center', 
-        marginRight:10
+        marginRight:15
     },
     actionButtonBuy:{
-        width: 90,
-        height:40, 
-        borderRadius:20, 
+        width: 95,
+        height:45, 
+        borderRadius:50, 
         backgroundColor:colors.greenColor, 
         justifyContent:'center', 
         alignItems:'center', 
@@ -978,6 +1081,16 @@ const styles = StyleSheet.create({
         justifyContent:'center', 
         alignItems:'center', 
         marginRight:10
+    },
+    actionButtonMore:{
+        width:45,
+        height:45, 
+        borderRadius:20, 
+        borderColor:colors.primaryColor2, 
+        borderWidth:0.8, 
+        justifyContent:'center', 
+        alignItems:'center', 
+        marginLeft:10
     },
     bottomSheetButton:{
         flexDirection:'row', 

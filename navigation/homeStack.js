@@ -1,24 +1,19 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
-import { Ionicons, AntDesign} from '@expo/vector-icons';
-import { colors } from '../styles';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons, Foundation, MaterialIcons} from '@expo/vector-icons';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 
 import HomeScreen from '../screens/homeScreen';
-import ProfileScreen from '../screens/profileScreen';
-import InboxMessageScreen from '../screens/inboxMessageScreen';
 import HistoryScreen from '../screens/historyScreen';
 import SettingScreen from '../screens/settingScreen';
-import CustomDrawer from '../components/customDrawer';
 import { AuthContext } from '../contextAPI/authContext';
-import FundAccountScreen from '../screens/fundAccountScreen';
-import SendFundScreen from '../screens/sendFundScreen';
-import ReferralScreen from '../screens/referralScreen';
-import FundAccountNextScreen from '../screens/fundAcctNextScreen';
+import TransactionMenus from '../screens/transactionMenus';
+import AccountMenus from '../screens/accountMenus';
 
 const Drawer = createDrawerNavigator();
+const Tab = createBottomTabNavigator();
 
 const Stack = createNativeStackNavigator();
 
@@ -44,85 +39,95 @@ const HomeStack = ({navigation}) => {
       };
 
   return (
-    <Drawer.Navigator drawerContent={props =><CustomDrawer {...props}/>} 
-    screenOptions={{headerShown:false,
-    animation: 'slide_from_right', 
-    drawerActiveBackgroundColor: colors.primaryColor1,
-    drawerActiveTintColor:'#fff',
-    drawerInactiveTintColor:'#333',
-    drawerLabelStyle:{marginLeft: -20, 
-    fontFamily:'_regular', fontSize:17}}}>
+    <Tab.Navigator
+            screenOptions={({ route }) => ({
+            headerShown: false,
+            tabBarStyle: {
+                height: 60, // Set the height of the tab bar
+                paddingVertical: 3, // Optional: Add padding to adjust space around icons
+              },
+            tabBarActiveTintColor: '#1D2667',
+            tabBarInactiveTintColor: 'gray',
+            tabBarLabelStyle: { fontSize: 14, fontWeight: 'bold' },
+            tabBarHideOnKeyboard: true,
+      })}>
+        <Tab.Screen name="Dashboard" component={HomeScreen}
+            options={{
+               //tabBarBadge: 3,
+                headerShown: false,
+                tabBarIcon: ({ focused, color, size }) => {
+                let iconColor = focused ? '#1D2667' : 'gray';
+                return <MaterialIcons name={focused ? 'dashboard' : 'dashboard'} 
+                size={25} 
+                color={iconColor} 
+                style={{ marginTop: 8 }}
+                />;
+                },
+                  tabBarLabel: '',
+                }}
+        />
+        <Tab.Screen name="Transaction" component={TransactionMenus} 
+            options={{
+                //tabBarBadge: 3,
+                headerShown: false,
+                tabBarIcon: ({ focused, color, size }) => {
+                 let iconColor = focused ? '#1D2667' : 'gray';
+                return <Ionicons name={focused ? 'stats-chart' : 'stats-chart'} 
+                size={23} 
+                color={iconColor}
+                style={{ marginTop: 8 }} />;
+                },
+                tabBarLabel: '',
+                }}
+        />
 
- <Drawer.Screen component={HomeScreen} name="Dashboard"
-    options={{
-        drawerIcon:({color}) =>(
-            <Ionicons name="home-outline" size={22} color={color} />
-        )
-    }}
-    
- />
-<Drawer.Screen component={ProfileScreen} name="Profile"
-screenOptions={{horizontalAnimation}}
-    options={{
-        drawerIcon:({color}) =>(
-            <Ionicons name="person-outline" size={22} color={color} />
-        )
-    }}
-    
-/>
-<Drawer.Group >
-<Drawer.Screen component={FundAccountScreen} name="FundAccount"
-    screenOptions={{ animation: 'slide_from_right'}}
-    options={{
-        animation: 'slide_from_right',
-        title:'Fund Account',
-        drawerIcon:({color}) =>(
-            <Ionicons name="add-circle-outline" size={22} color={color} />
-        )
-    }}
-/>
-</Drawer.Group>
-<Drawer.Screen component={SendFundScreen} name="SendFund"
-    options={{
-        title:'Send Fund',
-        drawerIcon:({color}) =>(
-            <Ionicons name="send-outline" size={22} color={color} />
-        )
-    }}
-/>
+        <Tab.Screen name="History" component={HistoryScreen} 
+            options={{
+                //tabBarBadge: 3,
+                headerShown: false,
+                tabBarIcon: ({ focused, color, size }) => {
+                 let iconColor = focused ? '#1D2667' : 'gray';
+                return <Ionicons name={focused ? 'timer' : 'timer'} 
+                size={27} 
+                color={iconColor}
+                style={{ marginTop: 8 }} />;
+                },
+                tabBarLabel: '',
+                }}
+        />
 
-<Drawer.Screen component={InboxMessageScreen} name="Message"
-    options={{
-        drawerIcon:({color}) =>(
-            <Ionicons name="chatbox-ellipses-outline" size={22} color={color} />
-        )
-    }}
-/>
-<Drawer.Screen component={HistoryScreen} name="History"
-    options={{
-        drawerIcon:({color}) =>(
-            <Ionicons name="timer-outline" size={22} color={color} />
-        )
-    }}
-/>
-<Drawer.Screen component={ReferralScreen} name="Referrals"
-    options={{
-        title:'Referrals',
-        drawerIcon:({color}) =>(
-            <AntDesign name="addusergroup" size={22} color={color} />
-        )
-    }}
-/>
-<Drawer.Screen component={SettingScreen} name="Setting"
-    options={{
-        title:'Setting',
-        drawerIcon:({color}) =>(
-            <Ionicons name="settings-outline" size={22} color={color}  />
-        )
-    }}
-/>
+        <Tab.Screen name="Account" component={AccountMenus} 
+            options={{
+                //tabBarBadge: 3,
+                headerShown: false,
+                tabBarIcon: ({ focused, color, size }) => {
+                let iconColor = focused ? '#1D2667' : 'gray';
+                return <Ionicons name={focused ? 'person' : 'person'} 
+                size={25} 
+                color={iconColor}
+                style={{ marginTop: 8 }} />;
+                },
+                tabBarLabel: '',
+                }}
+        />
 
-</Drawer.Navigator>
+        <Tab.Screen name="Setting" component={SettingScreen} 
+            options={{
+                //tabBarBadge: 3,
+                headerShown: false,
+                tabBarIcon: ({ focused, color, size }) => {
+                 let iconColor = focused ? '#1D2667' : 'gray';
+                return <Ionicons name={focused ? 'settings' : 'settings'} 
+                size={25} 
+                color={iconColor}
+                style={{ marginTop: 8 }} />;
+                },
+                tabBarLabel: '',
+                }}        
+        />
+
+        
+      </Tab.Navigator>
   );
 }
 

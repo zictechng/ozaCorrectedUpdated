@@ -1,10 +1,11 @@
-import React, { useContext, useState, useEffect}  from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, RefreshControl } from 'react-native';
+import React, { useContext, useState, useEffect, useRef }  from 'react';
+import { Dimensions , StyleSheet, View, Text, TextInput, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, RefreshControl } from 'react-native';
 import { gs,colors } from '../styles';
 import { useIsFocused } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { Feather, Ionicons,} from '@expo/vector-icons';
 import moment from "moment";
+import {windowWidth } from '../utils/Dimensions'
 import background from '../assets/images/money_ex.png';
 import { PaymentIcon } from 'react-native-payment-icons';
 import { NumberValueFormat } from '../components/formatValue';
@@ -15,6 +16,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BarChart, LineChart, PieChart, PopulationPyramid } from "react-native-gifted-charts";
 import { ActivityIndicator } from 'react-native';
 
+import Carousel from 'react-native-snap-carousel';
+import { NumberDollarValueFormat } from '../components/formatDollarValue';
+
+const { width } = Dimensions.get('window');
+
 const WalletScreen = ({navigation}) => {
     const isFocused = useIsFocused();
     
@@ -23,7 +29,8 @@ const WalletScreen = ({navigation}) => {
     const [isWalletLoading, setIsWalletLoading] = useState(false)
     const [walletHistory, setWalletHistory] = useState([])
     const [walletBalance, setWalletBalance] = useState([])
-    const [walletTotalBalance, setWalletTotalBalance] = useState()
+    const [bonusTotalBalance, setBonusTotalBalance] = useState({})
+    const [withdrawTotalBalance, setWithdrawTotalBalance] = useState({})
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     const [weeklyData, setWeeklyData] = useState('');
@@ -32,7 +39,45 @@ const WalletScreen = ({navigation}) => {
     const [chartLoading, setChartLoading] = useState(false);
     const [chartDetails, setChartDetails] = useState(false);
 
-    
+    const carouselRef = useRef(null);
+    const [activeIndex, setActiveIndex] = useState(0);
+    //console.log("Active Slider", activeIndex)
+
+    const dataWallet = [
+      { id: 1, 
+        title: 'Current Funding Balance', 
+        buttonTitle:'Fund Account', 
+        image: require('../assets/images/money_ex.png'),
+        iconType: <Ionicons name='add' size={20} color='#fff'/>,
+        btnTittle:'Add Fund', 
+        amt: userInfo.userData.amount? userInfo.userData.amount : '0.0',
+      },
+      { id: 2, 
+        title: 'Bonus Balance', 
+        image: '' ,
+        buttonTitle:'Withdraw', 
+        iconType: <Ionicons name='arrow-down-outline' size={20} color='#fff'/>,
+        btnTittle:'Withdraw',
+
+        userAmt: userInfo.userData.all_bonus_acct? userInfo.userData.all_bonus_acct : '0.0',
+        amtBalance: userInfo.userData.all_withdraw_acct? userInfo.userData.all_withdraw_acct : '0.0',
+      },
+    ];
+
+
+    const redirectionButton =(data) =>{
+      if(data == 0 )
+      {
+        navigation.navigate('Add-fund')
+      }
+      else if(data == 1)
+      {
+        navigation.navigate('withdraw-fund')
+      }
+      else{
+        alert('Sorry, something went wrong!')
+      }
+    }
     // fetching all history base on paypal transaction with pagination
     const getWalletHistory = async() =>{
          setIsLoading(true);
@@ -69,7 +114,12 @@ const WalletScreen = ({navigation}) => {
            
             if(res.data.msg =='201'){
             let result = res.data.feedback;
+            let resultData = res.data;
+            let bonusResult = res.data.feedbackBonus;
+            //console.log('all result ', bonusResult)
+            setBonusTotalBalance(bonusResult)
             setWalletBalance(result)
+            setWithdrawTotalBalance(res.data.feedbackWithdraw)
             //console.log("response: " + JSON.stringify( res.data.feedback));
             }
          else{
@@ -82,12 +132,6 @@ const WalletScreen = ({navigation}) => {
             setIsWalletLoading(false);
           }    
         }
-  
-    // const walletID = () =>{
-    //     if(walletBalance[1]?._id == 'Approved'){
-    //         setWalletTotalBalance(walletBalance[1]?.totalAmount)
-    //         }
-    //     }
 
     // refresh user details from db after any operation into the database
     const RefreshUserDetails = async()=>{
@@ -189,6 +233,40 @@ const fetchData = async()=>{
         setIsRefreshing(false);
         }, 1000);
       }, []);
+
+
+      const renderItem = ({ item }) => (
+        <View style={{flex: 1, borderRadius:8, marginTop:15, backgroundColor:colors.primaryColor1,
+          shadowRadius:5, shadowColor:'#000', shadowOffset:{width: 0,
+              height:2,}, shadowOpacity: 0.23, elevation: 1, height: 130, marginBottom:10}}>
+              <ImageBackground source={item.image} resizeMode='cover' imageStyle={{opacity: 0.3}} style={{flex:1}}>
+                  
+                      <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8}}>
+      
+                          <View style={{marginHorizontal:10, marginTop:10}}>
+                              <Text style={{fontFamily:'_semiBold', fontSize:13, color:colors.bgColor}}>{item.title} </Text>
+                              <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textColor, marginBottom: 8}}>
+                                {/* <NumberValueFormat value={walletBalance[0]?.totalAmount? walletBalance[0]?.totalAmount : '0.0'} /> */}
+                                
+                                {item.id == 1 && item.amt > 100000000 ? <Text>{'\u20A6'}100M</Text> : item.id == 1 && item.amt < 100000000 ? <Text><NumberValueFormat value={item.amt} /></Text> : item.id == 2 && item.userAmt > 100000000 ? <Text>$100M</Text>: item.id == 2 && item.userAmt < 100000000 ? <Text><NumberDollarValueFormat value={item.userAmt} /></Text> : <Text>0.00</Text>}
+                                
+                                </Text>
+                          </View>
+                              <View style={{marginHorizontal:5, flexDirection:'row', alignItems:'center', justifyContent:'center' }}>
+                                  <PaymentIcon type='master' width={30}/>
+                              </View>
+                          </View>
+                            <View style={{marginHorizontal:5, flexDirection:'row', alignItems:'center', justifyContent:'center', marginBottom:8 }}>
+                              <TouchableOpacity onPress={() => redirectionButton(activeIndex)} style={{backgroundColor:'transparent', borderColor:'#fff', borderWidth:1, borderRadius:10, height:30, justifyContent:'center', alignItems:'center'}}>
+                                <View style={{flexDirection:'row', marginHorizontal:10}}>
+                                  <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.textColor}}>{item.buttonTitle}  </Text>
+                                  {item.iconType}
+                                </View>
+                              </TouchableOpacity>  
+                          </View>
+              </ImageBackground>
+            </View>
+            );
      
       const data=[{value:weeklyData == '0' ? 0: weeklyData, label: 'Weekly'}, {value:monthlyData == '0'? 0: monthlyData, label:'Monthly'}, {value:yearlyData == '0' ? 0 : yearlyData, label:'Yearly'}]
          
@@ -220,36 +298,48 @@ const fetchData = async()=>{
             <View style={{backgroundColor:colors.bgColor, flex:1,}}>
                         
             <ScrollView showsVerticalScrollIndicator={false} style={{paddingHorizontal:20}}
-            refreshControl={
-                <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-              }>
+                  refreshControl={
+                <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}>
               
-              <View style={{flex: 1, borderRadius:8, marginTop:15, backgroundColor:colors.primaryColor1,
+              {/* <View style={{flex: 1, borderRadius:8, marginTop:15, backgroundColor:colors.primaryColor1,
               shadowRadius:5, shadowColor:'#000', shadowOffset:{width: 0,
                   height:2,}, shadowOpacity: 0.23, elevation: 1, height: 80}}>
-                  <ImageBackground source={background} resizeMode='cover' imageStyle={{opacity: 0.3}} style={{flex:1}}>
+                    <ImageBackground source={background} resizeMode='cover' imageStyle={{opacity: 0.3}} style={{flex:1}}>
                       
-                      <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8}}>
+                            <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8}}>
 
                               <View style={{marginHorizontal:10, marginTop:10}}>
                                   <Text style={{fontFamily:'_semiBold', fontSize:13, color:colors.bgColor}}>Current Wallet Balance </Text>
                                   <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textColor, marginBottom: 8}}>
-                                    {/* <NumberValueFormat value={walletBalance[0]?.totalAmount? walletBalance[0]?.totalAmount : '0.0'} /> */}
+                                    
                                     <NumberValueFormat value={userInfo.userData.amount? userInfo.userData.amount : '0.0'} />
                                     </Text>
                               </View>
-                              <View style={{marginHorizontal:5, flexDirection:'row', alignItems:'center' }}>
-                                  <TouchableOpacity onPress={() =>navigation.navigate('FundAccount')}>
-                                  <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.textColor}}>Add Fund</Text>
-                                  </TouchableOpacity>
-                                  
-                                  <PaymentIcon type='master' width={30}/>
-                              </View>
+                                  <View style={{marginHorizontal:5, flexDirection:'row', alignItems:'center' }}>
+                                      <TouchableOpacity onPress={() =>navigation.navigate('FundAccount')}>
+                                      <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.textColor}}>Add Fund </Text>
+                                      </TouchableOpacity>
+                                      
+                                      <PaymentIcon type='master' width={30}/>
+                                  </View>
                       </View>
                   </ImageBackground>
                   
-              </View>
+              </View> */}
+                {/* Wallet slider here */}
+                <View>
+                    <Carousel
+                      ref={carouselRef}
+                      data={dataWallet}
+                      renderItem={renderItem}
+                      sliderWidth={windowWidth -40} // - 40 means subtract 20 from left margin, 20 from right margin
+                      itemWidth={width * 0.8}
+                      onSnapToItem={(index) => setActiveIndex(index)}
+                    />
+                  </View>
 
+                {activeIndex == 0 &&
+                  <View>
                     {/* Wallet Chart data goes here */}
                     
                         <View style={styles.chartView}>
@@ -281,43 +371,89 @@ const fetchData = async()=>{
                         </View>
 
                     {/* recent added fund map list here */}
-                   
-   
+                  
                     {!isLoading && walletHistory.map((item, index) => (
+                    
                     <TouchableOpacity style={[styles.historyMainView,{ marginBottom:15}]} onPress={()=>{}}
                     key={index}>
                             <View style={styles.historyView}>
                              <View style={{marginHorizontal:10, marginTop:5, flexDirection:'row'}}>
-                             <Feather name="arrow-up-left" size={30} color="#09d97b"/>
+                                <Feather name="arrow-up-left" size={30} color="#09d97b"/>
                                   <View style={{flexDirection:'column'}}>
                                     <Text style={styles.historyTextDate}>{moment(item.creditOn).format("DD/MM/YYYY hh:mm:ss")}</Text>
                                     <Text style={[styles.historyTextStatus, {marginRight:5}]}>{item.fund_type}</Text>
                                   </View>
                                     
                               </View>
-                                <View style={styles.historyViewIn}>
-                                    <View style={{flexDirection:'column'}}>
-                                    <Text style={styles.historyAmtText}><NumberValueFormat value={item.amount} /></Text>
-                                    <Text style={[styles.historyTextStatus, {fontSize:10, marginBottom:-10}]}>{item.fund_status}</Text>
+                                    <View style={styles.historyViewIn}>
+                                        <View style={{flexDirection:'column'}}>
+                                        <Text style={styles.historyAmtText}><NumberValueFormat value={item.amount} /></Text>
+                                        <Text style={[styles.historyTextStatus, {fontSize:10, marginBottom:-10}]}>{item.fund_status}</Text>
+                                        </View>
+                                      
                                     </View>
-                                   
-                                </View>
                                 
                             </View>
                                 
                     </TouchableOpacity>
                         ))}
-                        {!chartLoading && walletHistory.length < 1 &&<View>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor, textAlign:'center'}}>No recent transaction at the moment</Text>
-                        </View>}
+                  </View>
+                  }
 
-              </ScrollView>
+                    {!chartLoading && walletHistory.length < 1 &&
+                      <View>
+                          <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor, textAlign:'center'}}>No recent transaction at the moment</Text>
+                      </View>
+                      }
+                  {/* bonus summary block */}
+                {activeIndex == 1 &&
+                  <View style={{flex: 1, flexDirection:'row', justifyContent:'center', alignItems:'center', marginHorizontal:5}}>
+                        
+                        <View style={{flex: 1, borderRadius:8, marginTop:15, backgroundColor:colors.colorWhite,
+                              shadowRadius:5, shadowColor:'#000', shadowOffset:{width: 0,
+                            height:2,}, shadowOpacity: 0.23, elevation: 1, marginBottom:10, marginLeft:8}}>
+                                <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:5}}>
+                                    <View style={{marginHorizontal:5, marginTop:10}}>
+                                        <Text style={{fontFamily:'_semiBold', fontSize:13, color:colors.lightHl}}>{'Pending Bonus'} </Text>
+                                        <Text style={{fontFamily:'_bold', fontSize:23, color:colors.lightBg, marginBottom: 8}}>
+                                          {/* <NumberValueFormat value={walletBalance[0]?.totalAmount? walletBalance[0]?.totalAmount : '0.0'} /> */}
+                                            {bonusTotalBalance == 0 || bonusTotalBalance == null ? '$0.00' : bonusTotalBalance > 1000000 ? <Text>$1M</Text> : <NumberDollarValueFormat value={bonusTotalBalance} />}
+                                          </Text>
+                                          <Text style={{fontFamily:'_regular', fontSize:11, color:colors.textSecColor, marginBottom: 8}}>
+                                            Current pending bonus balance
+                                          </Text>
+                                    </View>
+                              </View>
+                        </View>
+
+                            <View style={{flex: 1, borderRadius:8, marginTop:15, backgroundColor:colors.colorWhite,
+                                shadowRadius:5, shadowColor:'#000', shadowOffset:{width: 0,
+                                height:2,}, shadowOpacity: 0.23, elevation: 1, marginBottom:10, marginLeft:8}}>
+                             <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8}}>
+                                <View style={{marginHorizontal:5, marginTop:10}}>
+                                    <Text style={{fontFamily:'_semiBold', fontSize:13, color:colors.lightHl}}>{'Total Withdraw'} </Text>
+                                    <Text style={{fontFamily:'_bold', fontSize:23, color:colors.lightBg, marginBottom: 5}}>
+                                      {/* <NumberValueFormat value={walletBalance[0]?.totalAmount? walletBalance[0]?.totalAmount : '0.0'} /> */}
+                                      {withdrawTotalBalance == 0 || withdrawTotalBalance == null ? '$0.00' : withdrawTotalBalance > 1000000 ? <Text>$1M</Text> : <NumberDollarValueFormat value={withdrawTotalBalance} />}
+                                      </Text>
+                                      <Text style={{fontFamily:'_regular', fontSize:11, color:colors.textSecColor, marginBottom: 8}}>
+                                        All time Withdrawal from your account.
+                                      </Text>
+                                </View>                                    
+                            </View>
+                          </View>                          
+                  </View>
+                }
+                  
+              </ScrollView> 
             </View>
 
     </SafeAreaView>
-     </View>
+     </View>     
   );
 }
+    
+
 
 const styles = StyleSheet.create({
     container: {
@@ -436,8 +572,25 @@ const styles = StyleSheet.create({
         fontFamily:'_semiBold', 
         fontSize:17, 
         color:colors.lightBg
-    }
+    },
 
+    
+    carouselItem: {
+      backgroundColor: colors.primaryColor1,
+      borderRadius: 10,
+      padding: 10,
+      alignItems: 'center',
+    },
+    image: {
+      width: 300,
+      height: 150,
+      borderRadius: 10,
+      },
+    title: {
+      marginTop: 10,
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
 })
 
 

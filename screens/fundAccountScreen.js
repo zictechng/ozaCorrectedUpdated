@@ -133,8 +133,10 @@ const FundAccountScreen = ({navigation}) => {
             // if the response is successful redirect to the new page
                 if(res.data.msg == '200'){
                     refFundCheckOut.current.close();
+                    //console.log('result ', res.data.feedback)
                     navigation.navigate('FundingNextPage',{
-                    payment: amtData.amt
+                    payment: amtData.amt,
+                    track_id:res.data.feedback 
                     });
 
                     setContactData({
@@ -320,7 +322,7 @@ const FundAccountScreen = ({navigation}) => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView>
                         <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textBlack}}>Fund Account</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Fund Account</Text>
                         </View>
 
                         <View style={{marginHorizontal:20, marginTop:10}}>

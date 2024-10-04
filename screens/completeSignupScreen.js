@@ -7,7 +7,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { gs,colors } from '../styles';
 //import { StatusBar } from 'expo-status-bar';
 import { Dropdown } from 'react-native-element-dropdown';
-import DatePicker from 'react-native-modern-datepicker'
 import { getToday, getFormatedDate } from 'react-native-modern-datepicker';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import CustomButton from '../components/customButton';
@@ -17,6 +16,7 @@ import { noticeData } from '../components/errorNotice';
 import client from '../contextAPI/client';
 import LoaderIndicator from '../components/loaderIndicator';
 import { GenderData } from '../model/data';
+import IsValidEmail from '../components/checkEmailFormat';
 
 
 const CompleteSignupScreen = ({navigation}) => {
@@ -27,8 +27,7 @@ const CompleteSignupScreen = ({navigation}) => {
 
     // date implementation
     const today = new Date();
-    const startDate = getFormatedDate(today.setDate(today.getDate()) +1, 'DD/MM/YYYY')    
-    const [open, setOpen] = useState(false);
+    const startDate = getFormatedDate(today.setDate(today.getDate()) +1, 'DD/MM/YYYY')
 
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
     const [selectedDate, setSelectedDate] = useState('');
@@ -43,6 +42,7 @@ const CompleteSignupScreen = ({navigation}) => {
     };
  
     useEffect(() => {
+        
         if(isFocused){
        // console.log("navigation changed ", userInfo?.userData )
         if(userInfo?.userData.reg_stage2 =="Yes"){
@@ -59,7 +59,7 @@ const CompleteSignupScreen = ({navigation}) => {
       hideDatePicker();
     };
 
-    const [dataDetails, setDataDetails] = React.useState({
+    const [dataDetails, setDataDetails] = useState({
         sex: '',
         dob: '',
         state: '',
@@ -84,7 +84,7 @@ const CompleteSignupScreen = ({navigation}) => {
             sex: value,
             dob: selectedDate,
             state: dataDetails.state,
-            country: dataDetails.country,
+            //country: dataDetails.country,
             address: dataDetails.address,
             bank_name: dataDetails.bank_name,
             acct_name: dataDetails.acct_name,
@@ -96,7 +96,7 @@ const CompleteSignupScreen = ({navigation}) => {
         }
         //console.log('selected data ', registrationDetails)
 
-        if (registrationDetails.sex == 0 || registrationDetails.dob == 0 || registrationDetails.state == 0 || registrationDetails.country == 0 || registrationDetails.address == 0 || 
+        if (registrationDetails.sex == 0 || registrationDetails.dob == 0 || registrationDetails.state == 0 || registrationDetails.address == 0 || 
             registrationDetails.bank_name == 0 || registrationDetails.acct_name == 0 || registrationDetails.acct_number == 0) {
             Toast.show({
                  type: ALERT_TYPE.DANGER,
@@ -107,17 +107,38 @@ const CompleteSignupScreen = ({navigation}) => {
              })
              return
             }
-            if (registrationDetails.acct_number.length != 10) {
+            if (registrationDetails.acct_number.length < 8) {
                 Toast.show({
                      type: ALERT_TYPE.DANGER,
                      title: 'Error',
-                     textBody: 'Account number must be 10 digits',
+                     textBody: 'Account number should be 8 digits minimum',
                      textBodyStyle: noticeData[0].errorMessageStyle,
                      titleStyle: noticeData[0].errorTitleStyle,
                  })
                  return
                 }
-
+                // validate paypal address email format
+                if(!IsValidEmail(registrationDetails.paypal_address)){
+                    Toast.show({
+                        type: ALERT_TYPE.DANGER,
+                        title: 'Invalid parameters',
+                        textBody: 'Paypal address should be a valid email format.',
+                        titleStyle: noticeData[0].errorTitleStyle,
+                        textBodyStyle: noticeData[0].errorMessageStyle,
+                    });
+                    return
+                }
+                // validate payoneer address email format
+                    if(!IsValidEmail(registrationDetails.payoneer_address)){
+                        Toast.show({
+                            type: ALERT_TYPE.DANGER,
+                            title: 'Invalid parameters',
+                            textBody: 'Payoneer address should be a valid email format.',
+                            titleStyle: noticeData[0].errorTitleStyle,
+                            textBodyStyle: noticeData[0].errorMessageStyle,
+                        });
+                        return
+                    }
             try {
                 setIsBtnLoading(true)
                 const res = await client.post('/api/complete_registration', registrationDetails,{
@@ -301,7 +322,7 @@ return (
                     <View style={{flex:1, backgroundColor:colors.bgColor}}>
                         <ScrollView contentContainerStyle={{flexGrow:1}} showsVerticalScrollIndicator={false}>
                             <View style={{marginHorizontal:10, marginTop:10}}>
-                                <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textBlack}}>Complete Registration</Text>
+                                <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Complete Registration</Text>
                             </View>
 
                             <View style={{marginHorizontal:15, marginTop:10}}>
@@ -390,7 +411,7 @@ return (
                                         />
                                     </View>
 
-                                    <View style={{flexDirection:'row', 
+                                    {/* <View style={{flexDirection:'row', 
                                         marginBottom:15,
                                         borderWidth: 1,  // size/width of the border
                                         borderRadius: 7,
@@ -406,7 +427,7 @@ return (
                                         value={dataDetails.country}
                                         onChangeText={(val) => handleInputChange("country", val)}
                                         />
-                                    </View>
+                                    </View> */}
 
                                     <View style={{flexDirection:'row', 
                                         marginBottom:15,

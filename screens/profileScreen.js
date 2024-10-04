@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { useIsFocused } from '@react-navigation/native';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, Alert, ToastAndroid } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, Alert, ToastAndroid, Platform } from 'react-native';
 import { gs,colors } from '../styles';
 import * as Clipboard from 'expo-clipboard';
 import { StatusBar } from 'expo-status-bar';
@@ -136,10 +136,10 @@ const ProfileScreen = () =>{
                 +' Use this Tag ID '+' '+ userInfo.userData.tag_id+ ` to signup and get ${'$'+ businessRate.appDataRate?.signup_bonus_rate} free reward` +'\nVisit ' + 'https://ozaapp.com');
             // Display a success message 
             if (Platform.OS === 'android') { 
-                ToastAndroid.show('Your referral ID details copied successfully! \n Share it on any social networks to earn more', 
+                ToastAndroid.show('Your referral ID copied successfully! \n Share it on any social networks to earn money', 
                     ToastAndroid.SHORT); 
             } else if (Platform.OS === 'ios') { 
-                Alert.alert('Referral ID details copied successfully! \n Share it on any social networks to earn more'); 
+                Alert.alert('Referral ID copied! \n Share it on any social networks to earn money'); 
             } 
         //setShareDialog(false);
         } catch (error) {
@@ -169,9 +169,9 @@ const ProfileScreen = () =>{
                 </View> */}
 
                 <HeaderMenu 
-                    buttonHome={<TouchableOpacity onPress={() =>navigation.openDrawer()}>
+                    buttonHome={<TouchableOpacity onPress={() =>navigation.goBack()}>
                     <View  style={[gs.homeSideMenu, {backgroundColor:'transparent', borderWidth: 0}]}>
-                        <Entypo name='sweden' size={23} color={colors.textColor}/>
+                        <Ionicons name='close' size={23} color={colors.textColor}/>
                     </View>
                         </TouchableOpacity>}
                     titleName={'Profile'}
@@ -335,7 +335,7 @@ const ProfileScreen = () =>{
                                 shareButtonStyle={[gs.actionButtonShare, {marginTop:5}]}
                                 shareButtonText={gs.buttonSellText}
                                 buttonLabel={'Share'}
-                                desText={`Share with your friends and love once, \n both of you earn ${'$'+ businessRate.appDataRate?.signup_bonus_rate}`}
+                                desText={`Share your ID with your friends and love once to signup both of you earn ${'$'+ businessRate.appDataRate?.signup_bonus_rate}`}
                                 iconType={<Ionicons name='close' size={20} color={colors.primaryColor2} />}
                                 onPress1={() => shareCopyID()}
                                 onPress2={() => closeShareWithFriends()}

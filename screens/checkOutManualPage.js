@@ -46,8 +46,12 @@ const CheckOutManualPage = ({route, navigation}) => {
     }
 
     const cancelledModal =() =>{
-        setPayBtnConfirm(false);
-        navigation.replace('Home');
+        // setPayBtnConfirm(false);
+        // //navigation.replace('Home');
+        // navigation.navigate('UploadPaymentProof',{
+        //     track_id:trans_id
+        //     });
+       
         //Dialog.hide();
     }
 
@@ -58,7 +62,6 @@ const CheckOutManualPage = ({route, navigation}) => {
         setAppInfo(res.infoData)
         })
     }
-
     const timerCallbackFunc = (timerFlag) => {
         // Setting timer flag to finished
         setTimerEnd(timerFlag);
@@ -69,18 +72,10 @@ const CheckOutManualPage = ({route, navigation}) => {
         )}
 
       const paymentMade =()=>{
-        setPayBtnConfirm(true);
-
-        // Dialog.show({
-        //     type: ALERT_TYPE.SUCCESS,
-        //     title: 'Wow...',
-        //     textBody: 'This sounds good!\n If payment has been made, we will review and fund your account shortly',
-        //     button: 'Okay',
-        //     textBodyStyle: { fontFamily: '_regular', fontSize: 16 },
-        //     titleStyle: { fontFamily: '_bold', fontSize: 20 },
-        //     //onPressButton:(() => void cancelledModal()),
-        //     onPressButton:(() => void cancelledModal())
-        //     })
+        //setPayBtnConfirm(true);
+        navigation.navigate('UploadPaymentProof',{
+            track_id:trans_id.feedback
+            });
        }
 
     // get the current rate
@@ -230,7 +225,7 @@ const CheckOutManualPage = ({route, navigation}) => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView>
                         <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textBlack}}>Request Pending</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Request Pending</Text>
                         </View>
                                 <View style={{marginHorizontal:20, marginTop:10, marginBottom:20}}>
                                     <Text style={{fontFamily:'_regular', fontSize:12, color:colors.textBlack, opacity:0.7}}>
@@ -412,7 +407,7 @@ const CheckOutManualPage = ({route, navigation}) => {
                         </View>
                     </>  :'' }
 
-                    <View style={{borderBottomWidth:1, color:colors.redColor, marginBottom:8, opacity:0.3}}></View>
+                    {/* <View style={{borderBottomWidth:1, color:colors.redColor, marginBottom:8, opacity:0.3}}></View>
                         <View style={{flexDirection:'row', marginHorizontal:10}}>
                         <TouchableOpacity onPress={() => copyToClipboardMoMo()}>
                             <View style={{width:30, height:30}}>
@@ -426,7 +421,7 @@ const CheckOutManualPage = ({route, navigation}) => {
                             </Text>
                             </View>
 
-                    </View>
+                    </View> */}
                     
                     <View style={{justifyContent:'center', alignItems:'center', marginBottom:10, marginTop:10}}>
                     <TouchableOpacity style={styles.dialogActionBtn}

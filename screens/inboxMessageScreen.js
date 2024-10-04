@@ -5,7 +5,7 @@ import { gs,colors } from '../styles';
 import { useNavigation, useIsFocused} from '@react-navigation/native';
 import { Avatar, Badge} from 'react-native-elements';
 import * as Animatable from 'react-native-animatable'
-import { Entypo,} from '@expo/vector-icons';
+import { Entypo, Ionicons,} from '@expo/vector-icons';
 import CustomSmallButton from '../components/customSmallButton';
 import moment from "moment";
 import HeaderMenu from '../components/headerMenu';
@@ -97,6 +97,7 @@ const InboxMessageScreen = () => {
 
         }
       }
+      
       useEffect(() =>{
         loadMessages()
       },[isFocused])
@@ -149,9 +150,9 @@ const InboxMessageScreen = () => {
 
                         <HeaderMenu 
                           buttonHome={<TouchableOpacity
-                          onPress={() =>navigation.openDrawer()}>
+                          onPress={() =>navigation.goBack()}>
                             <View  style={gs.homeSideMenu}>
-                            <Entypo name='sweden' size={23} color={colors.textColor}/>
+                            <Ionicons name='close' size={23} color={colors.textColor}/>
                           
                           </View>
                           </TouchableOpacity>}

@@ -59,9 +59,8 @@ const HistoryScreen = ({navigation}) => {
       // fetching all history with pagination
          const loadMessages = async() =>{
           //console.log("current Page ", currentPage)
+          //console.log("current Page ", currentPage)
           if(!isLoading && !isListEndAll){
-  
-           // console.log("result ", loadMessages)
             setIsLoading(true);
             try {
               const res = await client.get(`api/all_historyMobile/${userInfo.userData._id}?page=`+currentPage,{
@@ -158,22 +157,6 @@ const HistoryScreen = ({navigation}) => {
           }
         }
 
-       
-  // footer
-  const allRenderFooter =() =>{
-    return (
-      <View style={{justifyContent:'center', alignItems:'center'}}>
-        {isLoading ? (
-          <ActivityIndicator size={25} color={colors.primaryColor1} style={{margin:15}} />
-        ): 
-        //   <View style={{justifyContent:'center', alignItems:'center', marginBottom:10}}>
-        //     <Text style={{fontFamily:"_regular", fontSize:13, color:colors.textSecColor}}>No more data</Text>
-        // </View>
-        ''
-      }
-      </View>
-    )
-  }
 
   // Paypal listView footer
   const paypalRenderFooter =() =>{
@@ -211,7 +194,9 @@ const HistoryScreen = ({navigation}) => {
      <Animatable.View style={[styles.recentTransaction ,{flexShrink: 1,}]}
           animation="fadeInUpBig" useNativeDriver={true} duration={1000} key={item.index}>
             <TouchableOpacity style={styles.rowWrapper}
-                  onPress={() =>{}}  key={index} >
+                  onPress={() => navigation.navigate('TranDetails', {
+                    record_id:item._id
+                  })}  key={index} >
 
             <View style={{flexDirection:'row', alignItems:'center', justifyContent:'space-between'}}>
                
@@ -319,39 +304,70 @@ const HistoryScreen = ({navigation}) => {
    </Animatable.View>  
 )
 
-//page refreshing function goes here
-const handleRefresh = useCallback(() => {
-  setIsRefreshing(true);
-  setCurrentPage(currentPage + 1)
-  loadMessages()
-  setTimeout(() => {
-  setIsRefreshing(false);
-  }, 2000);
-}, []);
 
-const handleRefreshPaypal = useCallback(() => {
-  setIsRefreshing(true);
-  setCurrentPage(currentPage + 1)
-  paypalHistory()
-  setTimeout(() => {
-  setIsRefreshing(false);
-  }, 2000);
-}, []);
 
-const handleRefreshPayoneer = useCallback(() => {
-  setIsRefreshing(true);
-  setCurrentPage(currentPage + 1)
-  payoonerHistory()
-  setTimeout(() => {
-  setIsRefreshing(false);
-  }, 2000);
-}, []);
 
 useEffect(() =>{
   loadMessages()
   paypalHistory()
   payoonerHistory()
-},[isFocused, isLoading, isPaypalLoading, isPayoonerLoading])
+},[isFocused, isPaypalLoading, isPayoonerLoading])
+
+const handleRefreshPaypal = React.useCallback(() => {
+  setIsRefreshing(true);
+  paypalHistory()
+  setTimeout(() => {
+  setIsRefreshing(false);
+  }, 2000);
+}, []);
+
+const handleRefreshPayoneer = React.useCallback(() => {
+  setIsRefreshing(true);
+  payoonerHistory()
+  setTimeout(() => {
+  setIsRefreshing(false);
+  }, 2000);
+}, []);
+//page refreshing function goes here
+const handleRefresh = React.useCallback(() => {
+  setIsRefreshing(true);
+  loadMessages()
+  setTimeout(() => {
+  setIsRefreshing(false);
+  }, 2000);
+}, []);
+
+  // footer
+  const renderFooter =() =>{
+    return (
+      <View style={{justifyContent:'center', alignItems:'center'}}>
+        {isLoading ? (
+          <ActivityIndicator size={25} color={colors.primaryColor1} style={{margin:15}} />
+        ): 
+          <View style={{justifyContent:'center', alignItems:'center', marginBottom:10}}>
+            <Text style={{fontFamily:"_regular", fontSize:13, color:colors.textSecColor}}></Text>
+        </View>
+      }
+      </View>
+    )
+  }
+
+         
+  // footer
+  const allRenderFooter =() =>{
+    return (
+      <View style={{justifyContent:'center', alignItems:'center'}}>
+        {isLoading ? (
+          <ActivityIndicator size={25} color={colors.primaryColor1} style={{margin:15}} />
+        ): 
+        //   <View style={{justifyContent:'center', alignItems:'center', marginBottom:10}}>
+        //     <Text style={{fontFamily:"_regular", fontSize:13, color:colors.textSecColor}}>No more data</Text>
+        // </View>
+        ''
+      }
+      </View>
+    )
+  }
 
   return (
     <View style={{flex:1, backgroundColor:colors.primaryColor2}}>
@@ -363,7 +379,7 @@ useEffect(() =>{
                     buttonHome={<TouchableOpacity
                     onPress={() =>navigation.openDrawer()}>
                         <View style={gs.homeSideMenu}>
-                            <Entypo name='sweden' size={23} color={colors.textColor}/>
+                            {/* <Entypo name='sweden' size={23} color={colors.textColor}/> */}
                         </View>
                         </TouchableOpacity>}
                     titleName={'History'}
@@ -406,9 +422,10 @@ useEffect(() =>{
                           <FlatList 
                           data={fetchMessageData}
                           renderItem={allHistorySheet}
-                          ListFooterComponent={allRenderFooter}
+                          ListFooterComponent={renderFooter}
                           onEndReached={loadMessages}
                           onEndReachedThreshold={0.5}
+                          showsVerticalScrollIndicator={false}
                           refreshing={isRefreshing}
                           onRefresh={handleRefresh}
                           />}

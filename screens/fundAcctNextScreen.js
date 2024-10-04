@@ -22,6 +22,7 @@ const FundAccountNextScreen = ({route, navigation}) => {
     const refTimer = useRef();
     const isFocused = useIsFocused();
     let amtReceive = route.params?.payment;
+    let payId = route.params?.track_id;
     const {userToken, userInfo, setUserInfo} = useContext(AuthContext)
     const [paymentDone, setPaymentDone] = useState(false);
     const [currentRate, setCurrentRate] = useState({});
@@ -48,7 +49,10 @@ const FundAccountNextScreen = ({route, navigation}) => {
     // }
     const cancelledModal =() =>{
         setPayBtnConfirm(false);
-        navigation.replace('Home');
+        //navigation.replace('Home');
+        navigation.navigate('UploadPaymentProof',{
+            track_id:payId
+            });
         //Dialog.hide();
     }
     const timerCallbackFunc = (timerFlag) => {
@@ -57,21 +61,14 @@ const FundAccountNextScreen = ({route, navigation}) => {
         setPaymentTime(true)
         setPaymentTimer('00:00:00')
         console.log(
-          'You can alert the user by letting him know that Timer is out.',
+          ' Timer is out.',
         );};
 
       const paymentMade =()=>{
-        setPayBtnConfirm(true);
-        // Dialog.show({
-        //     type: ALERT_TYPE.SUCCESS,
-        //     title: 'Wow...',
-        //     textBody: 'This sounds good!\n If payment has been made, we will review and fund your account shortly',
-        //     button: 'Okay',
-        //     textBodyStyle: { fontFamily: '_regular', fontSize: 16 },
-        //     titleStyle: { fontFamily: '_bold', fontSize: 20 },
-        //     //onPressButton:(() => void cancelledModal()),
-        //     onPressButton:(() => void cancelledModal())
-        //     })
+        //setPayBtnConfirm(true);
+        navigation.navigate('UploadPaymentProof',{
+            track_id:payId
+            });
        }
 
     // get the current rate
@@ -215,7 +212,7 @@ const FundAccountNextScreen = ({route, navigation}) => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView>
                         <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textBlack}}>Request Sent</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Funding Initiated</Text>
                         </View>
 
                         {/* <View style={{marginHorizontal:20, marginTop:10}}>
@@ -223,13 +220,13 @@ const FundAccountNextScreen = ({route, navigation}) => {
                                 Request to fund your account has been sent Successfully.</Text>
                          </View> */}
                                 <View style={{marginHorizontal:20, marginTop:10, marginBottom:20}}>
-                                    <Text style={{fontFamily:'_regular', fontSize:12, color:colors.textBlack, opacity:0.7}}>
-                                        Use your email ID or Transaction ID as the sender when making the payment to fast track your account funding.</Text>
+                                    <Text style={{fontFamily:'_regular', fontSize:13, color:colors.textBlack, opacity:0.7}}>
+                                        Use your email ID or Transaction ID in your description when making the transfer payment to fast track your account funding.</Text>
                                 </View>
                             <View style={[styles.formPage, {marginTop:5}]}>
                                 
                                 <View style={{marginHorizontal:20, marginTop:10, marginBottom:20}}>
-                                    <Text style={{fontFamily:'_regular', fontSize:12, color:colors.textBlack, opacity:0.6}}>
+                                    <Text style={{fontFamily:'_regular', fontSize:13, color:colors.textBlack, opacity:0.6}}>
                                         Your request is currently pending, till payment is receive your wallet will be funded.
                                         </Text>
                                 </View>
@@ -295,11 +292,11 @@ const FundAccountNextScreen = ({route, navigation}) => {
                                         <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textBlack}}>
                                             Amount to send in naira
                                         </Text>
-                                        <TouchableOpacity onPress={() =>paymentConfirmed()}>
+                                        {/* <TouchableOpacity onPress={() =>paymentConfirmed()}>
                                             <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.primaryColor1}}>
                                                 Account Details
                                             </Text>
-                                        </TouchableOpacity>
+                                        </TouchableOpacity> */}
                                         
                                     </View>
                                     
@@ -312,7 +309,12 @@ const FundAccountNextScreen = ({route, navigation}) => {
 
                                 <View style={{marginHorizontal:20, marginTop:10, marginBottom:20}}>
                                     <Text style={{fontFamily:'_regular', fontSize:12, color:colors.textBlack}}>
-                                        Payment should be made in naira to {appInfo.app_name} official account only. Payment can be made into Mappido account any where in the world.</Text>
+                                        Payment should be made in naira to {appInfo.app_name} official account only from any where in the world.</Text>
+                                        <TouchableOpacity onPress={() =>paymentConfirmed()}>
+                                            <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.primaryColor1, marginTop:10}}>
+                                                View Account Details
+                                            </Text>
+                                        </TouchableOpacity>
                                 </View>
                         
                             {/* custom button here */}
@@ -387,7 +389,7 @@ const FundAccountNextScreen = ({route, navigation}) => {
 
                             <View style={{borderBottomWidth:1, color:colors.redColor, marginBottom:8, opacity:0.3}}></View>
                             
-                                <View style={{flexDirection:'row', marginHorizontal:10}}>
+                                {/* <View style={{flexDirection:'row', marginHorizontal:10}}>
                                     <TouchableOpacity onPress={() => copyToClipboardMoMo()}>
                                     <View style={{width:30, height:30}}>
                                         <Ionicons name='copy-outline' size={20} color={colors.primaryColor2} />
@@ -402,7 +404,7 @@ const FundAccountNextScreen = ({route, navigation}) => {
                                     </Text>
                                     
                                  </View>
-                            </View>
+                            </View> */}
                             
                         <View style={{justifyContent:'center', alignItems:'center', marginBottom:10, marginTop:10}}>
                             <TouchableOpacity style={styles.dialogActionBtn}

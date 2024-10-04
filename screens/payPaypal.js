@@ -1,9 +1,8 @@
-import React, { useContext, useCallback, useState, useEffect } from "react";
+import React, { useContext, useState } from "react";
 import {
   Dimensions,
   View,
   Text,
-  TextInput,
   StyleSheet,
   SafeAreaView,
   ScrollView,
@@ -11,23 +10,19 @@ import {
   KeyboardAvoidingView,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  ActivityIndicator,
   Image,
   StatusBar,
 } from "react-native";
-import { MaterialIcons, Ionicons, Feather, FontAwesome } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
 import { gs, colors } from "../styles";
 // import { StatusBar } from "expo-status-bar";
-import background from "../assets/images/reg_bg1.png";
 import HeaderMenu from "../components/headerMenu";
 import LoaderIndicator from "../components/loaderIndicator";
 import { ALERT_TYPE, Toast, Dialog } from "react-native-alert-notification";
 import client from "../contextAPI/client";
 import { noticeData } from "../components/errorNotice";
 import paypalImage from '../assets/images/paypal2.png';
-const { width } = Dimensions.get("window");
-const windowHeight = Dimensions.get("window").height;
 import { useWindowDimensions } from "react-native";
 import PayPal from "expo-paypal";
 import { AuthContext } from "../contextAPI/authContext";

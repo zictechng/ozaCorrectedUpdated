@@ -36,18 +36,6 @@ const UploadProofAddress = ({navigation}) => {
                 if(userInfo?.userData.reg_stage6 =="Yes"){
                     navigation.navigate('Home');
                 }
-                if(userInfo?.userData.reg_stage2 !="Yes"){
-                    navigation.navigate('CompleteSignup');
-                }
-                else if(userInfo?.userData.reg_stage3 !="Yes"){
-                    navigation.navigate('UploadProfile_image');
-                }
-                else if(userInfo?.userData.reg_stage4 !="Yes"){
-                    navigation.navigate('UploadDocument');
-                }
-                else if(userInfo?.userData.reg_stage5 !="Yes"){
-                    navigation.navigate('Verify2faces');
-                }
             }
          }, [isFocused]);
 
@@ -77,10 +65,10 @@ const UploadProofAddress = ({navigation}) => {
           
           if (!resultResponse.canceled) {
             setImage(resultResponse.assets[0].uri);
-            let fileInfo = await FileSystem.getInfoAsync(result.assets[0].uri);
+            let fileInfo = await FileSystem.getInfoAsync(resultResponse.assets[0].uri);
             fileSize = 1024 * 1024 * 5
             if(fileInfo.size > fileSize) {
-              console.log('file size smaller than expected')
+              console.log('file size larger than expected')
               Toast.show({
                     type: ALERT_TYPE.DANGER,
                     title:'Error',
@@ -334,6 +322,9 @@ const UploadProofAddress = ({navigation}) => {
             let userInfo = await AsyncStorage.getItem('userInfo');
                 userInfo = JSON.parse(userInfo)
                 setUserInfo(userInfo)
+                
+            navigation.navigate('Home');
+              
           }
           else if(res.data.status == '401'){
             Toast.show({
@@ -479,7 +470,7 @@ const UploadProofAddress = ({navigation}) => {
                             {/* custom button here */}
                           <Animatable.View
                             animation={'zoomIn'}
-                            delay={1200}
+                            delay={500}
                             useNativeDriver={true}>
                                 <CustomButton 
                                   buttonStyle={{borderRadius:10, marginHorizontal:10, backgroundColor:colors.primaryColor1, marginTop:60}}

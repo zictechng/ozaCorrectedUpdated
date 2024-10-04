@@ -1,8 +1,7 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Image, ImageBackground, ScrollView } from 'react-native';
+import React, { useContext, useState, useEffect, useRef  } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, ScrollView } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons, Entypo, Fontisto} from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import * as Animatable from 'react-native-animatable'
 import * as FileSystem from 'expo-file-system'
 import Collapsible from 'react-native-collapsible';
@@ -21,89 +20,61 @@ import client from '../contextAPI/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Verify2faSuccess from '../components/veriy2faSuccess';
 import {CLOUDINARY_ACCOUNT_NAME, CLOUDINARY_PRESET_NAME} from '@env'
+import CheckPhotoType from '../components/checkPhotoType';
 
+const MAX_FILE_SIZE_MB = 5 * 1024 * 1024; // 5MB in bytes
 
-const Verify2faAccountScreen = ({navigation}) => {
+const Verify2faAccountScreen = ({route, navigation}) => {
       const isFocused = useIsFocused();
-
+      let newPhoto = route.params?.userPhoto;
       const {userInfo, setUserInfo, userToken, completeRegData, setCompleteRegData} = useContext(AuthContext)
       const [image, setImage] = useState(null);
       const [loading, setLoading] = useState(false);
       const [loading2, setLoading2] = useState(false);
       const [loading2fa, setLoading2FA] = useState(false);
       const [isCollapsed, setIsCollapsed] = useState(true);
+      const [isCollapsedReason, setIsCollapsedReason] = useState(true);
       const [isDisableBtn, setIsDisableBtn] = useState(false);
       const [otpSend, setOtpSend] = useState(false);
       const [documentSend, setDocumentSend] = useState(false);
+      const [documentType, setDocumentType] = useState('');
       const [imageValue, setImageValue] = useState('');
      
       let myId = userInfo.userData._id; // get logged in user ID
 
       useEffect(() => {
         if(isFocused){
-       // console.log("navigation changed ", userInfo?.userData )
+          setImage(newPhoto);
+          CheckPhotoType(newPhoto).then((res)=>{
+            setDocumentType(res)
+            //console.log("Image Type ", res )
+          })
+       
         if(userInfo?.userData.reg_stage5 =="Yes"){
             navigation.navigate('Home');
              }
-        if(userInfo?.userData.reg_stage2 !="Yes"){
-              navigation.navigate('CompleteSignup');
-           }
-        else if(userInfo?.userData.reg_stage3 !="Yes"){
-              navigation.navigate('UploadProfile_image');
-           }
-        else if(userInfo?.userData.reg_stage4 !="Yes"){
-              navigation.navigate('UploadDocument');
-           }
-        }
-         
-         }, [isFocused]);
+            }
+
+            CheckFileSize()
+         }, [isFocused, navigation]);
+
 
       // open collapsed state
       const openCollapsedState = ()=>{
         setIsCollapsed(!isCollapsed)
       }
-      const pickImage = async () => {
-        // No permissions request is necessary for launching the image library
-        let result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.All,
-          allowsEditing: true,
-          aspect: [4, 3],
-          quality: 1,
-        });
-    
-        //console.log(result);
-        // check file type here
-        if(result.assets[0].type =='video') {
-          Toast.show({
-              type: ALERT_TYPE.WARNING,
-              title:'Error',
-              textBody: 'Videos files are not supported',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            result.canceled = true;
-            setImage(null)
-            return
-          }
-    
-        if (!result.canceled) {
-          setImage(result.assets[0].uri);
-          let fileInfo = await FileSystem.getInfoAsync(result.assets[0].uri);
-          fileSize = 1024 * 1024 * 5
-          if(fileInfo.size > fileSize) {
-            console.log('file size smaller than expected')
-            Toast.show({
-                  type: ALERT_TYPE.DANGER,
-                  title:'Error',
-                  textBody: 'File size is larger than 5MB',
-                  titleStyle: noticeData[0].errorTitleStyle,
-                  textBodyStyle: noticeData[0].errorMessageStyle,
-                })
-              setImage(null)
-            return
-          }
-        }
-      };
+
+      
+      // open collapsed state
+      const openCollapsedStateReason = ()=>{
+        setIsCollapsedReason(!isCollapsedReason)
+      }
+
+      // open collapsed state
+      const resetOtpSending = ()=>{
+        setOtpSend(false)
+        setImage(null)
+      }
 
       const [isModalVisible, setModalVisible] = useState(false);
 
@@ -111,13 +82,76 @@ const Verify2faAccountScreen = ({navigation}) => {
           setModalVisible(!isModalVisible);
       };
      
-    // close success modal and go back to home page
-    const closeModal = () =>{
-      setDocumentSend(false);
-      //FetchLocalStorage();
-      navigation.navigate('UploadProofAddress')
+   
+     // go to camera page
+     const takeSelfie = () =>{
+      navigation.navigate('OpeCamera')
     }
 
+     // Retake photo to go to camera page
+     const reTakeSelfie = () =>{
+      setImage(null)
+      navigation.navigate('OpeCamera', { userPhoto: null })
+      
+    }
+
+    //check file size
+    const CheckFileSize = async ()=>{
+      if (!newPhoto) {
+        return null;
+      }
+      try {
+        const fileInfo = await FileSystem.getInfoAsync(newPhoto);
+        if (!fileInfo) {
+          return 'unknown';
+        }
+        
+        const fileSize = fileInfo.size;
+
+          // Check if file size is greater than 5MB, if so resize it
+          if (fileSize > MAX_FILE_SIZE_MB) {
+            const resizedUri = await ImageSizeReside(newPhoto);
+            //console.log("New Photo Size ", resizedUri); //
+            setImage(resizedUri);
+          } else {
+            setImage(newPhoto); // If it's already under 5MB, use original image
+          }
+       } catch (error) {
+        console.error("Error getting file info:", error);
+      }
+    
+    }
+
+    const ImageSizeReside = async(uri) =>{
+      if (!uri) {
+        //console.error('No URI provided for image resize check.');
+        return 'unknown';
+      }
+
+    try {
+      let resizedImage = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 500 } }], // Adjust the width to your requirement (aspect ratio is maintained)
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG } // Adjust compression level
+      );
+
+      const resizedFileInfo = await FileSystem.getInfoAsync(resizedImage.uri);
+
+      // Continue resizing if it's still larger than 5MB
+      while (resizedFileInfo.size > MAX_FILE_SIZE_MB) {
+        resizedImage = await ImageManipulator.manipulateAsync(
+          resizedImage.uri,
+          [{ resize: { width: resizedImage.width * 0.8 } }], // Gradually reduce size
+          { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG } // Lower compression
+        );
+      }
+
+      return resizedImage.uri; // Return resized image URI
+    } catch (error) {
+      console.error("Error resizing image:", error);
+      return uri; // Return original URI if resizing fails
+    }
+    }
      // Get user details from local storage after every request/operation into the database
    const FetchLocalStorage = async()=>{
     setLoading(true)
@@ -164,17 +198,18 @@ const Verify2faAccountScreen = ({navigation}) => {
               })
 
               if(res.data.msg == '201'){
-                Toast.show({
-                  type: ALERT_TYPE.SUCCESS,
-                  title:'Success',
-                  textBody: 'OTP Have been to your email successfully',
-                  titleStyle: noticeData[0].errorTitleStyle,
-                  textBodyStyle: noticeData[0].errorMessageStyle,
-                })
+                // Toast.show({
+                //   type: ALERT_TYPE.SUCCESS,
+                //   title:'Success',
+                //   textBody: 'OTP Have been to your email successfully',
+                //   titleStyle: noticeData[0].errorTitleStyle,
+                //   textBodyStyle: noticeData[0].errorMessageStyle,
+                // })
                 FetchLocalStorage()
                 setOtpSend(true)
                 setCompleteRegData(false)
-                //navigation.navigate('Verify2faces')
+                // go to camera screen
+                navigation.navigate('OpeCamera')
               }
               else if(res.data.status == '401'){
                 Toast.show({
@@ -302,6 +337,10 @@ const Verify2faAccountScreen = ({navigation}) => {
           })
           return
         }
+
+        // ResizeImageSize(image).then((data)=>{
+        //   console.log("Image Size ", data )
+        // })
         
         setLoading(true)
         //  const formData = new FormData();
@@ -426,7 +465,9 @@ const Verify2faAccountScreen = ({navigation}) => {
           setLoading2(true)
           const sendData = {
             'userId': myId,
-            'image_url': data
+            'image_url': data,
+            'fileType': documentType,
+            'public_id': imageValue
           }
             try {
                 const res = await client.post('/api/user_upload2fa', sendData,{
@@ -514,7 +555,7 @@ const Verify2faAccountScreen = ({navigation}) => {
   return (
     <View style={{flex:1, backgroundColor:colors.bgColor}}>
         <SafeAreaView style={{flex:1}}>
-
+        
             <StatusBar style='dark' />
 
                 <View style={gs.homeHeaderRow}>
@@ -535,21 +576,21 @@ const Verify2faAccountScreen = ({navigation}) => {
                     </View>
                     <View style={{marginBottom:20}}></View>
                     <View style={{marginTop:0}}>
-                            <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textBlack}}>Account Ownership Verification</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Account Ownership Verification</Text>
                         </View>
                  </View>
+
                       {loading && <LoaderIndicator 
                               loader={loading}
                               textInfo={'  Processing...'}
                         />}
                         {loading2 && <LoaderIndicator 
                         loader={loading2}
-                        textInfo={'  Updating...'}
+                        textInfo={'  Uploading...'}
                         />}
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView showsVerticalScrollIndicator={false}>
                         
-
                         <View style={{marginHorizontal:20, marginTop:10}}>
                             <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>Verify you are who you are! Let's us know you are the person behind this account profile.</Text>
                          </View>
@@ -562,50 +603,60 @@ const Verify2faAccountScreen = ({navigation}) => {
                             
                         {/* Hidden this first, when email send then show it */}
                             <TouchableOpacity style={[styles.btnTapImageUpload]}
-                                onPress={pickImage}
-                                disabled={!otpSend}
-                                >
+                                onPress={takeSelfie}
+                                disabled={!otpSend}>
+
                             {!image && <Fontisto name='photograph' size={80} color='#666' style={{marginRight:5, marginTop:15, opacity:0.4}} />}
-                            {image && <Image source={{ uri: image }} style={{ width: 200, height: 150, borderRadius:5, marginTop:15 }} />}
-                              <Text style={[styles.btnTap, otpSend && !image? styles.btnTap2: '']}>Tap to pick a file</Text>
+                            {image && <Image source={{ uri: image }} style={{ width: 250, height: 260, borderRadius:5, marginTop:15 }} />}
+                            {!loading2fa && !image && otpSend ? <Text style={[styles.btnTap, otpSend && !image? styles.btnTap2: '']}>Tap to take a selfie</Text>:''}
                           </TouchableOpacity>
                           
                          {/* Custom small button */}
                          {loading2fa && <View style={{justifyContent:'center', alignItems:'center',
-                            marginBottom:25,
-                            marginTop:25}}>
+                            marginBottom:25}}>
                               <View style={[styles.btnLoading, isDisableBtn? styles.btnLoadingDisable : '']}>
                               <ActivityIndicator size={20} color={colors.textColor}/>
                             </View>
                           </View>
                           }
 
-                         {!loading2fa && !otpSend && 
+                         {!loading2fa && !otpSend ? 
                          <Animatable.View
                             animation={'zoomIn'}
-                            delay={900}
+                            delay={400}
                             useNativeDriver={true}>
                               <CustomSmallButton 
                                 viewStyle={{ justifyContent:'center', alignItems:'center',
                                 marginBottom:25,
-                                marginTop:25
                                 }}
                                 buttonStyle={styles.actionButton}
                                 textStyle={styles.buttonSellText}
                                 textLabel={'Get Started'}
                                 buttonAction={() => sendOTPCode()}
                               />
+                         </Animatable.View>:
+                         image? <Animatable.View
+                            useNativeDriver={true}>
+                              <CustomSmallButton 
+                                viewStyle={{ justifyContent:'center', alignItems:'center',
+                                marginBottom:25,
+                                }}
+                                buttonStyle={styles.bntRetakeAction}
+                                textStyle={styles.buttonSellText}
+                                textLabel={'Re-Take photo'}
+                                buttonAction={() => reTakeSelfie()}
+                              />
                          </Animatable.View>
-                         }
+                         :''}
                       </Animatable.View>
-
                         
-                        {otpSend && <View style={{marginHorizontal:20, marginTop:10, marginBottom:5}} >
-                          <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.primaryColor2, marginTop:10}}>I did not receive OTP code <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.redColor, marginTop:10}} onPress={() =>setOtpSend(false)}> Resend</Text></Text>
-                        </View>}
-                         <Animatable.View 
-                          animation="fadeInRight" 
-                          duration={2000}
+                        {!image && otpSend? <View style={{marginHorizontal:20, marginTop:10, marginBottom:5}} >
+                          <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.primaryColor2, marginTop:10}}>I did not receive OTP code <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.redColor, marginTop:10}} onPress={() =>resetOtpSending()}> Start Again</Text></Text>
+                        </View>:''} 
+                        
+                        <Animatable.View 
+                          animation={'zoomIn'} 
+                          duration={500}
                           useNativeDriver={true}>
                              <TouchableOpacity
                          style={styles.formPageBnt} onPress={() => openCollapsedState()}>
@@ -619,49 +670,58 @@ const Verify2faAccountScreen = ({navigation}) => {
                                    <Text style={{fontFamily:'_regular', fontSize:14, color:colors.primaryColor2, marginBottom:8}}>{'*'} To secure your account</Text>
                                    <Text style={{fontFamily:'_regular', fontSize:14, color:colors.primaryColor2, marginBottom:8}}>{'*'} To enable you have full access to all our products to glow your business </Text>
                                    <Text style={{fontFamily:'_regular', fontSize:14, color:colors.primaryColor2, marginBottom:8}}>{'*'} Access to loan without any paper work </Text>
-                                   <Text style={{fontFamily:'_regular', fontSize:14, color:colors.primaryColor2, marginBottom:8}}>{'*'} Make the platform more safer for everyone in the platform </Text>
                                    <Text style={{fontFamily:'_regular', fontSize:14, color:colors.primaryColor2, marginBottom:8}}>{'*'} Build more trust with others in the platform and do business safely.</Text>
-                                   <Text style={{fontFamily:'_regular', fontSize:14, color:colors.primaryColor2}}>{'*'} And do so much more... </Text>
-                                   <Text style={{fontFamily:'_regular', fontSize:14, color:colors.redColor, marginTop:10}}>{'*'} Please note, The document information will not be stored, we only use it to verify who you are and uplift restrictions from your account .</Text>
+                                   <Text style={{fontFamily:'_regular', fontSize:14, color:colors.redColor, marginTop:10}}>{'*'} Please note, The document will not be stored, we only use it to verify who you are and uplift restrictions from your account .</Text>
                                    
                                </View>
-                                 <View style={{justifyContent:'center', alignItems:'center', marginTop:20, marginBottom: 15}}>
+                                 {/* <View style={{justifyContent:'center', alignItems:'center', marginTop:20, marginBottom: 15}}>
                                  <TouchableOpacity onPress={() => toggleModal()} style={styles.btnToggle}>
                                    <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.primaryColor2}}>View Example</Text>
                                  </TouchableOpacity>
-                               </View>
+                               </View> */}
                            </Collapsible>
                              
                          </TouchableOpacity>
  
                          </Animatable.View>
-                       
-                        <View style={{marginHorizontal:20, marginTop:30, borderBottomWidth:1, borderColor: '#dededc', marginBottom:5}}>
-                        <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textBlack, marginTop:10}}>Follow the procedure below to get started</Text>
-                        </View>
 
-                         <View style={{marginHorizontal:20, marginTop:10, borderColor: '#dededc', marginBottom:5}}>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.primaryColor2, marginBottom:8}}>{'*'} Click the get started button</Text>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.primaryColor2, marginBottom:8}}>{'*'} We will send you an OTP Code to your email </Text>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.primaryColor2, marginBottom:8}}>{'*'} Write the OTP code on a clean white paper boldly </Text>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.primaryColor2, marginBottom:8}}>{'*'} Hold the paper with OTP code written on it and take a selfie (Anyone can snap you), it should be very clean enough to see your face and the OTP Code on the paper</Text>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.primaryColor2}}>{'*'} Then, upload it for your account verification </Text>
-
-                            <TouchableOpacity onPress={() => toggleModal()}>
-                                   <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textSecColor, textAlign:"center", marginTop:10}}>View Sample</Text>
-                            </TouchableOpacity>
-                        
-                        </View>
-
-                            {/* custom button here */}
+                         <Animatable.View 
+                          animation={"zoomIn" }
+                          duration={700}
+                          useNativeDriver={true}>
+                             <TouchableOpacity
+                         style={styles.formPageBntReason} onPress={() => openCollapsedStateReason()}>
+                             <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginHorizontal:7, padding:5}}>
+                               <Text style={{fontFamily:'_semiBold', fontSize:14, marginLeft:15, color:'#777', }}>Tips on account verification</Text>
+                               {isCollapsedReason ? <Entypo name='chevron-small-down' size={30} />: <Entypo name='chevron-small-up' size={30} style={{marginHorizontal:10}} /> }
+                             </View>
+                           <Collapsible collapsed={isCollapsedReason}>
+                             <View style={{marginHorizontal:20, marginTop:10, borderColor: '#dededc', marginBottom:8}}>
+                            
+                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.blackColor1, marginBottom:8}}>{'*'} Click the get started button.</Text>
+                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.blackColor1, marginBottom:8}}>{'*'} We will send you an OTP Code to your email. </Text>
+                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.blackColor1, marginBottom:8}}>{'*'} Ensure to save the OTP code in a safe place for future reference. </Text>
+                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.blackColor1, marginBottom:8}}>{'*'} For better focus, aligned your face within the frame on the camera and Tab on take a photo.</Text>
+                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.blackColor1, marginBottom:8}}>{'*'} Uploading documents or photos other than what is requested may result in account suspension.</Text>
+                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.redColor, marginBottom:8}}>{'*'} Your image must be readable, in focus, and free of reflections and glare.</Text>
+                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.blackColor1}}>{'*'} Then, upload it for your account verification </Text>
+                            </View>
+                                 
+                           </Collapsible>
+                             
+                         </TouchableOpacity>
+ 
+                         </Animatable.View>
+                       {/* custom button here */}
+                            {newPhoto &&
                             <CustomButton 
-                                buttonStyle={{borderRadius:10, marginHorizontal:10, backgroundColor:colors.primaryColor1, marginTop:30}}
+                                buttonStyle={{borderRadius:10, marginHorizontal:10, backgroundColor:colors.primaryColor1, marginTop:60}}
                                 viewStyle={{height:50,justifyContent:'center', alignItems:'center'}}
                                 textStyle={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textColor}}
                                 textLabel={'Upload'}
-                                buttonAction={() => upload2FADocument()}
-                            />
-                            <View style={{justifyContent:'center', alignItems:'center', marginTop:10, marginBottom:20}}>
+                                buttonAction={() => upload2FADocument()}/>
+                            }
+                            <View style={{justifyContent:'center', alignItems:'center', marginTop:20, marginBottom:40}}>
                                 <TouchableOpacity style={{marginTop:5}} onPress={() => navigation.navigate('Home')}>
                                 <Text style={[gs.loginPageDesc,{color:colors.textBlack}]}>Maybe Later</Text>
                                 </TouchableOpacity>
@@ -694,6 +754,29 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       justifyContent: 'center',
     },
+
+    camera: {
+      flex: 1,
+    },
+    buttonContainer: {
+      flex: 1,
+      backgroundColor: 'transparent',
+      flexDirection: 'row',
+      margin: 20,
+    },
+    button: {
+      flex: 0.1,
+      alignSelf: 'flex-end',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255, 255, 255, 0.5)',
+      padding: 10,
+      borderRadius: 5,
+      marginHorizontal: 20,
+    },
+    text: {
+      fontSize: 18,
+      color: 'white',
+    },
     btnTap:{
       fontFamily:'_semiBold', 
       fontSize:12, 
@@ -717,7 +800,7 @@ const styles = StyleSheet.create({
    
     btnTap2:{
       fontFamily:'_semiBold', 
-      fontSize:12, 
+      fontSize:15, 
       color:colors.textSecColor,
       marginBottom:40,
     },
@@ -766,7 +849,7 @@ const styles = StyleSheet.create({
         borderRadius:10, 
         marginHorizontal:10, 
         backgroundColor:colors.textColor, 
-        marginTop:40,
+        marginTop:30,
         shadowColor: '#000',
         shadowOffset: { 
         width: 0, 
@@ -776,6 +859,20 @@ const styles = StyleSheet.create({
         shadowRadius: 1,
         elevation: 1, 
         },
+        formPageBntReason:{
+          borderRadius:10, 
+          marginHorizontal:10, 
+          backgroundColor:colors.textColor, 
+          marginTop:20,
+          shadowColor: '#000',
+          shadowOffset: { 
+          width: 0, 
+          height: 0.5 
+          },
+          shadowOpacity: 0.5,
+          shadowRadius: 1,
+          elevation: 1, 
+          },
     settingTitle:{
         color:colors.textColor,
         fontSize:20,
@@ -791,6 +888,14 @@ const styles = StyleSheet.create({
     },
     actionButton:{
       width:100, 
+      height:30, 
+      borderRadius:20, 
+      backgroundColor:colors.primaryColor1, 
+      justifyContent:'center', 
+      alignItems:'center', 
+     },
+     bntRetakeAction:{
+      width:150, 
       height:30, 
       borderRadius:20, 
       backgroundColor:colors.primaryColor1, 

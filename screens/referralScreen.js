@@ -1,5 +1,5 @@
 import React, { useContext,useState, useEffect } from 'react';
-import { ToastAndroid, Alert, ActivityIndicator, FlatList, StyleSheet, View, Text, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView } from 'react-native';
+import { ToastAndroid, Alert, ActivityIndicator, FlatList, StyleSheet, View, Text, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, Platform } from 'react-native';
 import { gs,colors } from '../styles';
 import * as Clipboard from 'expo-clipboard';
 import { StatusBar } from 'expo-status-bar';
@@ -150,9 +150,9 @@ const ReferralScreen = () => {
 
                 <View style={gs.homeHeaderRow}>
                     <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                        <TouchableOpacity onPress={() =>navigation.openDrawer()}>
+                        <TouchableOpacity onPress={() =>navigation.goBack()}>
                           <View  style={[gs.homeSideMenu, {backgroundColor:'transparent', borderWidth: 0}]}>
-                        <Entypo name='sweden' size={23} color={colors.textColor}/>
+                        <Ionicons name='close' size={23} color={colors.textColor}/>
                     </View>
                            </TouchableOpacity>
 
@@ -171,7 +171,7 @@ const ReferralScreen = () => {
                     <Image source={bgImage} resizeMode='cover' style={{width:350, height:150, opacity:.70}} />
                 </View> */}
                 <View style={{marginHorizontal:10, marginTop:10}}>
-                    <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>The people you have shared your link with that signup and connect with {appDetails?.infoData.app_name? appDetails?.infoData.app_name+ ' App' :''}</Text>
+                    <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>The people you have shared your link with that signup and connect with {appDetails?.infoData.app_name? appDetails?.infoData.app_name :''}</Text>
                 </View>
                 
                 {/* List view will come here */}
@@ -212,7 +212,7 @@ const ReferralScreen = () => {
                     shareButtonStyle={gs.actionButtonShare}
                     shareButtonText={gs.buttonSellText}
                     buttonLabel={'Share'}
-                    desText={'Share with your friends and love once, to earn more money'}
+                    desText={`Share with your friends and love once, to earn more money ${'$'+ businessRate?.signup_bonus_rate}`}
                     iconType={<Ionicons name='close' size={20} color={colors.primaryColor2} />}
                     onPress1={() => shareCopyID()}
                     onPress2={() => closeShareWithFriends()}

@@ -60,6 +60,7 @@ export default function BuyBottomSheet({
   );
 }
 
+
 const styles = StyleSheet.create({
     action: {
         marginTop: 20,

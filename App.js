@@ -37,6 +37,9 @@ export default function App({navigation}) {
       setUserLogToken(userToken);
       //console.log("User Token in App ", userToken);
     }
+    else{
+      setUserLogToken('');
+    }
     //console.log("User launch the App already ", launch);
   } catch (error) {
     // Error retrieving data

@@ -1,10 +1,9 @@
 import React , {useContext, useCallback, useState, useEffect } from 'react';
-import { Dimensions, StatusBar, View, Text, TextInput, StyleSheet, SafeAreaView, ScrollView, Keyboard, KeyboardAvoidingView, TouchableOpacity, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
+import { Dimensions, StatusBar, View, Text, TextInput, StyleSheet, SafeAreaView, ScrollView, Keyboard, KeyboardAvoidingView, TouchableOpacity, TouchableWithoutFeedback, ActivityIndicator, Platform } from 'react-native';
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
 import Checkbox from 'expo-checkbox';
 import { gs, colors } from '../styles';
 //import {  } from 'expo-status-bar';
-import background from '../assets/images/reg_bg1.png'
 import HeaderMenu from '../components/headerMenu';
 import LoaderIndicator from '../components/loaderIndicator';
 import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
@@ -507,7 +506,7 @@ const styles = StyleSheet.create({
      },
      loginTitle:{
         fontFamily:'_bold', 
-        fontSize:32, 
+        fontSize:25, 
         color:'#333', 
      },
      loginTitleDesc:{

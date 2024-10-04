@@ -189,7 +189,7 @@ const FundAccountPaystackScreen = ({route, navigation}) => {
                         <View style={{justifyContent:'center', alignItems:'center', padding:30}}>
                             <Image source={paystackImage} style={{borderRadius:15, height:50, width:50}} />
                         </View>
-                        <Text style={{fontFamily:'_semiBold', fontSize:30, color:colors.textBlack, textAlign:'center', marginBottom:20}}>
+                        <Text style={{fontFamily:'_semiBold', fontSize:25, color:colors.textBlack, textAlign:'center', marginBottom:20}}>
                             <NumberValueFormat value={routeName.total_money} />
                         </Text>
 

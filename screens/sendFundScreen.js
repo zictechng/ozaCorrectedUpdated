@@ -16,6 +16,9 @@ import { NumberValueFormat } from "../components/controls";
 import { ActivityIndicator } from "react-native";
 import {DotIndicator} from 'react-native-indicators';
 import client from "../contextAPI/client";
+import { Dropdown } from "react-native-element-dropdown";
+import { SendFundOptionData } from "../model/data";
+import { NumberDollarValueFormat } from "../components/formatDollarValue";
 
 const SendFundScreen = ({navigation}) => {
     //source={bgImage} resizeMode='stretch'
@@ -23,10 +26,13 @@ const SendFundScreen = ({navigation}) => {
     const [amtLoading, setAmtLoading] = useState(false);
 
     const [acctPin, setAcctPin] = useState(null);
+    const [isFocus, setIsFocus] = useState(false);
+    const [value, setValue] = useState(null);
     const [newData, setNewData] = useState([]);
     const [isModalVisible, setModalVisible] = useState(false);
     const [isGettingID, setIsGettingID] = useState(false);
     const [appDetails, setAppDetails] = useState({});
+    const [messageError, setMessageError] = useState('');
 
     // get app information from local storage here
  _getAppLocalInfo = async () =>{
@@ -53,6 +59,7 @@ const SendFundScreen = ({navigation}) => {
     const toggleModal = () => {
         setModalVisible(!isModalVisible);
         setAmtLoading(false)
+        setMessageError('')
     };
 
     // fetch receiver details
@@ -122,7 +129,8 @@ const SendFundScreen = ({navigation}) => {
         tagId: contactData.tag_id,
         note: contactData.send_note,
         userId: userInfo.userData._id,
-        acctPin: acctPin
+        acctPin: acctPin,
+        account_source: value,
     }
 
     const sendFundProcess = async() => { 
@@ -136,7 +144,18 @@ const SendFundScreen = ({navigation}) => {
                 })
                 return
             }
-            if(getSendInfo.amt != '' && getSendInfo.tagId != ''){
+            if(getSendInfo.account_source == '' || getSendInfo.account_source == null){
+                Toast.show({
+                    type: ALERT_TYPE.DANGER,
+                    title: 'Error',
+                    textBody: 'Account source is required',
+                    titleStyle: noticeData[0].errorTitleStyle,
+                    textBodyStyle: noticeData[0].errorMessageStyle,
+                    })
+                    return
+            }
+            //console.log(getSendInfo)
+            if(getSendInfo.amt != '' && getSendInfo.tagId != '' && getSendInfo.account_source!= null){
                 toggleModal()
             }
          }
@@ -144,14 +163,15 @@ const SendFundScreen = ({navigation}) => {
          //confirm account pin and process the request
     const processFundSending = async () => {
        if(acctPin == null || acctPin == undefined || acctPin == ''){
-            Toast.show({
-                type: ALERT_TYPE.DANGER,
-                title: 'Error',
-                textBody: 'Please enter account pin',
-                titleStyle: noticeData[0].errorTitleStyle,
-                textBodyStyle: noticeData[0].errorMessageStyle,
-                })
-                return
+            // Toast.show({
+            //     type: ALERT_TYPE.DANGER,
+            //     title: 'Error',
+            //     textBody: 'Please enter account pin',
+            //     titleStyle: noticeData[0].errorTitleStyle,
+            //     textBodyStyle: noticeData[0].errorMessageStyle,
+            //     })
+            setMessageError('Please enter account pin')
+                return null
             }
         setAmtLoading(true)
         try {
@@ -226,9 +246,9 @@ const SendFundScreen = ({navigation}) => {
 
                     <View style={gs.homeHeaderRow}>
                         <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                            <TouchableOpacity onPress={() =>navigation.openDrawer()}>
-                                <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                                    <Entypo name='sweden' size={23} color={colors.textColor}/>
+                            <TouchableOpacity onPress={() =>navigation.goBack()}>
+                                <View style={[gs.homeSideMenu, {borderWidth: 0, backgroundColor:colors.colorWhite}]}>
+                                    <Ionicons name='close' size={23} color={colors.primaryColor1}/>
                                 </View>
                                  </TouchableOpacity>
 
@@ -255,7 +275,7 @@ const SendFundScreen = ({navigation}) => {
                             
                             <Animatable.View 
                             animation={'fadeInUpBig'}
-                            delay={200}
+                            delay={100}
                             useNativeDriver={true}
                             style={styles.formPage}>
 
@@ -264,7 +284,7 @@ const SendFundScreen = ({navigation}) => {
                                     
                                     <View style={{marginHorizontal:20, marginTop:10, marginBottom:20}}>
                                         <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textBlack}}>
-                                            Enter the receiver Tag ID and the amount you want to send.</Text>
+                                            Enter the receiver Tag ID, enter amount you want to send and choose account source.</Text>
                                     </View>
                                     <View style={{
                                         flexDirection:'row', 
@@ -276,16 +296,42 @@ const SendFundScreen = ({navigation}) => {
                                         height: 50}}>
                                         <MaterialIcons name='perm-identity' size={20} color='#666' style={{marginRight:5, marginTop:15, opacity:0.4}} />
                                         <TextInput 
-                                        placeholder='User Tag ID'
+                                        placeholder='Receiver Tag ID'
                                         style={{flex:1}}
+                                        keyboardType="numeric"
                                         maxLength={7}
                                         onChangeText={(val) => handleInputChange("tag_id", val)}
                                         value={contactData.tag_id}/>
                                     </View>
+
+                                    <View style={{marginBottom:newData.length?10:-15, marginHorizontal:10, borderWidth: 1, borderRadius: 10,
+                                    borderColor: 'lightgrey', marginTop:20}}>
+                                    <Dropdown
+                                    style={[styles.dropdown, isFocus && { borderColor: colors.primaryColor1 }]}
+                                    placeholderStyle={styles.placeholderStyle}
+                                    selectedTextStyle={styles.selectedTextStyle}
+                                    inputSearchStyle={styles.inputSearchStyle}
+                                    iconStyle={styles.iconStyle}
+                                    data={SendFundOptionData}
+                                    maxHeight={300}
+                                    labelField="label"
+                                    valueField="value"
+                                    placeholder={!isFocus ? 'Account Source' : '...'}
+                                    value={value}
+                                    onFocus={() => setIsFocus(true)}
+                                    onBlur={() => setIsFocus(false)}
+                                    onChange={item => {
+                                        setValue(item.value);
+                                        setIsFocus(false);
+                                    }}
+                                    />
+                                </View>
                                     
                                     {isGettingID && <DotIndicator color={colors.primaryColor1} size={5} />}
                                     {!newData && <View style={{marginBottom:15}}></View>}
-                                    <Text style={{fontFamily:'_semiBold', fontSize:14, textAlign:'right', marginRight:20, marginBottom:10, marginTop:5}}>{newData? newData: ''}</Text>
+                                    <Text style={{fontFamily:'_semiBold', fontSize:14, textAlign:'right', marginRight:20, marginBottom:10, marginTop:5}}>
+                                        {newData? newData: ''}
+                                    </Text>
                                     <View style={{
                                         flexDirection:'row', 
                                         marginBottom:15,
@@ -362,8 +408,10 @@ const SendFundScreen = ({navigation}) => {
                                                 }
                                             amtStyle={{fontFamily: '_semiBold', fontSize:17}}
                                             payDesc={'Sending ' } 
-                                            textMoney={<NumberValueFormat value={getSendInfo.amt} />}
+                                            textMoney={getSendInfo.account_source =='1'?<NumberValueFormat value={getSendInfo.amt} />: <NumberDollarValueFormat value={getSendInfo.amt} />}
                                             sendingTo={'To ' + getSendInfo.tagId}
+                                            errorMessage={messageError}
+                                            errorMessageStyle={{fontFamily:'_regular', fontSize:13, color:colors.redColor, marginHorizontal:10, marginBottom:messageError?-5:2, marginTop:messageError?5:-10, justifyContent:'center', alignSelf:'center'}}
                                             icon={<MaterialCommunityIcons name='shield-key-outline' size={20} color='#666' style={{marginRight:5, marginTop:15, opacity:0.4}} />}
                                             placeholder={'Enter account pin'}
                                             keyboardType='numeric'
@@ -399,6 +447,28 @@ const styles = StyleSheet.create({
         paddingBottom: 5,
         
     },
+    dropdown: {
+        height: 50,
+        borderColor: 'gray',
+        //borderWidth: 0.5,
+        borderRadius: 8,
+        paddingHorizontal: 8,
+      },
+      placeholderStyle: {
+        fontSize: 16,
+        color:colors.textSecColor
+      },
+      selectedTextStyle: {
+        fontSize: 16,
+      },
+      iconStyle: {
+        width: 20,
+        height: 20,
+      },
+      inputSearchStyle: {
+        height: 40,
+        fontSize: 16,
+      },
     signInButton: {
         marginHorizontal:20,
         height: 50,

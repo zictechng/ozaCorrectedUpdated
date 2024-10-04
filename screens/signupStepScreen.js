@@ -145,7 +145,7 @@ const SignupStepScreen = ({navigation}) => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textBlack}}>Signup Process</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Signup Process</Text>
                             <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor, marginTop:10}}>Complete your account signup process to enjoy the amazing offer that we have for you</Text>
                             <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>It takes less than five minutes to complete</Text>
                         </View>

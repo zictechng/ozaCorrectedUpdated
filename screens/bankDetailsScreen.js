@@ -125,7 +125,7 @@ const BankDetailsScreen = ({navigation}) => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView>
                         <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textBlack}}>Bank Details</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Bank Details</Text>
                         </View>
 
                         <View style={{marginHorizontal:20, marginTop:10}}>
@@ -209,27 +209,42 @@ const BankDetailsScreen = ({navigation}) => {
                 </View>
                     {/* show if user profile is not complete */}
                      
-                     {completeRegData && <BottomWarning 
-                        closeBtn={<View style={{justifyContent:'flex-end', alignItems:'flex-end'}}>
-                                    <TouchableOpacity style={styles.closeBnt}
-                                    onPress={() => {closeIncompleteRegistration()}}>
-                                        <View style={styles.closeBtnView}>
-                                            <Ionicons name="close" size={25} color={colors.textColor}/>
-                                        </View>
-                                    </TouchableOpacity>
-                                 </View>
-                            }
-                        icon={<Ionicons name="information-circle-outline" size={24} color={colors.textColor}/>}
-                        title={'Incomplete Profile'}
-                        subTitle={'Complete your registration to remove restrictions in your account to enjoy the amazing offers we have for you.'}
-                        buttonText={'Okay'}
-                        buttonTextStyle={{color:colors.textColor, fontFamily:'_semiBold', fontSize:14}}
-                        buttonStyle={{borderRadius:50, borderColor:colors.lightGreenColor1, width:60, height:30, borderWidth:1, justifyContent:'center', alignItems:'center', marginBottom:20}}
-                        titleStyle={{marginLeft: 5, fontFamily:'_bold', fontSize:15, color:colors.bgColor}}
-                        subTitleStyle={{marginLeft: 5, fontFamily:'_regular', fontSize:12, color:colors.textColor}}
-                        onPress={() => navigation.navigate('SignupSteps')}
-                        bgColor={{backgroundColor:colors.primaryColor1}}
-                    />}
+                     {completeRegData &&
+                    <View style={{marginBottom: 20, marginTop:20, marginHorizontal:10}}>
+                        <View style={{backgroundColor:'#DCF2EA', height:130, borderRadius:20}}>
+                        <View style={{justifyContent:'flex-end', alignItems:'flex-end'}}>
+                            <TouchableOpacity style={styles.closeBnt}
+                            onPress={() => {closeIncompleteRegistration()}}>
+                                <View style={styles.closeBtnView}>
+                                    <Ionicons name="close" size={20} color={colors.textColor}/>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                            <View style={{flexDirection:'row', marginTop: 5, marginHorizontal:5, alignItems:'center'}}>
+                            <Ionicons name="information-circle-outline" size={24} color={colors.blackColor1}/>
+                                <Text style={{marginLeft: 5, fontFamily:'_bold', fontSize:14, color:colors=='#1D2667'? '#fff':'#51534D'}}>
+                                    Incomplete Profile
+                                </Text>
+                            </View>
+                            <View style={{marginVertical:5, marginHorizontal:8}}>
+                                <Text style={{marginLeft: 5, fontFamily:'_regular', fontSize:12, color:colors=='#1D2667'? '#fff':'#51534D'}}>
+                                    
+                                Please, complete your account registration process to remove restrictions in your account.
+                                </Text>
+                            </View>
+
+                            <View style={{justifyContent:'center', alignItems:'center',}}>
+                        
+                            <TouchableOpacity onPress={() => navigation.navigate('SignupSteps')}
+                                    style={{borderRadius:50, borderColor:colors.greenColor, width:90, height:40, borderWidth:1, justifyContent:'center', alignItems:'center', marginBottom:40}}>
+                                    <Text style={{color:colors.blackColor1, fontFamily:'_semiBold', fontSize:14}}>Okay</Text>
+                            </TouchableOpacity>
+                        </View>
+                                            
+                        </View>
+
+                    </View>
+                    }
                          
         </SafeAreaView>
     </View>
@@ -246,8 +261,8 @@ const styles = StyleSheet.create({
     closeBnt:{
         borderRadius:50, 
         borderWidth:2, 
-        borderColor:colors.primaryColor1, 
-        backgroundColor:colors.primaryColor1, 
+        borderColor:colors.lightGreenColor1, 
+        backgroundColor:colors.lightGreenColor1, 
         marginHorizontal: 10
     },
     closeBtnView:{

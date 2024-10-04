@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import {ToastAndroid, View, Text, TextInput, StyleSheet, TouchableOpacity, Switch, SafeAreaView, ScrollView } from 'react-native';
+import {ToastAndroid, View, Text, TextInput, StyleSheet, TouchableOpacity, Switch, SafeAreaView, ScrollView, Platform } from 'react-native';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import Modal from "react-native-modal";
 import RBSheet from "react-native-raw-bottom-sheet";
@@ -433,12 +433,14 @@ const copyToClipboard = async () => {
                         style='light'/>
                         }
                     <HeaderMenu 
-                        buttonHome={<TouchableOpacity onPress={() =>navigation.openDrawer()}>
+                        buttonHome={
+                        <TouchableOpacity onPress={() =>{}}>
                             <View style={gs.homeSideMenu}>
-                            <Entypo name='sweden' size={23} color={colors.textColor}/>
+                            {/* <Ionicons name='arrow-back' size={23} color={colors.textColor}/> */}
                          </View>
-                            </TouchableOpacity>}
-                        titleName={'Setting'}
+                        </TouchableOpacity>
+                        }
+                        titleName={'Settings'}
                         profileTitle={styles.settingTitle}
                     />
                 
@@ -446,7 +448,7 @@ const copyToClipboard = async () => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textBlack}}>App Setting</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>App Settings</Text>
                         </View>
                 
                         <TouchableOpacity style={styles.formPage} onPress={() =>navigation.navigate('contacts')}>

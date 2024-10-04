@@ -15,6 +15,8 @@ import HeaderMenu from '../components/headerMenu';
 import LoaderIndicator from '../components/loaderIndicator';
 import client from '../contextAPI/client';
 import { ShowLogoutModal, _AppSystemSettings } from '../components/controls';
+import CountryPicker from 'react-native-country-picker-modal';
+
 
 const { width } = Dimensions.get('window');
 
@@ -31,6 +33,10 @@ const SignupScreen = () =>{
     const [codeError, setCodeError] = useState(false);
 
     const {userEmail, setUserEmail} = useContext(AuthContext)
+
+    const [countryCode, setCountryCode] = useState(null); // No default country initially
+    const [country, setCountry] = useState(null);
+    const [visible, setVisible] = useState(false); // Control modal visibility
 
     const [dataDetails, setDataDetails] = React.useState({
         full_name: '',
@@ -69,8 +75,25 @@ const SignupScreen = () =>{
             setAppStatus(false);
         }
 
+        const onSelect = (selectedCountry) => {
+            setCountryCode(selectedCountry.cca2); // Set the country code (ISO Alpha-2)
+            setCountry(selectedCountry);          // Set the country object
+            setVisible(false);                    // Close the modal after selecting
+          };
+
     const sendReg = async() =>{
            
+        if(country == null || country.length == 0){
+            Toast.show({
+                type: ALERT_TYPE.DANGER,
+                title: 'Error',
+                textBody: 'Please select your country.',
+                titleStyle: noticeData[0].errorTitleStyle,
+                textBodyStyle: noticeData[0].errorMessageStyle,
+            });
+            return
+        }
+        console.log("country Code: " + country.callingCode, country.name)
             if (dataDetails.full_name.length == 0 || dataDetails.phone.length == 0 || dataDetails.email.length == 0 || dataDetails.password.length == 0 || dataDetails.confirm_password.length == 0) {
             Toast.show({
                  type: ALERT_TYPE.DANGER,
@@ -97,12 +120,24 @@ const SignupScreen = () =>{
                 Toast.show({
                     type: ALERT_TYPE.DANGER,
                     title: 'Invalid phone number',
-                    textBody: 'Please enter a valid phone number 11 digits.',
+                    textBody: 'Please enter a valid phone number format.',
                     titleStyle: noticeData[0].errorTitleStyle,
                     textBodyStyle: noticeData[0].errorMessageStyle,
                 });
                 return
             }
+            // Remove all non-digit characters
+            const cleanedPhoneNumber = dataDetails.phone.replace(/\D/g, '');
+            if (cleanedPhoneNumber.length > 12) {
+                Toast.show({
+                    type: ALERT_TYPE.DANGER,
+                    title: 'Phone number error',
+                    textBody: 'Please enter a 12 digits phone number max.',
+                    titleStyle: noticeData[0].errorTitleStyle,
+                    textBodyStyle: noticeData[0].errorMessageStyle,
+                });
+                return
+              } 
     
             if (dataDetails.password !== dataDetails.confirm_password) {
                 Toast.show({
@@ -124,7 +159,7 @@ const SignupScreen = () =>{
                 });
                 return
             }
-            if(dataDetails.phone_code == '' || dataDetails.phone_code.length == 0){
+            if(dataDetails.phone_code == '' && country.callingCode == null){
 
             setCodeError(true)
                 Toast.show({
@@ -143,9 +178,10 @@ const SignupScreen = () =>{
             
             const sendData = {
                 display_name: dataDetails.full_name,
-                phone: dataDetails.phone_code + dataDetails.phone,
+                phone:  '+'+country.callingCode + dataDetails.phone,
                 email: dataDetails.email,
                 password: dataDetails.password,
+                user_country: country.name,
                 share_code: dataDetails.refer_code,
                 confirm_password: dataDetails.confirm_password,
                 }
@@ -182,8 +218,11 @@ const SignupScreen = () =>{
                 confirm_secureTextEntry: true,
                 });
                 setChecked(false)
+                setCountry(null)
                //navigate('VerifyOTP');
-              navigation.navigate("VerifyOTP")
+              navigation.navigate("VerifyOTP", {
+                otpCode:res.data.userCode
+              })
              }
              
             else if(res.data.status == '401') {
@@ -235,7 +274,7 @@ const SignupScreen = () =>{
                     Toast.show({
                         type: ALERT_TYPE.DANGER,
                         title: 'Error',
-                        textBody: 'User phone already in use',
+                        textBody: 'User phone number already in use',
                         titleStyle: noticeData[0].errorTitleStyle,
                         textBodyStyle: noticeData[0].errorMessageStyle,
                         })
@@ -267,6 +306,8 @@ const SignupScreen = () =>{
               setIsBtnLoading(false);
               setIsButtonDisable(false);
               }
+
+
         // //signupUserAction(dataDetails)
         // signupAction(dataDetails)
         // if(nextPage){
@@ -343,8 +384,37 @@ const SignupScreen = () =>{
                             maxLength={20}
                             value={dataDetails.full_name}
                             onChangeText={(val) => handleInputChange("full_name", val)}
-                            />
+                            ></TextInput>
                         </View>
+                        
+                        <TouchableOpacity onPress={() => setVisible(true)} style={{flexDirection:'row',
+                            marginBottom:15,
+                            borderWidth: 1,  // size/width of the border
+                            borderRadius: 7,
+                            borderColor: 'lightgrey',  // color of the border
+                            paddingLeft: 10,
+                            height: 50}}>
+                            {!country && <Ionicons name='flag' size={20} color='#666' style={{marginRight:5, marginTop:15, opacity:0.4}} />}
+                            
+                            <CountryPicker
+                                withFlagButton
+                                countryCode={countryCode}
+                                withFlag
+                                withFilter={true}
+                                withEmoji
+                                placeholder=" " // here
+                                withAlphaFilter
+                                visible={visible} // Control modal visibility
+                                onSelect={onSelect}
+                                onClose={() => setVisible(false)}
+                            />
+                            {!country && 
+                            <Text style={{flex:1, paddingLeft:-10, paddingVertical:12, color:'#aaa'}}> Select Country </Text>
+                            }
+
+                            <Text style={styles.selectedText}> {country?.name}</Text>
+                        </TouchableOpacity>
+                            
                         {codeError && <Text style={{fontFamily:'_regular', fontSize:12, color:'red'}}>Enter Phone Code</Text>}
                         <View style={{flexDirection:'row'}}>
                             <View style={{
@@ -355,6 +425,9 @@ const SignupScreen = () =>{
                                 paddingLeft: 10,
                                 height: 50,
                                 marginRight:8}}>
+                                {country ? 
+                                <Text style={[styles.selectedText, {width:80, color:"#000"}]}> {'+'+country.callingCode}</Text>
+                                :
                                 <TextInput 
                                 placeholder='EX:(+234)'
                                 style={{flex:1, paddingVertical:0}}
@@ -362,7 +435,7 @@ const SignupScreen = () =>{
                                 width={70}
                                 value={dataDetails.phone_code}
                                 onChangeText={(val) => handleInputChange("phone_code", val)}
-                                />
+                                />}
                             </View>
                             
                             <View style={{flex:1, flexDirection:'row',
@@ -376,7 +449,7 @@ const SignupScreen = () =>{
                                 <TextInput 
                                 placeholder='Phone Number'
                                 style={{flex:1, paddingVertical:0}}
-                                maxLength={11}
+                                maxLength={12}
                                 keyboardType='numeric'
                                 value={dataDetails.phone}
                                 onChangeText={(val) => handleInputChange("phone", val)}
@@ -558,6 +631,11 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       justifyContent: 'center',
     },
+    placeholderStyle: {
+        fontSize: 16,
+        color:colors.textSecColor,
+        marginRight:5, marginTop:15, opacity:0.4
+      },
     checkboxText: {
         margin:0,
         marginRight:5,
@@ -601,7 +679,25 @@ const styles = StyleSheet.create({
         marginBottom:30, 
         marginTop: 65,
     }
-    
+    ,
+    selectCountry:{
+    flex: 1,
+    },
+    placeholderContainer: {
+      padding: 8,
+      borderColor: '#ccc',
+      },
+    placeholderText: {
+      color: '#999',
+      fontSize: 16,
+      marginBottom: 10,
+    },
+    selectedText: {
+      fontSize: 18,
+      color: '#aaa',
+      marginTop:8,
+      marginBottom: 10,
+    },
   });
 
   export default SignupScreen;

@@ -39,13 +39,21 @@ export const sliderData = [
       { label: 'Account Profile Update', value: 'Account Profile Update' },
       { label: 'Account Approval', value: 'Account Approval' },
       { label: 'Bounces Issues', value: 'Bounces Issues' },
+      { label: 'Closing Account', value: 'Closing Account' },
       { label: 'Documents Upload', value: 'Documents Upload' },
       { label: 'Funds Sending', value: 'Funds Sending' },
       { label: 'Funds Withdrawal', value: 'Funds Withdrawal' },
       { label: 'Payment Issues', value: 'Payment Issues' },
+      { label: 'Paypal Account Opening', value: 'Paypal Account Opening' },
       { label: 'Transaction Issues', value: 'Transaction Issues' },
-      { label: 'Closing Account', value: 'Closing Account' },
+      { label: '2FA Issue', value: '2FA Verification' },
       { label: 'Others', value: 'Others' },
+  ]
+
+  export const SendFundOptionData = [ 
+    { label: 'Fund Account [NGN]', value: '1' },
+    { label: 'Bonus Account [USD]', value: '2' },
+    
   ]
   
   

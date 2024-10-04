@@ -38,12 +38,12 @@ const UploadDocumentScreen = ({navigation}) => {
             navigation.navigate('Home');
             //console.log("navigation Stage ", userInfo?.userData.reg_stage2 )
           }
-          if(userInfo?.userData.reg_stage2 !="Yes"){
-              navigation.navigate('CompleteSignup');
-            }
-          else if(userInfo?.userData.reg_stage3 !="Yes"){
-            navigation.navigate('UploadProfile_image');
-          }
+          // if(userInfo?.userData.reg_stage2 !="Yes"){
+          //     navigation.navigate('CompleteSignup');
+          //   }
+          // else if(userInfo?.userData.reg_stage3 !="Yes"){
+          //   navigation.navigate('UploadProfile_image');
+          // }
           
         }
          
@@ -336,7 +336,7 @@ const UploadDocumentScreen = ({navigation}) => {
                 <View style={gs.homeHeaderRow}>
                     <View style={{justifyContent:'space-between', flexDirection:'row'}}>
                         <Text></Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('SignupSteps')}>
+                        <TouchableOpacity onPress={() => navigation.goBack()}>
                           <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
                           <Ionicons name='close-outline' size={23} color={colors.textColor}/>
                         </View>
@@ -364,7 +364,7 @@ const UploadDocumentScreen = ({navigation}) => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textBlack}}>Documents Upload</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Documents Upload</Text>
                         </View>
 
                         <View style={{marginHorizontal:20, marginTop:10}}>
@@ -426,7 +426,7 @@ const UploadDocumentScreen = ({navigation}) => {
                         <Animatable.View animation={'fadeIn'}
                           delay={500}
                           useNativeDriver={true} style={{marginHorizontal:20, marginTop:10, borderBottomWidth:1, borderColor: '#dededc', marginBottom:5}}>
-                            <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textBlack, marginTop:10}}>Any of the document are supported</Text>
+                            <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textBlack, marginTop:10}}>Any of the document below is accepted</Text>
                         </Animatable.View>
 
                         <Animatable.View animation={'fadeIn'}
@@ -435,8 +435,8 @@ const UploadDocumentScreen = ({navigation}) => {
                             <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textSecColor}}>{'*'} International Passport</Text>
                             <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textSecColor}}>{'*'} Government Official ID <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textBlack}}>('NIN')</Text></Text>
                             <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textSecColor}}>{'*'} Driving License</Text>
-                            <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textSecColor}}>{'*'} Bank Statement <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textBlack}}>('three months old')</Text></Text>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor, marginTop: 10}}>{ } PNG Or JPG image file only accepted</Text>
+                            <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textSecColor}}>{'*'} Bank Statement <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textBlack}}>('Three months old')</Text></Text>
+                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor, marginTop: 10}}>{ } accepted file types are PNG and JPEG only</Text>
                         
                         </Animatable.View>
                             

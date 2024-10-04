@@ -24,6 +24,7 @@ const UserProvider = ({children}) =>{
     const [completeRegData, setCompleteRegData] = useState(false);
     const [homeChartDisplay, setHomeChartDisplay] = useState(false);
     const [logoutModal, setLogoutModal] = useState(false);
+    const [otpStatus, setOtpStatus] = useState(false)
     
     // const updateUserEmail = (newValue) => {
     //   setUserRegEmail({ ...userRegEmail, value: newValue });
@@ -43,6 +44,7 @@ const UserProvider = ({children}) =>{
       }
       }).catch(err => console.log(err.message))
    }
+
     // login function
     const loginAction = async(username, password)=>{
       //console.log('Login details:', username, password);
@@ -167,6 +169,7 @@ const UserProvider = ({children}) =>{
           setIsLoading(false);
         }
       }
+
     // is logged in function here
     const isLoggedIn = async()=>{
       try {
@@ -245,6 +248,7 @@ const UserProvider = ({children}) =>{
           payStackKey,
           homeChartDisplay, setHomeChartDisplay,
           appBaseUrl, setAppBaseUrl,
+          otpStatus, setOtpStatus,
           logoutModal, setLogoutModal}}
           >
             {children}

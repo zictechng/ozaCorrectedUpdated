@@ -35,9 +35,9 @@ const UploadProfileImageScreen = ({navigation}) => {
             navigation.navigate('Home');
              }
             }
-            if(userInfo?.userData.reg_stage2 !="Yes"){
-              navigation.navigate('CompleteSignup');
-           }
+          //   if(userInfo?.userData.reg_stage2 !="Yes"){
+          //     navigation.navigate('CompleteSignup');
+          //  }
          
          }, [isFocused]);
          
@@ -298,7 +298,6 @@ const UploadProfileImageScreen = ({navigation}) => {
           
       }
 
-      
       useEffect(() =>{
         if(isFocused){
           FetchLocalStorage()

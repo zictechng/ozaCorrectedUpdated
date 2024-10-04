@@ -2,7 +2,7 @@ import React , {useContext, useCallback, useState, useEffect, useRef } from 'rea
 import OTPInputView from '@twotalltotems/react-native-otp-input';
 import { ALERT_TYPE, Toast, Dialog } from 'react-native-alert-notification';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
-import {Platform, Alert, Dimensions, StatusBar, View, Text, BackHandler, TextInput, StyleSheet, SafeAreaView, ScrollView, TouchableWithoutFeedback, Keyboard, TouchableOpacity, Modal, Image, ImageBackground, KeyboardAvoidingView, Pressable} from 'react-native';
+import {Platform, Alert, Dimensions, StatusBar, View, Text, BackHandler, TextInput, StyleSheet, SafeAreaView, ScrollView, TouchableWithoutFeedback, Keyboard, TouchableOpacity, Modal, Image, ImageBackground, KeyboardAvoidingView} from 'react-native';
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
 import { gs, colors } from '../styles';
 //import { StatusBar } from 'expo-status-bar';
@@ -14,9 +14,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const { width } = Dimensions.get('window');
 
 
-const VerifySignupScreen = () =>{
+const VerifySignupScreen = ({route}) =>{
+
     const navigation = useNavigation();
     const isFocused = useIsFocused();
+    let verifyCode = route.params?.otpCode;
+
     const {userRegEmail, userEmail, otpStatus} = useContext(AuthContext)
     const [copiedText, setCopiedText] = useState('');
     const [copiedTextOTP, setCopiedTextOtp] = useState('');
@@ -25,6 +28,7 @@ const VerifySignupScreen = () =>{
     const [username, setUsername] = useState('');
     const [name, domainPart] = userEmail.split('@');
     const [btnVerifyLoading, setBtnVerifyLoading] = useState(false);
+    const [sendingUserOtp, setSendingUserOtp] = useState(false);
     const otpRef = useRef(null);
 
     // console.log('User OTP ', AsyncStorage.getItem('userOTP'))
@@ -35,6 +39,11 @@ const VerifySignupScreen = () =>{
         })
 
     useEffect(() => {
+        if (verifyCode) {
+            // Call your function if route has a value or exists
+            SendOTP()
+          }
+   
      setTimeout(() => otpRef.current.focusField(0), 250);
       // this will get the email send to this page and format it
       setUsername(name);
@@ -59,6 +68,8 @@ const VerifySignupScreen = () =>{
       return () => backHandler.remove();
 
       }, [name, domainPart, isFocused]);
+
+
 
       // get first 3 letters of the email
       const displayEmail = name.substring(0, 5);
@@ -349,6 +360,58 @@ const VerifySignupScreen = () =>{
               }
       }
 
+       // send user activation code after signup once this page is loaded
+       const SendOTP = async() =>{
+        const otpData={
+            'email': userEmail,
+            'otp_code': verifyCode.reg_otp,
+            }
+            try {
+                setSendingUserOtp(true)
+                const res = await client.post('/api/sendUserOTP', otpData)
+                //console.log(res.data);
+                if(res.data.msg == '200'){ 
+                  //console.log('OTP Send ', res.data)
+                 }
+                
+                else if(res.data.status == '401') {
+                    console.log(res.data)
+                    }
+                else if(res.data.status == '400'){
+                    console.log(res.data)
+                    }
+                    
+                    else {
+                        console.log(res.data)
+                        }
+                } catch (error) {
+                  console.log(error.message)
+                  if(error.message == 'Network Error'){
+                    Toast.show({
+                        type: ALERT_TYPE.DANGER,
+                        title: 'Error',
+                        textBody: error.message +' occurred',
+                        titleStyle: noticeData[0].errorTitleStyle,
+                        textBodyStyle: noticeData[0].errorMessageStyle,
+                        })
+                        return
+                    } 
+                    if(error.message == 'Request failed with status code 404'){
+                    Toast.show({
+                        type: ALERT_TYPE.DANGER,
+                        title: 'Error',
+                        textBody: 'Sorry, error occurred! Please try again',
+                        titleStyle: noticeData[0].errorTitleStyle,
+                        textBodyStyle: noticeData[0].errorMessageStyle,
+                        })
+                        return
+                    } 
+                }
+                    finally {
+                    setSendingUserOtp(false)
+                    }
+            }
+
       const backActionPress = () => {
         Alert.alert('Hold on!', `Are you sure you want to go back?\nThis action will cancelled your operation `, [
           {
@@ -378,9 +441,9 @@ const VerifySignupScreen = () =>{
                             backgroundColor="transparent"
                         />
                     }
-                <View style={{backgroundColor:'transparent', justifyContent:'flex-start', marginTop:50, marginHorizontal:10}}>
+                <View style={{backgroundColor:'transparent', justifyContent:'flex-start', marginTop:40, marginHorizontal:10}}>
                     <TouchableOpacity onPress={() => backActionPress()}>
-                        <View style={gs.homeSideMenu}>
+                        <View style={[gs.homeSideMenu, {marginBottom:5}]}>
                         <Ionicons name='arrow-back' size={20} color={colors.textColor} />
                         </View>
                     </TouchableOpacity>
@@ -395,21 +458,19 @@ const VerifySignupScreen = () =>{
                 <View style={{alignItems:'center'}}></View>
 
             <View style={styles.LoginDivTitle}>
-                <Text style={styles.loginTitle}>Activate Account</Text>
+                <Text style={styles.loginTitle}>Activate Account </Text>
                 <Text style={styles.loginTitleDesc}>We have sent an OTP Code to <Text style={{fontFamily:'_bold'}}>{userEmail}</Text>, please check your email.</Text>
                 {!otpStatus ?
                 
                 <View>
-                    <Text style={[styles.loginTitleDesc, {color:'#aaa', fontSize: 15}]}>Sometimes network might delay the email to arrival, or click on resend below!</Text>
-                    <Text style={[styles.loginTitleDesc, {color:'#aaa', fontSize: 15}]}>If you didn't received OTP immediately, patient a bit, come back when you have received the OTP Code and activate your account.</Text>
+                    <Text style={[styles.loginTitleDesc, {color:'#aaa', fontSize: 15}]}>Sometimes network might delay the email to arrival.</Text>
+                    
                 </View>
                 
-                :<Text style={[styles.loginTitleDesc, {color:'#aaa', fontSize: 15}]}>You have a pending account activation, enter the OTP to activate it now.</Text>}
+                :<Text style={[styles.loginTitleDesc, {color:'#aaa', fontSize: 15}]}>You have a pending account activation, enter the OTP Code to activate it now.</Text>}
             </View>
-                    <View style={{ justifyContent:'center', alignItems:'center'}}><Text style={{fontFamily:'_regular', fontSize:15}}>I didn't received OTP 
-                        <Text style={{fontFamily:'_semiBold', color:colors.primaryColor1, fontSize:17}} onPress={() => resendOTP()}> Resend</Text></Text>
-                    </View>
-                <View style={{justifyContent:'center', alignItems:'center'}}>
+                    
+                <View style={{justifyContent:'center', alignItems:'center', marginTop: -20}}>
                 
                     <OTPInputView
                         ref={otpRef}
@@ -442,6 +503,16 @@ const VerifySignupScreen = () =>{
                     />
                     
                 </View>
+                {!otpStatus &&
+                <Text style={[styles.loginTitleDesc, {color:'#aaa', fontSize: 15, marginTop: -20}]}>If you didn't received OTP immediately, you can close the app, come back when you have received the OTP Code and activate your account.
+
+                </Text>
+                }
+                    <View style={{ justifyContent:'center', alignItems:'center', marginBottom:40}}>
+                        <Text style={{fontFamily:'_regular', fontSize:15}}>
+                        <Text style={{fontFamily:'_semiBold', color:colors.redColor, fontSize:17}} onPress={() => resendOTP()}> Resend OTP</Text></Text>
+                    </View>
+
                 <View style={{flex:1, justifyContent:'center', alignItems:'center', marginBottom:5, marginHorizontal:10}}>
                         <TouchableOpacity style={styles.signInButton} onPress={() =>ConfirmCode()}>
                             <Text style={styles.textSign}>Activate</Text>
@@ -523,7 +594,7 @@ const styles = StyleSheet.create({
      },
      LoginDivTitle:{
         marginBottom:10, 
-        marginTop: 40,
+        marginTop: 20,
     }
     
   });

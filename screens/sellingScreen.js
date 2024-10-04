@@ -609,7 +609,7 @@ const checkOutPaypal = async () => {
          
         <ScrollView>
             <View style={{marginHorizontal:10, marginTop:10}}>
-                <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textBlack}}>Sell</Text>
+                <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Sell</Text>
             </View>
             {/* show loader when processing request */}
             {/* {isLoading && <LoaderIndicator 

@@ -18,7 +18,6 @@ const AccountScreen = () => {
                         <TouchableOpacity>
                             <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
                                 <Ionicons name='arrow-back' size={25} color={colors.textColor}/>
-                        
                             </View>
                             </TouchableOpacity>
 
@@ -35,7 +34,7 @@ const AccountScreen = () => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView>
                         <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textBlack}}>Account</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Account</Text>
                         </View>
                 
                         <View style={styles.formPage}>

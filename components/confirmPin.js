@@ -3,7 +3,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-nativ
 import CustomButton from './customButton';
 import { colors } from '../styles';
 
-export default function ConfirmAccountPin({desc, btnClose, btnAction, btnText, payDesc, sendingTo, textMoney, title, amtStyle, icon,inputType, placeholder, keyboardType, fieldButtonLabel,fieldButtonFunction, value, onChangeText}) {
+export default function ConfirmAccountPin({desc, btnClose, btnAction, btnText, payDesc, sendingTo, textMoney, title, amtStyle, icon,inputType, placeholder, keyboardType, fieldButtonLabel,fieldButtonFunction, value, onChangeText, errorMessage, errorMessageStyle}) {
   return (
             <View style={{borderRadius:10, marginHorizontal:10, backgroundColor:colors.textColor}}>
                 <View style={{width:'100%', borderTopRightRadius:10, borderTopLeftRadius:10, marginBottom:20, height:30, backgroundColor:colors.primaryColor1}}>
@@ -14,7 +14,12 @@ export default function ConfirmAccountPin({desc, btnClose, btnAction, btnText, p
                      
                 </View>
                         <Text style={{fontFamily:'_regular', fontSize:13, color:colors.textBlack, marginHorizontal:10, marginBottom:5, marginTop:-10}}>
-                            Enter your account pin to authorized this transaction. {'\n '} {payDesc} <Text style={amtStyle}>{textMoney} {sendingTo}</Text>
+                            Enter your account pin to authorized this transaction. {'\n '} {payDesc} <Text style={amtStyle}>{textMoney} {sendingTo}
+                            </Text>
+                            
+                        </Text>
+                        <Text style={errorMessageStyle}>
+                         <Text style={amtStyle}>{errorMessage}</Text>
                             
                         </Text>
                         <Text style={amtStyle}></Text>

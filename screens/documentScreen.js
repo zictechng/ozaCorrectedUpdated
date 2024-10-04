@@ -53,7 +53,7 @@ const DocumentScreen = ({navigation}) => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView>
                         <View style={{marginHorizontal:15, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textBlack}}>Documents</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Documents</Text>
                         </View>
 
                         <View style={{marginHorizontal:15, marginTop:10, marginBottom:10}}>

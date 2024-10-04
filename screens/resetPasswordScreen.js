@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { StyleSheet, View, Text, TextInput, Keyboard, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Alert } from 'react-native';
+import { StyleSheet, View, Text, TextInput, Keyboard, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Alert, Platform } from 'react-native';
 import { gs,colors } from '../styles';
 import * as Animatable from 'react-native-animatable'
 import { StatusBar } from 'expo-status-bar';
@@ -161,7 +161,7 @@ const ResetPasswordScreen = ({navigation}) => {
                 <ScrollView showsVerticalScrollIndicator={false} style={{paddingHorizontal:20}}>
                     
                     <View style={{marginTop:20}}>
-                        <Text style={{fontFamily:'_semiBold', fontSize:32, color:'#353535'}}>Reset Password?</Text>
+                        <Text style={{fontFamily:'_semiBold', fontSize:25, color:'#353535'}}>Reset Password?</Text>
                         <Text style={styles.loginTitleDesc}>
                             Don't worry, you can easily reset your account password.</Text>
                     </View>
@@ -314,6 +314,7 @@ const styles = StyleSheet.create({
     loginTitleDesc:{
         fontFamily:'_regular',  
         fontSize:15, 
+        marginTop: 10,
         color:'#333', 
        },
 
