@@ -10,6 +10,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AppNav from './navigation/appNav';
 import UserProvider from './contextAPI/userProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NetworkProvider } from './contextAPI/networkProvider';
 
 const Stack = createNativeStackNavigator();
 
@@ -59,12 +60,14 @@ export default function App({navigation}) {
   }
 
   return (
-    <UserProvider>
+    <NetworkProvider >
+      <UserProvider>
           <AlertNotificationRoot>
             <AppNav />
            {/* <FundAccountNextScreen /> */}
           </AlertNotificationRoot>
       </UserProvider>
+    </NetworkProvider>
   );
 }
 

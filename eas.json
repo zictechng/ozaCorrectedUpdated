@@ -1,11 +1,11 @@
 {
   "cli": {
-    "version": ">= 7.3.0"
+    "version": ">= 7.7.0"
   },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "production"
+      "distribution": "internal"
     },
     "preview": {
       "distribution": "internal"
@@ -13,11 +13,6 @@
     "production": {}
   },
   "submit": {
-    "production": {
-      "android": {
-        "serviceAccountKeyPath": "./ozaappGoogleService",
-        "track": "production"
-      }
-    }
+    "production": {}
   }
 }

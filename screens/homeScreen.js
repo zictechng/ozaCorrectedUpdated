@@ -309,12 +309,7 @@ const HomeScreen = ({navigation}) =>{
         }
         
       }
-
-      // Add fund link
-      const addFundNavigation =() =>{
-        navigation.navigate('FundAccount')
-        }
-
+      
       // buying link
       const buyPaypalBtn =() =>{
         if(appSettingDetails?.app_paypal_buy == false){

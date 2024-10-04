@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Oza App",
-    "slug": "oza_app",
+    "slug": "oza_mobile",
     "description": "A simple, efficient, reliable, secure and profitable way to sell paypal, payoneer, bitcoin and pay bills with virtual funds",
     "version": "2.0.0",
     "orientation": "portrait",
@@ -11,9 +11,6 @@
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#fff"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/f63e3254-a25d-4609-a1c1-585e516b2cd5"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -32,7 +29,7 @@
         "permissions": [
           "WAKE_LOCK",
           "CAMERA"
-          ]
+        ]
       },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -55,24 +52,24 @@
         {
           "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
           "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
-         "isAccessMediaLocationEnabled": true,
+          "isAccessMediaLocationEnabled": true,
           "cameraPermission": "Allow $(PRODUCT_NAME) to open the camera",
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
           "recordAudioAndroid": true
         }
       ],
       "expo-font"
-      ],
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "f63e3254-a25d-4609-a1c1-585e516b2cd5"
-      }
-    },
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1dc88ff4-100f-4e85-9bf8-ede811cf6767"
+      }
     }
   }
 }
