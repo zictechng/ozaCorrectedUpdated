@@ -239,15 +239,15 @@ const WithdrawFund = ({navigation}) => {
                                 <View style={styles.textAreaContainer}>
                                      <View style={[styles.action, {marginRight: 10}]}>
                                         <TextInput 
-                                        placeholder="Reason/purpose (Optional)"
-                                        style={styles.textInput}
-                                        autoCapitalize="none"
-                                        onChangeText={(val) => handleInputChange("amt_note", val)}
-                                        multiline={true}
-                                        numberOfLines={10}
-                                        maxLength={350}
-                                        textAlignVertical="top"
-                                        value={contactData.amt_note}
+                                            placeholder="Reason/purpose (Optional)"
+                                            style={styles.textInput}
+                                            autoCapitalize="none"
+                                            onChangeText={(val) => handleInputChange("amt_note", val)}
+                                            multiline={true}
+                                            numberOfLines={10}
+                                            maxLength={350}
+                                            textAlignVertical="top"
+                                            value={contactData.amt_note}
                                         />
                                     </View>
                             
@@ -289,13 +289,12 @@ const WithdrawFund = ({navigation}) => {
                             backgroundColor: "#000"
                         }
                         }}>
-                    <ScrollView>
+                        <ScrollView>
                             <View style={{alignItems:'center', marginTop:10, marginHorizontal:20}}>
                                     <Animatable.View
                                     animation={'zoomIn'}
                                     delay={100}
-                                    useNativeDriver={true}
-                                    >
+                                    useNativeDriver={true}>
                                         <Text style={{fontFamily:'_semiBold', fontSize:17, color:colors.textBlack, marginBottom:10,marginTop:-10 }}>
                                         <Ionicons name='checkmark-circle' size={70} style={{color:colors.primaryColor1}} /></Text>
                                     </Animatable.View>

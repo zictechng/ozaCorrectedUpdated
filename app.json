@@ -3,7 +3,7 @@
     "name": "Oza App",
     "slug": "oza_mobile",
     "description": "A simple, efficient, reliable, secure and profitable way to sell paypal, payoneer, bitcoin and pay bills with virtual funds",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -44,7 +44,7 @@
         "android.permission.RECORD_AUDIO"
       ],
       "package": "com.ozaapp.mobile",
-      "versionCode": 2
+      "versionCode": 3
     },
     "plugins": [
       [

@@ -93,7 +93,7 @@ const SignupScreen = () =>{
             });
             return
         }
-        console.log("country Code: " + country.callingCode, country.name)
+        //console.log("country Code: " + country.callingCode, country.name)
             if (dataDetails.full_name.length == 0 || dataDetails.phone.length == 0 || dataDetails.email.length == 0 || dataDetails.password.length == 0 || dataDetails.confirm_password.length == 0) {
             Toast.show({
                  type: ALERT_TYPE.DANGER,

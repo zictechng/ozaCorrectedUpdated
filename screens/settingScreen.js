@@ -169,7 +169,7 @@ const SettingScreen = () => {
     }
 }
 
-      // run a api request to update email sending notification for user details
+      // run an api request to update email sending notification for user details
     const toggleEmailSwitch = async(value) => {
         setIsEmailEnabled(value);
         // call the custom function to send api request and update db
