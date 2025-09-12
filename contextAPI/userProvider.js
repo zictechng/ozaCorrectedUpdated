@@ -32,7 +32,7 @@ const UserProvider = ({children}) =>{
 
 
   // get user information from local storage here
- _getAppLocalInfo = async () =>{
+  const _getAppLocalInfo = async () =>{
 
   AsyncStorage.getItem('userInfo').then(res =>{
       if(res != null){

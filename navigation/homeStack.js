@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons, Foundation, MaterialIcons} from '@expo/vector-icons';
@@ -43,8 +43,10 @@ const HomeStack = ({navigation}) => {
             screenOptions={({ route }) => ({
             headerShown: false,
             tabBarStyle: {
-                height: 60, // Set the height of the tab bar
-                paddingVertical: 3, // Optional: Add padding to adjust space around icons
+
+                paddingBottom: Platform.OS === 'ios' ? 20 : 8, // adjust bottom padding
+                height: Platform.OS === 'ios' ? 100 : 70,       // extra height for iOS
+               // backgroundColor: 'red',
               },
             tabBarActiveTintColor: '#1D2667',
             tabBarInactiveTintColor: 'gray',

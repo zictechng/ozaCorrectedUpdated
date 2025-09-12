@@ -110,7 +110,7 @@ const LandPageScreen = ({navigation}) => {
       }
       
        // get app information from local storage here
- _getAppLocalInfo = async () =>{
+  const _getAppLocalInfo = async () =>{
 
   AsyncStorage.getItem('AppSettingInfo').then(res =>{
       if(res != null){

@@ -58,6 +58,8 @@ import MoreBottomSheet from '../components/moreBottomSheet';
 
 const HomeScreen = ({navigation}) =>{
     const isFocused = useIsFocused();
+
+    const carouselRef = useRef(null);
     
     const {logoutAction, userToken, userInfo, setUserInfo, appSettingDetails, setAppSettingDetails, completeRegData, setCompleteRegData,
         logoutModal, setLogoutModal} = useContext(AuthContext)
@@ -576,14 +578,15 @@ const HomeScreen = ({navigation}) =>{
                 <>
                  <HeaderMenu 
                 buttonHome={
-                            <Text style={styles.loginTitle}>Hi {myName},</Text>
+                        <Text style={styles.loginTitle}>Hi {myName},</Text>
                         }
-
-                buttonLeft={<TouchableOpacity style={gs.homeSideMenu} onPress={() =>navigation.navigate('Message')} >
-                <Feather name='bell' size={20} color={colors.textColor}/>
-                    {notifications > 0 && 
-                <View style={{position: "absolute", top: -1, right: -10, marginRight: 10, borderRadius:50, backgroundColor: colors.greenColor, width:8, height:8}}></View>}
-                </TouchableOpacity>}/>
+                // bell notification icon
+                    // buttonLeft={<TouchableOpacity style={gs.homeSideMenu} onPress={() =>navigation.navigate('Message')} >
+                    // <Feather name='bell' size={20} color={colors.textColor}/>
+                    //     {notifications > 0 && 
+                    // <View style={{position: "absolute", top: -1, right: -10, marginRight: 10, borderRadius:50, backgroundColor: colors.greenColor, width:8, height:8}}></View>}
+                    // </TouchableOpacity>}
+                />
                 
                 <View style={[styles.LoginDivTitle, {marginHorizontal:20}]}>
                      {/* <Text style={styles.loginTitle}>Hi {myName},</Text> */}
@@ -600,22 +603,38 @@ const HomeScreen = ({navigation}) =>{
                         <View style={styles.balanceStyle}>
                             <ImageBackground source={background} resizeMode='cover' imageStyle={{opacity: 0.3}} style={{flex:1}}>
                             
-                                    <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8, marginVertical:10}}>
+                            <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8, marginVertical:10}}>
 
-                                        <View style={{marginHorizontal:10, marginTop:10}}>
-                                            <Text style={styles.balanceTitle}>All time transaction</Text>
-                                            <Text style={styles.amtStyle}><NumberDollarValueFormat value={userInfo.userData?.tran_account}/></Text>
-                                        </View>
-                                        <View style={{flexDirection:'column', marginTop:10}}>
-                                            <View style={{marginHorizontal:15, flexDirection:'row', justifyContent:'flex-end'}}>
-                                                <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.textColor}}>Accepted</Text>
-                                                <PaymentIcon type='master' width={30}/>
-                                            </View>
-                                            <View style={{justifyContent:'center', alignItems:'center', padding:15}}>
-                                                <Text style={{color:'#fff', fontFamily:'_semiBold', fontSize:14}}>Bonus: <NumberDollarValueFormat value={userInfo.userData?.signup_account}/></Text>
-                                            </View>
-                                        </View>
-                                    </View>                                 
+                                <View style={{marginHorizontal:10, marginTop:10}}>
+                                    <Text style={styles.balanceTitle}>Ballance</Text>
+                                    <Text style={styles.amtStyle}><NumberDollarValueFormat value={userInfo.userData?.tran_account}/></Text>
+                                </View>
+                                
+                            </View> 
+                            <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8, marginVertical:10}}>
+
+                            <View style={{marginHorizontal:10, marginTop:10}}>
+                                <Text style={styles.balanceTitle}>Rewards</Text>
+                                <Text style={{color:'#fff', fontFamily:'_semiBold', fontSize:20}}><NumberDollarValueFormat value={userInfo.userData?.signup_account}/></Text>
+                            </View>
+                            <View style={{flexDirection:'column', marginTop:10}}>
+                                <View style={{marginHorizontal:15, flexDirection:'row', justifyContent:'flex-end', marginTop:20}}>
+                                    {/* <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.textColor}}>Accepted</Text>
+                                    <PaymentIcon type='master' width={30}/> */}
+                                </View>
+                                {/* <View style={{justifyContent:'center', alignItems:'center', padding:15}}>
+                                    <Text style={{color:'#fff', fontFamily:'_semiBold', fontSize:14}}>Bonus: <NumberDollarValueFormat value={userInfo.userData?.signup_account}/></Text>
+                                </View> */}
+                            <View style={{marginHorizontal:15, flexDirection:'row', justifyContent:'flex-end'}}>
+                            <TouchableOpacity style={styles.actionButtonMoreBar} onPress={() =>refMoreRBSheet.current.open()}>
+                            <Text><Ionicons name='ellipsis-vertical'
+                            size={24}
+                            color='#ffffff'/></Text>
+                            </TouchableOpacity>
+                            </View>
+                            
+                            </View>
+                            </View>                                 
                             
                              </ImageBackground>
                         
@@ -709,8 +728,8 @@ const HomeScreen = ({navigation}) =>{
                     </View>
                    
                     <Carousel 
-                        ref={(c) => { this._carousel = c; }}
-                        data={sliderData}
+                        ref={carouselRef}
+                        data={sliderData }
                         renderItem={renderBanner}
                         sliderWidth={windowWidth -40} // - 40 means subtract 20 from left margin, 20 from right margin
                         itemWidth={280}
@@ -1011,8 +1030,8 @@ const styles = StyleSheet.create({
 },
     balanceStyle:{
         flex: 1, 
-        borderRadius:8, 
-        height:100,
+        borderRadius:15, 
+        height:200,
         backgroundColor:colors.primaryColor1,
         shadowRadius:10, 
         marginTop:20, 
@@ -1030,7 +1049,7 @@ const styles = StyleSheet.create({
       },
       balanceTitle:{
         fontFamily:'_semiBold', 
-        fontSize:13, 
+        fontSize:15, 
         color:colors.textSecColor
     },
     amtStyle:{
@@ -1087,6 +1106,16 @@ const styles = StyleSheet.create({
         alignItems:'center', 
         marginLeft:10
     },
+    actionButtonMoreBar:{
+        width:40,
+        height:40, 
+        borderRadius:10, 
+        borderColor:colors.textColor, 
+        borderWidth:0.8, 
+        justifyContent:'center', 
+        alignItems:'center', 
+        marginLeft:10,
+    },
     bottomSheetButton:{
         flexDirection:'row', 
         borderRadius:10, 
@@ -1122,6 +1151,11 @@ const styles = StyleSheet.create({
     },
     buttonAddText:{
         color:colors.textColor1,
+        fontFamily:'_semiBold', 
+        fontSize:15
+    },
+    buttonAddTextBar:{
+        color:colors.textSecColor,
         fontFamily:'_semiBold', 
         fontSize:15
     },

@@ -116,7 +116,7 @@ const ReferralScreen = () => {
 
     useEffect(() =>{
       loadReferrals()
-      _getAppLocalInfo()
+      //_getAppLocalInfo()
       getData()
       getDataLocal()
     },[isFocused])

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dimensions , Text, View, Button, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
-import { Camera, CameraType } from "expo-camera/legacy";
+import { Camera, CameraType } from "expo-camera";
 import { gs, colors } from '../styles';
 import { Ionicons} from '@expo/vector-icons';
 

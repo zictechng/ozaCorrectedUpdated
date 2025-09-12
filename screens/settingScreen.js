@@ -453,7 +453,7 @@ const copyToClipboard = async () => {
                 
                         <TouchableOpacity style={styles.formPage} onPress={() =>navigation.navigate('contacts')}>
                             <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                                <Ionicons name='help-circle' size={25} color={colors.primaryColor2} />
+                                <MaterialIcons name='support-agent' size={25} color={colors.primaryColor2} />
                                 <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Help</Text>
                             </View>
                         </TouchableOpacity>

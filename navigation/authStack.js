@@ -80,22 +80,6 @@ const AuthStack = () => {
                     </Stack.Group>
                   
             </Stack.Navigator>
-
-
-// this is for checking if app has been launched before then show login page
-// Do't show welcome page
-              // <Stack.Navigator screenOptions={{headerShown:false}}>
-              // {userLaunch == null ? <Stack.Screen component={WelcomeStack} name="WelcomePage" />:
-              // <>
-              // <Stack.Screen component={LoginScreen} name="Login"/>
-              // <Stack.Screen component={SignupScreen} name="Register"/>
-              // <Stack.Screen component={ForgetPasswordScreen} name="ForgetPassword"/>
-              // <Stack.Screen component={VerifySignupScreen} name="VerifyOTP"/>
-              // </>
-              // }
-              // </Stack.Navigator>
-
-            
   );
 }
 

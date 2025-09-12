@@ -1,14 +1,12 @@
-// useCustomFonts.js
 import { useState, useEffect } from 'react';
 import * as Font from 'expo-font';
 
 export function useCustomFonts() {
-  const [fontsLoaded, setFontsLoaded] = useState(true);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
     async function loadFonts() {
       try {
-        setFontsLoaded(true);
         await Font.loadAsync({
           '_regular': require('./assets/fonts/Manrope-Regular.ttf'),
           '_semiBold': require('./assets/fonts/Manrope-SemiBold.ttf'),
@@ -16,12 +14,10 @@ export function useCustomFonts() {
           '_medium': require('./assets/fonts/Manrope-Medium.ttf'),
           '_light': require('./assets/fonts/Manrope-Light.ttf'),
         });
+        setFontsLoaded(true); // only mark loaded after fonts finish
       } catch (err) {
-
-      } finally {
-        setFontsLoaded(false);
+        console.error('Error loading fonts:', err);
       }
-
     }
 
     loadFonts();

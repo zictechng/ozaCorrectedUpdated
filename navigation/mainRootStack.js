@@ -134,11 +134,13 @@ const MainRootStack = ({navigation}) =>{
       </Stack.Screen>
       </Stack.Group>
 
-      <Stack.Group screenOptions={Platform.OS == 'ios'?{ presentation: ''}:{
-        animation: 'slide_from_bottom',}}>
+      <Stack.Group>
       <Stack.Screen 
       name='SendFund'
-      component={SendFundScreen}>
+      component={SendFundScreen}
+      options={{
+        animation: Platform.OS === 'ios' ? 'slide_from_bottom' : 'slide_from_right',
+      }}>
       </Stack.Screen>
       </Stack.Group>
 
@@ -158,12 +160,13 @@ const MainRootStack = ({navigation}) =>{
       />
       </Stack.Group>
 
-      <Stack.Group screenOptions={Platform.OS == 'ios'?{ presentation: 'modal'}:{
-        animation: 'slide_from_bottom',
-      }}>
+      <Stack.Group>
         <Stack.Screen 
         name='ResetPassword'
         component={ResetPasswordScreen}
+        options={{
+          animation: Platform.OS === 'ios' ? 'slide_from_bottom' : 'slide_from_right',
+        }}
         />
        </Stack.Group>
       
@@ -183,48 +186,51 @@ const MainRootStack = ({navigation}) =>{
         />
         </Stack.Group>
 
-        <Stack.Group screenOptions={Platform.OS == 'ios'?{ presentation: ''}:{
-        animation: 'slide_from_bottom',}}>
+        <Stack.Group>
         <Stack.Screen 
-        screenOptions={{animation: 'slide_from_right'}}
-        name='FundAccount'
+         name='FundAccount'
         component={FundAccountScreen}
-        />
+        options={{
+          animation: Platform.OS === 'ios' ? 'slide_from_bottom' : 'slide_from_right',
+        }}/>
         </Stack.Group>
 
-        <Stack.Group  screenOptions={Platform.OS == 'ios'?{ presentation: ''}:{
-        animation: 'slide_from_bottom',}}>
+        <Stack.Group>
         <Stack.Screen 
-        screenOptions={{animation: 'slide_from_right'}}
-        name='Referrals'
+        name='referrals'
         component={ReferralScreen}
+        options={{
+          animation: Platform.OS === 'ios' ? 'slide_from_bottom' : 'slide_from_right',
+        }}
         />
         </Stack.Group>
 
-        <Stack.Group  screenOptions={Platform.OS == 'ios'?{ presentation: ''}:{
-        animation: 'slide_from_bottom',}}>
+        <Stack.Group>
+          <Stack.Screen
+            name="messages"
+            component={InboxMessageScreen}
+            options={{
+              animation: Platform.OS === 'ios' ? 'slide_from_bottom' : 'slide_from_right',
+            }}
+          />
+        </Stack.Group>
+
+        <Stack.Group>
         <Stack.Screen 
         screenOptions={{animation: 'slide_from_right'}}
-        name='Messages'
+        name='message'
         component={InboxMessageScreen}
         />
         </Stack.Group>
 
-        <Stack.Group screenOptions={{ animation: 'slide_from_right'}}>
-        <Stack.Screen 
-        screenOptions={{animation: 'slide_from_right'}}
-        name='Message'
-        component={InboxMessageScreen}
-        />
-        </Stack.Group>
-
-        <Stack.Group  screenOptions={Platform.OS == 'ios'?{ presentation: 'slide_from_bottom'}:{
-        animation: 'slide_from_bottom',}}>
-        <Stack.Screen 
-        screenOptions={{animation: 'slide_from_right'}}
-        name='Profile'
-        component={ProfileScreen}
-        />
+        <Stack.Group>
+          <Stack.Screen
+            name="profile"
+            component={ProfileScreen}
+            options={{
+              animation: Platform.OS === 'ios' ? 'slide_from_bottom' : 'slide_from_right',
+            }}
+          />
         </Stack.Group>
         
 

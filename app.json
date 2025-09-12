@@ -58,7 +58,8 @@
           "recordAudioAndroid": true
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-web-browser"
     ],
     "web": {
       "favicon": "./assets/favicon.png"

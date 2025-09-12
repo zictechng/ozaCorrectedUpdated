@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Share, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Share, TouchableOpacity, SafeAreaView, ScrollView , Platform, ToastAndroid} from 'react-native';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
-import { FontAwesome, Ionicons, Entypo, AntDesign} from '@expo/vector-icons';
+import { FontAwesome6, Ionicons, Entypo, AntDesign} from '@expo/vector-icons';
+
 import { gs,colors } from '../styles';
 import { StatusBar } from 'expo-status-bar';
 import shareImageBg  from '../assets/images/gift_share.png';
-
+import * as Clipboard from 'expo-clipboard';
 import ShareFriend from '../components/shareFriends';
 import HeaderMenu from '../components/headerMenu';
 import RBSheet from "react-native-raw-bottom-sheet";
@@ -56,30 +57,50 @@ const AccountMenus = () => {
 
         // sharing of text content only.
         // to share images and other content together we need to use expo share or third party libraries
-        // like react-native-share or expo share
+
         const onShare = async () => {
-            const shareOptions ={
-            message: appInfo.app_name +' is more reliable for all virtual funds exchange, I use it in selling my Paypal, Payoneer and Bitcoin funds with high rate. '+ '\n' +'Start selling your funds with it today. '+ '\n'
-            +'Use my ID ' +userInfo?.userData.tag_id +' to join and get free cash back' +'\n Visit ' + 'https://ozaapp.com',
-            }
             try {
-                const result = await Share.share(shareOptions);
-                    if(result.action === Share.sharedAction){
-                        if(result.activityType){
-                        console.log('Share with activity type '+ result.activityType)
-                        
-                        }
-                        else{
-                        //console.log('Shared')
-                        }
-                    }
-                    else if(result.action === Share.dismissedAction){
-                        console.log('Cancelled')
-                        }
-                } catch (error) {
-                    console.log('Error: ' + error.message)
+              const shareMessage = `${appInfo?.app_name} is more reliable for all virtual funds exchange. I use it to sell my Paypal, Payoneer, and Bitcoin funds at high rates.\n\nStart selling your funds with it today.\nUse my ID ${userInfo?.userData.tag_id} to join and get free cash back!\n`;
+          
+              const result = await Share.share({
+                message: shareMessage,
+                title: appInfo?.app_name, // Android uses this as dialog title
+                url: Platform.OS === 'android' ? 'https://ozaapp.com' : undefined, // Optional, helps Android
+              });
+          
+              if (result.action === Share.sharedAction) {
+                if (result.activityType) {
+                  console.log('Shared with activity type:', result.activityType);
+                } else {
+                  console.log('Shared successfully');
                 }
+              } else if (result.action === Share.dismissedAction) {
+                console.log('Share dismissed');
+              }
+            } catch (error) {
+              console.log('Share error:', error.message);
             }
+          };
+
+            // function to copy user tag ID and share
+              const shareCopyID = async () => {
+                  try {
+                       await Clipboard.setStringAsync(
+                        appInfo?.app_name+' App is a reliable platform for you to earn a living and deal with varieties of products and services: '+ '\n'
+                          +' Use this Tag ID '+' '+ userInfo.userData.tag_id+ ` to signup and get ${'$'+ businessRate.appDataRate?.signup_bonus_rate} free reward` +'\nVisit ' + 'https://ozaapp.com');
+                      // Display a success message 
+                      if (Platform.OS === 'android') { 
+                          ToastAndroid.show('Referral ID copied successfully! \n Share it on any social networks to earn money', 
+                              ToastAndroid.SHORT); 
+                      } else if (Platform.OS === 'ios') { 
+                          Alert.alert('Referral ID copied! \n Share it on any social networks to earn money'); 
+                      } 
+                  //setShareDialog(false);
+                  } catch (error) {
+                      console.log(error);
+                  }
+                  
+              };
  
     useEffect(() =>{
         appDetails();
@@ -117,7 +138,7 @@ const AccountMenus = () => {
                             <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>User Account</Text>
                         </View>
                 
-                        <TouchableOpacity style={styles.formPage} onPress={() =>navigation.navigate('Profile')}>
+                        <TouchableOpacity style={styles.formPage} onPress={() =>navigation.navigate('profile')}>
                             <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
                                 <Ionicons name='person' size={25} color={colors.primaryColor2} />
                                 <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Profile</Text>
@@ -126,7 +147,7 @@ const AccountMenus = () => {
 
 
                         <TouchableOpacity style={[styles.formPage, {marginBottom:-3}]}
-                            onPress={() =>navigation.navigate('Messages')}>
+                            onPress={() =>navigation.navigate('messages')}>
                             <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
                                 <Entypo name='notification' size={25} color={colors.primaryColor2} />
                                 <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Notifications</Text>
@@ -135,9 +156,9 @@ const AccountMenus = () => {
                         </TouchableOpacity>
 
                         <TouchableOpacity style={[styles.formPage, {marginBottom:-3}]}
-                            onPress={() =>navigation.navigate('Referrals')}>
+                            onPress={() =>navigation.navigate('referrals')}>
                             <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                                <AntDesign name="addusergroup" size={25} color={colors.primaryColor2} />
+                                <FontAwesome6 name="users" size={25} color={colors.primaryColor2} />
                                 <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Referrals</Text>
                             </View>
                             
@@ -161,9 +182,10 @@ const AccountMenus = () => {
                     shareButtonText={styles.btnShareText}
                     buttonLabel={'Tell a friend'}
                     desText={`Start telling your friends about us both of you earn ${'$'+businessRate?.signup_bonus_rate} for free`}
-                    onPress1={() => onShare()}
+                    onPress1={Platform.OS === 'android' ? shareCopyID : onShare}
                     onPress2={() => {}}
                 />
+
             </View>
                          
             {/* Show current rate here... */}
@@ -354,7 +376,6 @@ dialogCancelBtn:{
         shadowRadius: 0.9,
         elevation: 1, 
         },
-
 
         bgReferral:{
             position: 'absolute',

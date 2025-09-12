@@ -29,7 +29,10 @@ export const colors = {
     textColor: "#fff",
     colorWhite:"#fff",
     textSecColor: "#aaa",
+    textSecColor2: "#fff",
     textColor1:"#05375a",
+    text: "#05375a",
+    pink:"#FFC0CB",
     
     dividerColor: "#595957",
 };
@@ -254,7 +257,7 @@ export const gs = StyleSheet.create({
       marginBottom:5,
       marginHorizontal:10,
   },
-  buttonSellText:{
+  buttonSellText2:{
     color:colors.textColor, 
     fontFamily:'_semiBold', 
     fontSize:15,
