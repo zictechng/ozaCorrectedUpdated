@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Share, TouchableOpacity, SafeAreaView, ScrollView , Platform, ToastAndroid} from 'react-native';
+import { View, Text, StyleSheet, Share, TouchableOpacity, SafeAreaView, ScrollView , Platform, ToastAndroid, ImageBackground} from 'react-native';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { FontAwesome6, Ionicons, Entypo, AntDesign} from '@expo/vector-icons';
 
@@ -13,6 +13,7 @@ import RBSheet from "react-native-raw-bottom-sheet";
 import { AuthContext } from '../contextAPI/authContext';
 import { applicationDetails } from '../components/controls';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import bgImage from '../assets/images/app_land2.jpg';
 
 
 const AccountMenus = () => {
@@ -110,137 +111,139 @@ const AccountMenus = () => {
                
   return (
     
-        <SafeAreaView style={{flex:1, backgroundColor:colors.primaryColor2}}>
-
-                    {
-                     isFocused &&
-                        <StatusBar
-                        style='light'/>
+        <ImageBackground style={{flex:1}} source={bgImage} resizeMode='cover'>
+            <SafeAreaView style={{flex:1}}>
+                {
+                isFocused &&
+                    <StatusBar
+                    style='light'/>
+                }
+                {!acctPin &&
+                    <StatusBar
+                    style='light'/>
                     }
-                    {!acctPin &&
-                        <StatusBar
-                        style='light'/>
-                        }
-                    <HeaderMenu 
-                        buttonHome={<TouchableOpacity onPress={() =>{}}>
-                            <View style={gs.homeSideMenu}>
-                            {/* <Ionicons name='arrow-back' size={23} color={colors.textColor}/> */}
-                         </View>
-                            </TouchableOpacity>}
-                        titleName={'Account'}
-                        profileTitle={styles.settingTitle}
-                    />
-                
-                 <View style={{marginBottom:30}}></View>
-                 <View style={{flex:1, backgroundColor:colors.bgColor}}>
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>User Account</Text>
+                <HeaderMenu 
+                    buttonHome={<TouchableOpacity onPress={() =>{}}>
+                        <View style={gs.homeSideMenu}>
+                        {/* <Ionicons name='arrow-back' size={23} color={colors.textColor}/> */}
+                    </View>
+                        </TouchableOpacity>}
+                    titleName={'Account'}
+                    profileTitle={styles.settingTitle}
+                />
+
+                <View style={{marginBottom:30}}></View>
+                <View style={{flex:1, backgroundColor:colors.bgColor}}>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                    <View style={{marginHorizontal:10, marginTop:10}}>
+                        <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>User Account</Text>
+                    </View>
+
+                    <TouchableOpacity style={styles.formPage} onPress={() =>navigation.navigate('profile')}>
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
+                            <Ionicons name='person' size={25} color={colors.primaryColor2} />
+                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Profile</Text>
                         </View>
-                
-                        <TouchableOpacity style={styles.formPage} onPress={() =>navigation.navigate('profile')}>
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                                <Ionicons name='person' size={25} color={colors.primaryColor2} />
-                                <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Profile</Text>
-                            </View>
-                        </TouchableOpacity>
+                    </TouchableOpacity>
 
 
-                        <TouchableOpacity style={[styles.formPage, {marginBottom:-3}]}
-                            onPress={() =>navigation.navigate('messages')}>
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                                <Entypo name='notification' size={25} color={colors.primaryColor2} />
-                                <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Notifications</Text>
-                            </View>
-                            
-                        </TouchableOpacity>
+                    <TouchableOpacity style={[styles.formPage, {marginBottom:-3}]}
+                        onPress={() =>navigation.navigate('messages')}>
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
+                            <Entypo name='notification' size={25} color={colors.primaryColor2} />
+                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Notifications</Text>
+                        </View>
+                        
+                    </TouchableOpacity>
 
-                        <TouchableOpacity style={[styles.formPage, {marginBottom:-3}]}
-                            onPress={() =>navigation.navigate('referrals')}>
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                                <FontAwesome6 name="users" size={25} color={colors.primaryColor2} />
-                                <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Referrals</Text>
-                            </View>
-                            
-                        </TouchableOpacity>
+                    <TouchableOpacity style={[styles.formPage, {marginBottom:-3}]}
+                        onPress={() =>navigation.navigate('referrals')}>
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
+                            <FontAwesome6 name="users" size={25} color={colors.primaryColor2} />
+                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Referrals</Text>
+                        </View>
+                        
+                    </TouchableOpacity>
 
-                        {/* <TouchableOpacity style={[styles.formPage, {marginBottom:30}]}
-                            onPress={() => OpenAccountDetails()}>
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                                <FontAwesome name="bank" size={25} color={colors.primaryColor2} />
-                                <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Bank Details</Text>
-                            </View>
-                            
-                        </TouchableOpacity> */}
+                    {/* <TouchableOpacity style={[styles.formPage, {marginBottom:30}]}
+                        onPress={() => OpenAccountDetails()}>
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
+                            <FontAwesome name="bank" size={25} color={colors.primaryColor2} />
+                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Bank Details</Text>
+                        </View>
+                        
+                    </TouchableOpacity> */}
                 </ScrollView>
 
 
                 <ShareFriend  
-                    imageSource={shareImageBg} 
-                    imageStyle={styles.bgReferral}
-                    shareButtonStyle={styles.btnShare}
-                    shareButtonText={styles.btnShareText}
-                    buttonLabel={'Tell a friend'}
-                    desText={`Start telling your friends about us both of you earn ${'$'+businessRate?.signup_bonus_rate} for free`}
-                    onPress1={Platform.OS === 'android' ? shareCopyID : onShare}
-                    onPress2={() => {}}
+                imageSource={shareImageBg} 
+                imageStyle={styles.bgReferral}
+                shareButtonStyle={styles.btnShare}
+                shareButtonText={styles.btnShareText}
+                buttonLabel={'Tell a friend'}
+                desText={`Start telling your friends about us both of you earn ${'$'+businessRate?.signup_bonus_rate} for free`}
+                onPress1={Platform.OS === 'android' ? shareCopyID : onShare}
+                onPress2={() => {}}
                 />
 
-            </View>
-                         
-            {/* Show current rate here... */}
-            <RBSheet
-                    ref={refAccountViewBSheet}
-                    closeOnDragDown={true}
-                    closeOnPressMask={true}
-                    openDuration={900}
-                    closeDuration={400}
-                    height={350}
-                    closeOnPressBack={true}
-                    keyboardAvoidingViewEnabled={true}
-                    customStyles={{
-                    container:{
-                        backgroundColor: colors.bgColor,
-                    },
-                    draggableIcon: {
-                        backgroundColor: "#000"
-                    }
-                    }}>
+                </View>
                     
-                    <View style={{marginHorizontal: 20}}>
-                        <Text style={{fontFamily:'_semiBold', fontSize:25, color:colors.textBlack}}>Bank Details </Text>
-                            
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                                <View style={{paddingVertical:5, marginBottom:20}}>
-                                    <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textSecColor}}>Easily manage your bank account details on the go</Text>
-                                </View>
-                            <View style={styles.accountView}>
-                                <Text style={styles.accountDetailsTile}>Account Name</Text>
-                                <Text style={styles.accountDetails}>{userInfo?.bank_acct_name}</Text>
-                            </View>
+                {/* Show current rate here... */}
+                <RBSheet
+                ref={refAccountViewBSheet}
+                closeOnDragDown={true}
+                closeOnPressMask={true}
+                openDuration={900}
+                closeDuration={400}
+                height={350}
+                closeOnPressBack={true}
+                keyboardAvoidingViewEnabled={true}
+                customStyles={{
+                container:{
+                    backgroundColor: colors.bgColor,
+                },
+                draggableIcon: {
+                    backgroundColor: "#000"
+                }
+                }}>
+
+                <View style={{marginHorizontal: 20}}>
+                    <Text style={{fontFamily:'_semiBold', fontSize:25, color:colors.textBlack}}>Bank Details </Text>
                         
-                            <View style={styles.accountView}>
-                                <Text style={styles.accountDetailsTile}>Account Number</Text>
-                                <Text style={styles.accountDetails}>{userInfo?.bank_acct_number}</Text>
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                            <View style={{paddingVertical:5, marginBottom:20}}>
+                                <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textSecColor}}>Easily manage your bank account details on the go</Text>
                             </View>
-                        
-                            <View style={styles.accountView}>
-                                <Text style={styles.accountDetailsTile}>Bank Name</Text>
-                                <Text style={styles.accountDetails}>{userInfo?.bank_name}</Text>
-                            </View>
-                            <View style={styles.accountView}>
-                                <Text style={styles.accountDetailsTile}>Account PIN</Text>
-                                <Text style={styles.accountDetails}>{userInfo.userData.acct_cot_pin}</Text>
-                            </View>
-                            <View style={[styles.accountView, {marginBottom:30}]}>
-                                <Text style={styles.accountDetailsTile}>Tag ID</Text>
-                                <Text style={styles.accountDetails}>{userInfo.userData.tag_id}</Text>
-                            </View>
-                        </ScrollView>
-                    </View>
-            </RBSheet>
-              
-</SafeAreaView>
+                        <View style={styles.accountView}>
+                            <Text style={styles.accountDetailsTile}>Account Name</Text>
+                            <Text style={styles.accountDetails}>{userInfo?.bank_acct_name}</Text>
+                        </View>
+                    
+                        <View style={styles.accountView}>
+                            <Text style={styles.accountDetailsTile}>Account Number</Text>
+                            <Text style={styles.accountDetails}>{userInfo?.bank_acct_number}</Text>
+                        </View>
+                    
+                        <View style={styles.accountView}>
+                            <Text style={styles.accountDetailsTile}>Bank Name</Text>
+                            <Text style={styles.accountDetails}>{userInfo?.bank_name}</Text>
+                        </View>
+                        <View style={styles.accountView}>
+                            <Text style={styles.accountDetailsTile}>Account PIN</Text>
+                            <Text style={styles.accountDetails}>{userInfo.userData.acct_cot_pin}</Text>
+                        </View>
+                        <View style={[styles.accountView, {marginBottom:30}]}>
+                            <Text style={styles.accountDetailsTile}>Tag ID</Text>
+                            <Text style={styles.accountDetails}>{userInfo.userData.tag_id}</Text>
+                        </View>
+                    </ScrollView>
+                </View>
+                </RBSheet>
+
+            </SafeAreaView>
+        </ImageBackground>
+        
         
   );
 }

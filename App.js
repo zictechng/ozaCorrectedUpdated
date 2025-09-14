@@ -15,6 +15,7 @@ import AppNav from './navigation/appNav';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NetworkProvider } from './contextAPI/networkProvider';
+import { colors } from './styles';
 
 const Stack = createNativeStackNavigator();
 
@@ -63,7 +64,7 @@ export default function App() {
       if (!fontsLoaded) {
         return (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator size="large" color="#1D2667" />
+            <ActivityIndicator size="large" color={colors.primaryColor1} />
           </View>
         );
       }

@@ -2,11 +2,32 @@ import { StyleSheet, Platform } from "react-native";
 
 export const colors = {
     darkBg: "#222",
+    lightblue: "e9f6ff",
+    fadeText: '#575e68',
+    aishaColor: "#5c6270",
+    blueColor: "#075aaa",
+    blueColor2: "#3b8ad6",
+    orange1: "#b47e11",
+    orangeLight: "#d3a448",
     textBlack:'#353535',
     blackColor1: "#51534D",
     blackColor2: "#23261E",
-    primaryColor1: "#1D2667",
-    primaryColor2: "#010A4F",
+    //primaryColor1: "#1D2667",
+    //primaryColor1: "#b47e11" orange color,
+    primaryColor1: "#5464c4",
+    secondaryColor: "#7f8cda",
+    bannerTextColor: "#FAFAD2",
+    // try this color below for update of color
+    primaryColor1a: "#5464c4",
+    primaryColor1b:"#7f8cda",
+    primaryColor1c:"#6c7bd6",
+    primaryColor1d:"#425adc",
+    primaryColor1e:"#364cc4",
+
+    primaryColor1F:"#424878",
+    //primaryColor2: "#010A4F",
+    //primaryColor2: "#d3a448",
+    primaryColor2: "#7f8cda",
     primaryLightBlue: "#595F90",
     yellowColor1: "#F4D41B",
     lightBg: "#333",
@@ -14,7 +35,7 @@ export const colors = {
     shahColorLight:"#F2F3F7",
     shahColorDark:"#EEEFF3",
     statusBarColor:"#666",
-    greenColorLight:"#E6F0FC",
+    greenColorLight:"#d3a448",
     textColorBlack:"#D9DDE0",
     textColorBlack2:"#6C737B",
     darkHl: "#666",
@@ -23,8 +44,8 @@ export const colors = {
     warningColor: "#FF0000",
     redColor: "#e32f45",
     lightRed: "#f0cecc",
-    greenColor:"#1CB377",
-    lightGreenColor1: "#A0DFC6",
+    greenColor:"#d3a448",
+    lightGreenColor1: "#d6c39e",
     lightGreenColor2: "#DCF2EA",
     textColor: "#fff",
     colorWhite:"#fff",
@@ -33,6 +54,7 @@ export const colors = {
     textColor1:"#05375a",
     text: "#05375a",
     pink:"#FFC0CB",
+    red: "#FF6347",
     
     dividerColor: "#595957",
 };
@@ -135,6 +157,29 @@ export const gs = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
       },
+
+      startButton: {
+        borderRadius: 30,
+        borderColor: "#fff",
+        borderWidth:2,
+        width: 60,
+        height: 60,
+        alignItems: "center",
+        justifyContent: "center",
+        //backgroundColor:"#e9f6ff",
+        backgroundColor: colors.secondaryColor
+      },
+
+      start_circleIcon: {
+        borderRadius: 30,
+        backgroundColor: "#fff",
+        width: 46,
+        height: 46,
+        alignItems: "center",
+        justifyContent: "center",
+        
+      },
+
       circleIcon: {
         borderRadius: 7,
         backgroundColor: "#fff",
@@ -145,26 +190,26 @@ export const gs = StyleSheet.create({
       },
       logoText: {
         fontSize: 40,
-        color: "#fff",
+        color: "#333",
         fontFamily: "_bold",
         fontWeight: "600",
       },
       landPageTitle:{
         fontSize: 30,
-        color: "#fff",
+        color: "#333",
         fontFamily: "_semiBold",
         letterSpacing: 0.41,
       },
       landPageDesc:{
-        fontSize: 13,
-        color: "#fff",
+        fontSize: 14,
+        color: "#222",
         fontFamily: "_regular",
         letterSpacing: -0.08
       },
       loginPageDescTitle:{
         fontFamily:"_regular",
         fontSize:17,
-        color:colors.textColor
+        color:colors.fadeText
       },
 
       loginPageForgetPass:{
@@ -176,17 +221,22 @@ export const gs = StyleSheet.create({
       loginPageDesc:{
         fontFamily:"_semiBold",
         fontSize:17,
-        color:colors.lightGreenColor1
+        color:colors.secondaryColor
       },
       signupPageDescTitle:{
         fontFamily:"_regular",
         fontSize:17,
         color:colors.lightBg
       },
-      singupPageDesc:{
+      signupPageDesc:{
         fontFamily:"_semiBold",
         fontSize:17,
         color:colors.greenColor
+      },
+      signupPageLogin:{
+        fontFamily:"_semiBold",
+        fontSize:17,
+        color:colors.secondaryColor
       },
       homeHeaderRow:{
         backgroundColor:'transparent', 
@@ -197,7 +247,7 @@ export const gs = StyleSheet.create({
       homeSideMenu:{
         borderRadius: 50, 
         //borderWidth: 1, 
-        backgroundColor:colors.primaryColor2, 
+        //backgroundColor:colors.primaryColor2, 
         width:30, 
         height:30,
         alignItems:'center', 

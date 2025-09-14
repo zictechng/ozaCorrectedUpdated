@@ -286,7 +286,7 @@ const ForgetPasswordScreen = ({navigation}) =>{
             <HeaderMenu buttonHome={<TouchableOpacity 
             onPress={() =>navigation.navigate('Login')}>
                 <View style={gs.homeSideMenu}>
-                <Ionicons name='arrow-back' size={25} color={colors.textColor} />
+                <Ionicons name='arrow-back' size={25} color={colors.blackColor1} />
                 </View>
                 
             </TouchableOpacity>

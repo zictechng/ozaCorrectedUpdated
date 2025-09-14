@@ -12,23 +12,34 @@ export default function HeaderMenu({
     actionButton3,
     buttonHome,
     buttonLeft,
+    buttonRight,
     button3,
     badgeIcon,
     profileTitle,
     titleName,
+    greeting,
     titleHead
 
 }) {
   return (
         <View style={gs.homeHeaderRow}>
                     
-            <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                    {buttonHome}
+            <View style={{flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',}}>
+                    <View style={{ flex: 1, alignItems: 'flex-start' }}>
+                      {buttonHome}
+                    </View>
 
-                    <Text style={profileTitle}>{titleName}</Text>
+                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    {greeting}
+                  </View>
+
                     <Text></Text>
-
+                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
                     {buttonLeft}
+                    </View>
+                    
             </View>
             
         </View>

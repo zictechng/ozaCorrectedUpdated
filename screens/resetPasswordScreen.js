@@ -2,22 +2,20 @@ import React, { useContext, useState } from 'react';
 import { StyleSheet, View, Text, TextInput, Keyboard, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Alert, Platform } from 'react-native';
 import { gs,colors } from '../styles';
 import * as Animatable from 'react-native-animatable'
+import { useIsFocused } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { Avatar, Badge} from 'react-native-elements';
 import { Ionicons, Feather, Entypo,} from '@expo/vector-icons';
 import proPassImage from '../assets/images/pass_image.png';
 import { AuthContext } from '../contextAPI/authContext';
 import LoaderIndicator from '../components/loaderIndicator';
-import { ALERT_TYPE, Dialog } from 'react-native-alert-notification';
-import { noticeData } from '../components/errorNotice';
 import client from '../contextAPI/client';
 
 
 const ResetPasswordScreen = ({navigation}) => {
     //source={bgImage} resizeMode='stretch'
     const {userToken, userInfo, setUserInfo} = useContext(AuthContext);
-
-
+      const isFocused = useIsFocused();
     let myId = userInfo.userData._id; // get logged in user ID
     const [requestLoading, setRequestLoading] = useState(false);
     const [errorWarning, setErrorWarning] = useState(false);
@@ -131,18 +129,18 @@ const ResetPasswordScreen = ({navigation}) => {
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <SafeAreaView style={{flex:1}}>
 
-        <StatusBar style='light' />
+        {isFocused && <StatusBar style='dark' />}
 
                 <View style={[gs.homeHeaderRow,]}>
                     <View style={{justifyContent:'space-between', flexDirection:'row'}}>
                         <TouchableOpacity
                         onPress={() => navigation.goBack()}>
                      <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                            <Ionicons name='close' size={23} color={colors.textColor}/>
+                            <Ionicons name='close' size={23} color={colors.blackColor1}/>
                      </View>
                      </TouchableOpacity>
 
-                        <Text style={styles.profileTitle}>Password Reset</Text>
+                        {/* <Text style={styles.profileTitle}>Password Reset</Text> */}
                         <Text></Text>
                         {/* <TouchableOpacity style={gs.homeSideMenu}>
                             <Feather name='bell' size={20} color={colors.textColor}/>
@@ -161,7 +159,7 @@ const ResetPasswordScreen = ({navigation}) => {
                 <ScrollView showsVerticalScrollIndicator={false} style={{paddingHorizontal:20}}>
                     
                     <View style={{marginTop:20}}>
-                        <Text style={{fontFamily:'_semiBold', fontSize:25, color:'#353535'}}>Reset Password?</Text>
+                        <Text style={{fontFamily:'_semiBold', fontSize:20, color:'#353535'}}>Reset Password?</Text>
                         <Text style={styles.loginTitleDesc}>
                             Don't worry, you can easily reset your account password.</Text>
                     </View>
@@ -291,7 +289,7 @@ const styles = StyleSheet.create({
       },
       profileTitle:{
         color:'#353535',
-        fontSize:20,
+        fontSize:18,
         marginLeft: -20,
         fontFamily: '_semiBold',
       },

@@ -6,7 +6,7 @@ import * as Clipboard from 'expo-clipboard';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons, Entypo, MaterialCommunityIcons, FontAwesome} from '@expo/vector-icons';
-import bgImage from '../assets/images/bg5.png';
+import bgImage from '../assets/images/app_land2.jpg';
 import proBg from '../assets/images/pro_bg.png';
 import imageIcon from '../assets/images/note.png';
 import shareImageBg  from '../assets/images/gift.png';
@@ -187,7 +187,7 @@ const ProfileScreen = () =>{
                         </View>
 
                         <View style={{justifyContent:'center', 
-                        alignItems:'center'}}><Text>TagID: {userInfo?.userData.tag_id}</Text>
+                        alignItems:'center'}}><Text>Tag ID: {userInfo?.userData.tag_id}</Text>
                         </View>
                             
                         {signupState &&
@@ -197,7 +197,7 @@ const ProfileScreen = () =>{
                                     <Text style={styles.actionSignupText}>Please, complete your account registration to remove restriction</Text>
                                     <View>
                                         <TouchableOpacity style={{marginRight:5}} onPress={() => closeIncompleteRegistration()}>
-                                        <Ionicons name='close' size={20} color={colors.primaryColor2} />
+                                        <Ionicons name='close' size={20} color={colors.bgColor} />
                                         </TouchableOpacity>
                                     </View>
                                 
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     },
     actionSignupView:{
         borderRadius:10, 
-        backgroundColor:colors.lightGreenColor1, 
+        backgroundColor:colors.secondaryColor, 
         marginHorizontal:10, 
         alignItems:'center', 
         marginTop:10
@@ -408,12 +408,14 @@ const styles = StyleSheet.create({
         marginHorizontal:5, 
         flexShrink:1, 
         flexWrap: 'wrap',
+        color:colors.bannerTextColor
+        
     },
 
     actionSignupButton:{
-        fontFamily:'_bold', 
-        fontSize:14, 
-        color:colors.primaryColor2, 
+        fontWeight:'bold', 
+        fontSize:18, 
+        color:colors.bgColor, 
         marginBottom:5
     },
     buttonSellText:{

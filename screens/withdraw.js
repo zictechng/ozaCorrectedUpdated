@@ -180,7 +180,7 @@ const WithdrawFund = ({navigation}) => {
                         <TouchableOpacity 
                         onPress={() =>navigation.goBack()}>
                             <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                            <Ionicons name='close' size={25} color={colors.textColor}/>
+                            <Ionicons name='close' size={25} color={colors.blackColor1}/>
                              </View>
                            </TouchableOpacity>
                            <Text></Text>
@@ -198,7 +198,7 @@ const WithdrawFund = ({navigation}) => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView>
                         <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Withdraw Funds</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Withdraw Funds</Text>
                         </View>
 
                         <View style={{marginHorizontal:20, marginTop:10}}>

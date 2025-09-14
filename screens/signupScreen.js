@@ -82,7 +82,16 @@ const SignupScreen = () =>{
           };
 
     const sendReg = async() =>{
-           
+        if (dataDetails.full_name.length == 0 || dataDetails.phone.length == 0 || dataDetails.email.length == 0 || dataDetails.password.length == 0 || dataDetails.confirm_password.length == 0) {
+            Toast.show({
+                 type: ALERT_TYPE.DANGER,
+                 title: 'Error',
+                 textBody: 'Required details are missing',
+                 textBodyStyle: noticeData[0].errorMessageStyle,
+                 titleStyle: noticeData[0].errorTitleStyle,
+             })
+             return
+            }
         if(country == null || country.length == 0){
             Toast.show({
                 type: ALERT_TYPE.DANGER,
@@ -94,16 +103,7 @@ const SignupScreen = () =>{
             return
         }
         //console.log("country Code: " + country.callingCode, country.name)
-            if (dataDetails.full_name.length == 0 || dataDetails.phone.length == 0 || dataDetails.email.length == 0 || dataDetails.password.length == 0 || dataDetails.confirm_password.length == 0) {
-            Toast.show({
-                 type: ALERT_TYPE.DANGER,
-                 title: 'Error',
-                 textBody: 'Required fields are missing',
-                 textBodyStyle: noticeData[0].errorMessageStyle,
-                 titleStyle: noticeData[0].errorTitleStyle,
-             })
-             return
-            }
+            
             // validate email format
             if(!IsValidEmail(dataDetails.email)){
                 Toast.show({
@@ -349,7 +349,7 @@ const SignupScreen = () =>{
                 <HeaderMenu buttonHome={
                 <TouchableOpacity onPress={() =>navigation.navigate('Login')}>
                         <View style={gs.homeSideMenu}>
-                        <Ionicons name='arrow-back' size={25} color={colors.textColor}/>
+                        <Ionicons name='arrow-back' size={25} color={colors.blackColor1}/>
                         </View>
                      </TouchableOpacity>
                     }/>
@@ -581,7 +581,7 @@ const SignupScreen = () =>{
                              </View>
                              <View style={{}}>
                                     <Text style={[gs.loginPageForgetPass,]}>By signup, you agreed to the company 
-                                    <Text style={[gs.singupPageDesc, {fontSize:13}]} onPress={() =>navigation.navigate('Terms_Conditions')}> Terms and Conditions </Text>
+                                    <Text style={[gs.signupPageDesc, {fontSize:13}]} onPress={() =>navigation.navigate('Terms_Conditions')}> Terms and Conditions </Text>
                                      and privacy policy </Text>
                                      
                                 </View>
@@ -595,10 +595,10 @@ const SignupScreen = () =>{
                         </View>
 
                         <View style={{flex:1, justifyContent:'center', alignItems:'center', marginBottom:30}}>
-                        <Text style={gs.signupPageDescTitle}>I have an account?</Text>
+                        <Text style={gs.signupPageDescTitle}>I have an account</Text>
                             <TouchableOpacity onPressOut={() =>navigation.navigate('Login')}>
                                 <View>
-                                    <Text style={gs.singupPageDesc}>Login</Text>
+                                    <Text style={gs.signupPageLogin}>Login</Text>
                                 </View>
                             </TouchableOpacity>
                         </View>

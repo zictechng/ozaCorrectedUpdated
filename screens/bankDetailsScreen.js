@@ -1,11 +1,9 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Image, ImageBackground, ScrollView, ActivityIndicator } from 'react-native';
-import { AntDesign, MaterialIcons, Ionicons, Feather, Entypo, MaterialCommunityIcons, FontAwesome5} from '@expo/vector-icons';
+import { MaterialIcons, Ionicons} from '@expo/vector-icons';
 import { gs,colors } from '../styles';
 import { StatusBar } from 'expo-status-bar';
-import { Dropdown } from 'react-native-element-dropdown';
-import BottomWarning from '../components/bottomWarning';
 import { AuthContext } from '../contextAPI/authContext';
 import { CheckRegistrationStage, NavigateNextPage } from '../components/controls';
 import client from '../contextAPI/client';
@@ -107,7 +105,7 @@ const BankDetailsScreen = ({navigation}) => {
                     <View style={{justifyContent:'space-between', flexDirection:'row'}}>
                         <TouchableOpacity onPress={() => navigation.goBack() }>
                             <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                            <Ionicons name='close' size={25} color={colors.textColor}/>
+                            <Ionicons name='close' size={25} color={colors.blackColor1}/>
                         
                             </View>
                             </TouchableOpacity>
@@ -207,45 +205,7 @@ const BankDetailsScreen = ({navigation}) => {
                     </View>
                      </ScrollView>
                 </View>
-                    {/* show if user profile is not complete */}
                      
-                     {completeRegData &&
-                    <View style={{marginBottom: 20, marginTop:20, marginHorizontal:10}}>
-                        <View style={{backgroundColor:'#DCF2EA', height:130, borderRadius:20}}>
-                        <View style={{justifyContent:'flex-end', alignItems:'flex-end'}}>
-                            <TouchableOpacity style={styles.closeBnt}
-                            onPress={() => {closeIncompleteRegistration()}}>
-                                <View style={styles.closeBtnView}>
-                                    <Ionicons name="close" size={20} color={colors.textColor}/>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                            <View style={{flexDirection:'row', marginTop: 5, marginHorizontal:5, alignItems:'center'}}>
-                            <Ionicons name="information-circle-outline" size={24} color={colors.blackColor1}/>
-                                <Text style={{marginLeft: 5, fontFamily:'_bold', fontSize:14, color:colors=='#1D2667'? '#fff':'#51534D'}}>
-                                    Incomplete Profile
-                                </Text>
-                            </View>
-                            <View style={{marginVertical:5, marginHorizontal:8}}>
-                                <Text style={{marginLeft: 5, fontFamily:'_regular', fontSize:12, color:colors=='#1D2667'? '#fff':'#51534D'}}>
-                                    
-                                Please, complete your account registration process to remove restrictions in your account.
-                                </Text>
-                            </View>
-
-                            <View style={{justifyContent:'center', alignItems:'center',}}>
-                        
-                            <TouchableOpacity onPress={() => navigation.navigate('SignupSteps')}
-                                    style={{borderRadius:50, borderColor:colors.greenColor, width:90, height:40, borderWidth:1, justifyContent:'center', alignItems:'center', marginBottom:40}}>
-                                    <Text style={{color:colors.blackColor1, fontFamily:'_semiBold', fontSize:14}}>Okay</Text>
-                            </TouchableOpacity>
-                        </View>
-                                            
-                        </View>
-
-                    </View>
-                    }
-                         
         </SafeAreaView>
     </View>
   );

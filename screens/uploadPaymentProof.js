@@ -1,7 +1,6 @@
 import React, { useContext, useState, useEffect} from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system'
 import * as Animatable from 'react-native-animatable'
 import { View, Button, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Image, ImageBackground, ScrollView } from 'react-native';
 import { Ionicons} from '@expo/vector-icons';
@@ -300,13 +299,14 @@ const UploadPaymentProof = ({route, navigation}) => {
 
                 <View style={gs.homeHeaderRow}>
                     <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                        <Text></Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Home')}>
                           <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                          <Ionicons name='close-outline' size={23} color={colors.textColor}/>
+                          <Ionicons name='close-outline' size={23} color={colors.blackColor1}/>
                           </View>
                            
                         </TouchableOpacity>
+                        <Text></Text>
+                        
 
                         {/* <Text style={styles.settingTitle}>Settings</Text> */}
                         
@@ -330,7 +330,7 @@ const UploadPaymentProof = ({route, navigation}) => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Upload Payment Proof</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Upload Payment Proof</Text>
                         </View>
 
                         <View style={{marginHorizontal:20, marginTop:10}}>

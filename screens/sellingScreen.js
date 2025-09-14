@@ -592,14 +592,15 @@ const checkOutPaypal = async () => {
 
             <View style={gs.homeHeaderRow}>
                 <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                    <Text></Text>
-                    {/* <Text style={styles.settingTitle}>Settings</Text> */}
-                   
-                    <TouchableOpacity onPress={() => navigation.goBack()} >
+                <TouchableOpacity onPress={() => navigation.goBack()} >
                         <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                            <Ionicons name='close' size={25} color={colors.textColor}/>
+                            <Ionicons name='close' size={25} color={colors.blackColor1}/>
                       </View>
                     </TouchableOpacity>
+                    
+                    {/* <Text style={styles.settingTitle}>Settings</Text> */}
+                   
+                    
                     
                 </View>
                 <View style={{marginBottom:30}}></View>

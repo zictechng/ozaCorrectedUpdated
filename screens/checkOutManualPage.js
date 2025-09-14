@@ -206,15 +206,10 @@ const CheckOutManualPage = ({route, navigation}) => {
             
                 <View style={gs.homeHeaderRow}>
                     <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                        {/* <TouchableOpacity style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                            <Ionicons name='arrow-back' size={25} color={colors.textColor}/>
-                        </TouchableOpacity> */}
-
-                        {/* <Text style={styles.settingTitle}>Settings</Text> */}
-                        <Text></Text>
+                        
                         <TouchableOpacity onPress={() =>navigation.replace('Home')}>
                             <View >
-                            <Ionicons name='close-outline' size={30} color={colors.primaryColor1}/>
+                            <Ionicons name='close-outline' size={30} color={colors.blackColor1}/>
                             </View>
                             
                         </TouchableOpacity>
@@ -225,7 +220,7 @@ const CheckOutManualPage = ({route, navigation}) => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView>
                         <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Request Pending</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Request Pending</Text>
                         </View>
                                 <View style={{marginHorizontal:20, marginTop:10, marginBottom:20}}>
                                     <Text style={{fontFamily:'_regular', fontSize:12, color:colors.textBlack, opacity:0.7}}>
@@ -248,13 +243,12 @@ const CheckOutManualPage = ({route, navigation}) => {
                                                 timestamp={paymentTimer}
                                                 timerCallback={timerCallbackFunc}
                                                 containerStyle={{
-                                                    height: 56,
-                                                    width: 120,
+                                                    height: 40,
+                                                    width: 100,
                                                     justifyContent: 'center',
                                                     alignItems: 'center',
                                                     borderRadius: 10,
-                                                    backgroundColor: 									
-                                                    colors.primaryColor1,
+                                                    backgroundColor: colors.blackColor1,
                                                 }}
                                                 textStyle={{
                                                     fontSize: 25,

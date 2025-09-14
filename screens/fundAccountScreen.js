@@ -288,24 +288,20 @@ const FundAccountScreen = ({navigation}) => {
     }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex:1, backgroundColor:colors.bgColor}}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex:1, backgroundColor:colors.primaryColor2}}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <SafeAreaView style={{flex:1}}>
-                    {
-                    isFocused &&
-                    <StatusBar
-                    barStyle={'dark-content'}
-                    translucent
-                    backgroundColor="transparent"/>
-                    }
+
+                    <StatusBar barStyle="light-content" translucent backgroundColor={"transparent"}/>
+
                  <View style={gs.homeHeaderRow}>
                     <View style={{justifyContent:'space-between', flexDirection:'row'}}>
                         
                         <TouchableOpacity 
                         onPress={() =>navigation.goBack()}>
-                            <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                            <Ionicons name='close' size={25} color={colors.textColor}/>
-                             </View>
+                            <View style={[gs.homeSideMenu, {borderWidth: 0, backgroundColor:colors.colorWhite}]}>
+                            <Ionicons name='close' size={23} color={colors.primaryColor1}/>
+                        </View>
                            </TouchableOpacity>
                            <Text></Text>
                         {/* <Text style={styles.settingTitle}>Settings</Text> */}

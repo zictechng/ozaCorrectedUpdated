@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, ImageBackground} from 'react-native';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import Modal from "react-native-modal";
 import { MaterialIcons, Ionicons} from '@expo/vector-icons';
@@ -12,6 +12,7 @@ import RateBottomSheet from '../components/rateBottomSheet';
 import paypalImage from '../assets/images/paypal2.png';
 import payoonerImage from '../assets/images/payooner3.png';
 import bitcoinImage from '../assets/images/bitcoin1.png';
+import bgImage from '../assets/images/app_land2.jpg';
 
 
 const TransactionMenus = () => {
@@ -45,99 +46,100 @@ const TransactionMenus = () => {
  
   
   return (
-    
-        <SafeAreaView style={{flex:1, backgroundColor:colors.primaryColor2}}>
-
-                    {
-                     isFocused &&
-                        <StatusBar
-                        style='light'/>
+        <ImageBackground style={{flex:1}} source={bgImage} resizeMode='cover'>
+            <SafeAreaView style={{flex:1}}>
+                {
+                isFocused &&
+                    <StatusBar
+                    style='light'/>
+                }
+                {!acctPin &&
+                    <StatusBar
+                    style='light'/>
                     }
-                    {!acctPin &&
-                        <StatusBar
-                        style='light'/>
-                        }
-                    <HeaderMenu 
-                        buttonHome={
-                        <TouchableOpacity onPress={() =>{}}>
-                            <View style={gs.homeSideMenu}>
-                            {/* <Ionicons name='arrow-back' size={23} color={colors.textColor}/> */}
-                         </View>
-                        </TouchableOpacity>
-                        }
-                        titleName={'Transactions'}
-                        profileTitle={styles.settingTitle}
-                    />
-                
-                 <View style={{marginBottom:30}}></View>
-                 <View style={{flex:1, backgroundColor:colors.bgColor}}>
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>App Transactions</Text>
+                <HeaderMenu 
+                    buttonHome={
+                    <TouchableOpacity onPress={() =>{}}>
+                        <View style={gs.homeSideMenu}>
+                        {/* <Ionicons name='arrow-back' size={23} color={colors.textColor}/> */}
+                    </View>
+                    </TouchableOpacity>
+                    }
+                    titleName={'Transactions'}
+                    profileTitle={styles.settingTitle}
+                />
+
+                <View style={{marginBottom:30}}></View>
+                <View style={{flex:1, backgroundColor:colors.bgColor}}>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                    <View style={{marginHorizontal:10, marginTop:10}}>
+                        <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Transactions</Text>
+                    </View>
+
+                    <TouchableOpacity style={styles.formPage} onPress={() =>navigation.navigate('FundAccount')}>
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
+                            <Ionicons name='add' size={25} color={colors.primaryColor2} />
+                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Add Funds</Text>
                         </View>
-                
-                        <TouchableOpacity style={styles.formPage} onPress={() =>navigation.navigate('FundAccount')}>
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                                <Ionicons name='add' size={25} color={colors.primaryColor2} />
-                                <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Add Funds</Text>
-                            </View>
-                        </TouchableOpacity>
+                    </TouchableOpacity>
 
-                        <TouchableOpacity style={[styles.formPage, {marginBottom:-3}]}
-                            onPress={() =>navigation.navigate('SendFund')}>
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                                <Ionicons name='send-sharp' size={25} color={colors.primaryColor2} />
-                                <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Send Funds</Text>
-                            </View>
-                            
-                        </TouchableOpacity>
+                    <TouchableOpacity style={[styles.formPage, {marginBottom:-3}]}
+                        onPress={() =>navigation.navigate('SendFund')}>
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
+                            <Ionicons name='send-sharp' size={25} color={colors.primaryColor2} />
+                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Send Funds</Text>
+                        </View>
+                        
+                    </TouchableOpacity>
 
-                        <TouchableOpacity style={[styles.formPage, {marginBottom:30}]}
-                            onPress={() =>OpenRateView()}>
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                                <MaterialIcons name='currency-exchange' size={25} color={colors.primaryColor2} />
-                                <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Exchange Rate</Text>
-                            </View>
-                            
-                        </TouchableOpacity>
-
-            </ScrollView>
-        </View>
-                         
-            {/* Show current rate here... */}
-            <RBSheet
-                    ref={refVieRateBSheet}
-                    closeOnDragDown={true}
-                    closeOnPressMask={true}
-                    openDuration={500}
-                    closeDuration={400}
-                    height={250}
-                    closeOnPressBack={true}
-                    keyboardAvoidingViewEnabled={true}
-                    customStyles={{
-                    container:{
-                        backgroundColor: colors.bgColor,
-                    },
-                    draggableIcon: {
-                        backgroundColor: "#000"
-                    }
-                    }}>
-                <ScrollView>
-                    <RateBottomSheet 
-                        titleText={'Rate'}
-                        titleStyle={{fontFamily:'_semiBold', fontSize:20, color:colors.textBlack}}
-                        imageIconPaypal={paypalImage}
-                        imageIconPayooner={payoonerImage}
-                        imageIconBitcoin={bitcoinImage}
-                        imageStyle={styles.bottomSheetImageStyle}
-                        buttonTextStyle={styles.bottomSheetButtonText}
-                        textStyle={{fontFamily:'_semiBold', fontSize:14, marginTop:8}}
-                    />
+                    <TouchableOpacity style={[styles.formPage, {marginBottom:30}]}
+                        onPress={() =>OpenRateView()}>
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
+                            <MaterialIcons name='currency-exchange' size={25} color={colors.primaryColor2} />
+                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Exchange Rate</Text>
+                        </View>
+                        
+                    </TouchableOpacity>
 
                 </ScrollView>
-            </RBSheet>
-              
-</SafeAreaView>
+                </View>
+                    
+                {/* Show current rate here... */}
+                <RBSheet
+                ref={refVieRateBSheet}
+                closeOnDragDown={true}
+                closeOnPressMask={true}
+                openDuration={500}
+                closeDuration={400}
+                height={250}
+                closeOnPressBack={true}
+                keyboardAvoidingViewEnabled={true}
+                customStyles={{
+                container:{
+                    backgroundColor: colors.bgColor,
+                },
+                draggableIcon: {
+                    backgroundColor: "#000"
+                }
+                }}>
+                <ScrollView>
+                <RateBottomSheet 
+                    titleText={'Rate'}
+                    titleStyle={{fontFamily:'_semiBold', fontSize:20, color:colors.textBlack}}
+                    imageIconPaypal={paypalImage}
+                    imageIconPayooner={payoonerImage}
+                    imageIconBitcoin={bitcoinImage}
+                    imageStyle={styles.bottomSheetImageStyle}
+                    buttonTextStyle={styles.bottomSheetButtonText}
+                    textStyle={{fontFamily:'_semiBold', fontSize:14, marginTop:8}}
+                />
+
+                </ScrollView>
+                </RBSheet>
+
+                </SafeAreaView>
+        </ImageBackground>
+        
         
   );
 }

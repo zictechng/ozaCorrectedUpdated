@@ -198,10 +198,9 @@ const FundAccountNextScreen = ({route, navigation}) => {
                         </TouchableOpacity> */}
 
                         {/* <Text style={styles.settingTitle}>Settings</Text> */}
-                        <Text></Text>
                         <TouchableOpacity style={{}} onPress={() =>navigation.replace('Home')}>
                         <View>
-                            <Ionicons name='close-outline' size={30} color={colors.primaryColor1}/>
+                            <Ionicons name='close-outline' size={30} color={colors.blackColor1}/>
                            
                         </View>
                      </TouchableOpacity>
@@ -238,13 +237,13 @@ const FundAccountNextScreen = ({route, navigation}) => {
                                                 timestamp={paymentTimer}
                                                 timerCallback={timerCallbackFunc}
                                                 containerStyle={{
-                                                    height: 56,
-                                                    width: 120,
+                                                    height: 40,
+                                                    width: 100,
                                                     justifyContent: 'center',
                                                     alignItems: 'center',
                                                     borderRadius: 10,
-                                                    backgroundColor: 									
-                                                    colors.primaryColor1,
+                                                    backgroundColor: 
+                                                    colors.blackColor1,
                                                 }}
                                                 textStyle={{
                                                     fontSize: 25,

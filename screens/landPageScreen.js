@@ -18,11 +18,12 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
 import { gs, colors } from '../styles';
-import bgImageLocal from '../assets/images/bg6.png';
+import bgImageLocal from '../assets/images/app_land2.jpg';
 import client from '../contextAPI/client';
 import { AuthContext } from '../contextAPI/authContext';
 import * as Updates from 'expo-updates';
 import { ShowUpdateModal } from '../components/controls';
+import RenderHTML from 'react-native-render-html';
 
 const LandPageScreen = ({navigation}) => {
   const isFocused = useIsFocused();
@@ -32,6 +33,7 @@ const LandPageScreen = ({navigation}) => {
   const {isLoading, userEmail, setUserEmail, otpStatus, setOtpStatus, appSettingDetails} = useContext(AuthContext)
   const [iLoading, setILoading] = useState(false);
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
+  const { width } = useWindowDimensions();
 
   // check if user otp is pending
   const isPendingOTP = async()=>{
@@ -165,43 +167,56 @@ const LandPageScreen = ({navigation}) => {
       )
   }
 
+  const htmlContent =
+    appDetails.infoData?.app_launch_desc ||
+    appInfo.app_launch_desc;
+
   return (
         <ImageBackground style={{flex:1}} source={bgImageLocal} resizeMode='cover'>
            
             <StatusBar barStyle='light-content' translucent backgroundColor="transparent"/>
             
-                <View style={{flex:1, backgroundColor:'transparent'}}></View>
-                    <View style={{flex:3, alignItems: 'center',justifyContent: 'center'}}>
+              {/* <View style={{flex:1, backgroundColor:'transparent'}}></View> */}
+                    <View style={{flex:2, alignItems: 'center',justifyContent: 'center'}}>
                       <Text style={[gs.logoText]}>{appDetails.infoData?.app_name? appDetails.infoData?.app_name.toUpperCase() : appInfo.app_name?.toUpperCase() || ''}</Text>
                     </View>
                     <ScrollView>
                 <Animatable.View animation='fadeInUpBig' style={{flex:4, backgroundColor:'transparent'}}>
 
                   <View style={{marginHorizontal:15}}>
-
-                      <Text style={{fontSize:40, color: colors.lightGreenColor1, fontWeight:'700'}}>-------</Text>
-
                       <Text style={gs.landPageTitle}>{appDetails.infoData?.app_launch_title? appDetails.infoData?.app_launch_title : appInfo.app_launch_title}</Text>
                       
-                      <View style={{marginTop:15}}>
+                      <View style={{marginTop:30}}>
                       <Text style={gs.landPageDesc}>
-                        {appDetails.infoData?.app_launch_desc? appDetails.infoData?.app_launch_desc: appInfo.app_launch_desc}</Text>
+                      <RenderHTML
+                        contentWidth={width}
+                        source={{ html: htmlContent }}
+                      /></Text>
                       
                      </View>
 
-                        <View style={{alignItems:'flex-end', marginTop:40}}>
-                          <TouchableOpacity style={gs.circleIconLeft} onPress={() => navigation.navigate('Login')}>
-                              <View style={gs.circleIcon}>
+                        {/* <View style={{alignItems:'center', marginTop:60}}>
+                          <TouchableOpacity style={gs.startButton} onPress={() => navigation.navigate('Login')}>
+                              <View style={gs.start_circleIcon}>
                               <MaterialIcons name="navigate-next" size={24} color="black" />
                               </View>
                           </TouchableOpacity>
-                      </View>
+                      </View> */}
                     
                   </View>
                   
                 </Animatable.View>
+            </ScrollView>
 
-                <ShowUpdateModal 
+                  <View style={styles.buttonContainer}>
+                  <TouchableOpacity style={gs.startButton} onPress={() => navigation.navigate('Login')}>
+                    <View style={gs.start_circleIcon}>
+                      <MaterialIcons name="navigate-next" size={24} color="black" />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+
+                  <ShowUpdateModal 
                     openModal={isUpdateAvailable}
                     animationType={'fade'}
                     modalTitle={'New Update!'}
@@ -210,21 +225,26 @@ const LandPageScreen = ({navigation}) => {
                     modalBgColor={"rgba(0,0,0,0.4)"}
                     bntYesText={'Download Update'}
                 />
-            </ScrollView>
             
-           
         </ImageBackground>
       );
 }
 
 const styles = StyleSheet.create({
   landPageDesc:{
-    fontSize: 13,
+    fontSize: 15,
     color: "#fff",
     fontFamily: "_regular",
     letterSpacing: -0.08
-  }
-  
+  },
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 40, // adjust as needed
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 
 export default LandPageScreen;

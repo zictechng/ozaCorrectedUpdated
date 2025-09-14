@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView,Image, ImageBack
 import { Ionicons, MaterialCommunityIcons, FontAwesome5} from '@expo/vector-icons';
 import { gs,colors } from '../styles';
 import { StatusBar } from 'expo-status-bar';
-import { Switch } from 'react-native-elements';
 import { AuthContext } from '../contextAPI/authContext';
 
 
@@ -35,7 +34,7 @@ const DocumentScreen = ({navigation}) => {
                     <View style={{justifyContent:'space-between', flexDirection:'row'}}>
                         <TouchableOpacity onPress={() => navigation.goBack()}>
                             <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                                <Ionicons name='close-outline' size={25} color={colors.textColor}/>
+                                <Ionicons name='close-outline' size={25} color={colors.blackColor1}/>
                             </View>
                             
                         </TouchableOpacity>

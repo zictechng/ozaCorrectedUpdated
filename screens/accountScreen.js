@@ -4,7 +4,7 @@ import { MaterialIcons, Ionicons, Feather, Entypo, MaterialCommunityIcons, FontA
 import * as Animatable from 'react-native-animatable'
 import { gs,colors } from '../styles';
 import { StatusBar } from 'expo-status-bar';
-import { Switch } from 'react-native-elements';
+import bgImage from '../assets/images/app_land2.jpg';
 
 const AccountScreen = () => {
   return (

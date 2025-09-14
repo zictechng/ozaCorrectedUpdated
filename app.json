@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Oza App",
-    "slug": "oza_mobile",
+    "name": "Doc Mobile",
+    "slug": "doc_mobile",
     "description": "A simple, efficient, reliable, secure and profitable way to sell paypal, payoneer, bitcoin and pay bills with virtual funds",
     "version": "2.0.1",
     "orientation": "portrait",
@@ -43,8 +43,8 @@
         "android.permission.ACCESS_MEDIA_LOCATION",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.ozaapp.mobile",
-      "versionCode": 3
+      "package": "com.doc_mobile.online",
+      "versionCode": 1
     },
     "plugins": [
       [
@@ -66,11 +66,6 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "1dc88ff4-100f-4e85-9bf8-ede811cf6767"
-      }
     }
   }
 }

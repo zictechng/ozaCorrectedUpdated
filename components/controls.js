@@ -7,6 +7,7 @@ import {
   Modal,
   Pressable,
   StyleSheet,
+  TouchableOpacity
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { AuthContext } from "../contextAPI/authContext";
@@ -380,6 +381,57 @@ export const ShowLogoutModal = ({
   );
 };
 
+export const LogoutModal = ({
+  openModal,
+  modalTitle,
+  ModalDesc,
+  closeBtn,
+  logoutBtn,
+  modalBgColor,
+  animationType,
+  bntYesText,
+}) => {
+  return (
+    <Modal
+            visible={openModal}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => {
+              // Prevent modal from closing if there is no internet
+            }}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalText}>{modalTitle}</Text>
+                <Text style={styles.modalSubText}>
+                  {ModalDesc}
+                </Text>
+                
+                <View style={{ flexDirection: "row", justifyContent: "space-between", padding: 10,}}>
+                <View style={{ marginRight: 40 }}>
+                  <Pressable style={[styles.button]} onPress={closeBtn}>
+                    <Text style={[styles.textStyle, { color: colors.blackColor1 }]}>
+                      Cancel
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <View style={{ marginLeft: 40 }}>
+                  <Pressable
+                    style={[styles.btn]}
+                    onPress={logoutBtn}>
+                    <Text style={styles.textStyle}>{bntYesText}</Text>
+                  </Pressable>
+                </View>
+                </View>
+               
+
+              </View>
+            </View>
+          </Modal>
+  )
+}
+
 // create logout modal  function here
 export const ShowUpdateModal = ({
   openModal,
@@ -698,7 +750,7 @@ const styles = StyleSheet.create({
     borderWidth:1,
   },
   textStyle: {
-    color: colors.textBlack,
+    color: colors.bannerTextColor,
     fontFamily: "_bold",
     fontSize: 13,
   },
@@ -707,4 +759,45 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: -30,
   },
+
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalSubText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 20,
+  },
+
+  retryButtonText: {
+      color: '#aaa',  // Text color matching border color
+      fontSize: 16,
+    },
+  btn:{
+      paddingVertical: 5,
+      paddingHorizontal: 20,
+      borderRadius:20, 
+      borderColor:colors.bannerTextColor, 
+      borderWidth:0.8, 
+      justifyContent:'center', 
+      alignItems:'center',
+      backgroundColor: "#FF6347",
+    
+      }
 });

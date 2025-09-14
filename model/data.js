@@ -1,21 +1,21 @@
 import React , {useContext, useCallback, useState, useEffect, useMemo, useRef } from 'react';
+import { colors } from '../styles';
 export const sliderData = [
     {
-        title: 'PayPal Funds',
-        desc:'We offer competitive rate for your PayPal! Do not waste your money on low rates with unverified dealers.',
-        bgColor:'#1D2667',
-        image: require('../assets/images/paypal2.png'),
-      },
-    
-    {
       title: 'Payooner',
-      desc:'Our competitive rate is mount watery! Bring in your payoneer funds with instant payout.',
-      bgColor:'#A0DFC6',
+      desc:'Our competitive rate is unbeatable! Bring in your payoneer funds with instant payout.',
+      borderColor:colors.secondaryColor,
       image: require('../assets/images/payooner3.png'),
     },
     {
+      title: 'PayPal Funds',
+      desc:'We offer competitive rate for your PayPal! Do not waste your money on low rates with unverified dealers.',
+      bgColor:'#F0F0F0',
+      image: require('../assets/images/paypal2.png'),
+    },
+    {
         title: 'Awesome Rate with Bitcoin',
-        desc:'Get the best rate when you trade your Bitcoin with us, No better place than mappido',
+        desc:'Get the best rate when you trade your Bitcoin with us, No better place than our platform.',
         bgColor: '#DCF2EA',
         image: require('../assets/images/bitcoin1.png'),
       },

@@ -15,16 +15,14 @@ export default function ShareFriend ({
   return (
     <View style={gs.shareView}>
     <Image source={imageSource} style={imageStyle} />
-          <View style={gs.shareRow}>
-              <View>
+            <View style={gs.shareRow}>
               <Text style={gs.shareText}>{desText}</Text>
+                <View style={{marginRight:10}} >
+                <TouchableOpacity onPress={onPress2}>
+                  {iconType}
+                </TouchableOpacity>
               </View>
-              <View>
-              <TouchableOpacity style={{marginRight:10}} onPress={onPress2}>
-                {iconType}
-              </TouchableOpacity>
-          </View>
-          </View>
+            </View>
           
               <View style={{justifyContent:'center', alignItems:'center'}}>
                   <TouchableOpacity style={shareButtonStyle} onPress={onPress1}>

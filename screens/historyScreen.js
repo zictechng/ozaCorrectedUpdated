@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react';
-import { StyleSheet, View, Text,TouchableOpacity, SafeAreaView, FlatList } from 'react-native';
+import { StyleSheet, View, Text,TouchableOpacity, SafeAreaView, FlatList, ImageBackground } from 'react-native';
 import { useNavigation, useIsFocused} from '@react-navigation/native';
 import * as Animatable from 'react-native-animatable'
 import { gs,colors } from '../styles';
@@ -13,6 +13,7 @@ import client from '../contextAPI/client';
 import { ActivityIndicator } from 'react-native';
 import { NumberValueFormat } from '../components/formatValue';
 import { NumberDollarValueFormat } from '../components/formatDollarValue';
+import bgImage from '../assets/images/app_land2.jpg';
 
 
 const HistoryScreen = ({navigation}) => {
@@ -370,7 +371,7 @@ const handleRefresh = React.useCallback(() => {
   }
 
   return (
-    <View style={{flex:1, backgroundColor:colors.primaryColor2}}>
+    <ImageBackground style={{flex:1,}} source={bgImage} resizeMode='cover'>
         <SafeAreaView style={{flex:1}}>
 
               <StatusBar style='light' />
@@ -468,7 +469,7 @@ const handleRefresh = React.useCallback(() => {
             
 
          </SafeAreaView>
-     </View>
+     </ImageBackground>
   );
 }
 

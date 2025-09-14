@@ -9,6 +9,7 @@ import {Ionicons, Feather, Entypo,} from '@expo/vector-icons';
 import proBg from '../assets/images/refferal_bg5.png';
 import moment from "moment";
 import shareImageBg  from '../assets/images/gift_share.png';
+import bgImage from '../assets/images/app_land2.jpg';
 import ShareFriend from '../components/shareFriends';
 import { AuthContext } from '../contextAPI/authContext';
 import client from '../contextAPI/client';
@@ -79,23 +80,30 @@ const ReferralScreen = () => {
         </View>
       )
     }
+
+    useEffect(() =>{
+      loadReferrals()
+      //_getAppLocalInfo()
+      getData()
+      getDataLocal()
+    },[isFocused])
     
       // get business rate settings from local storage here
       const getData = async () => {
-          try {
-            const value = await AsyncStorage.getItem('businessRate')
-            dataRate = JSON.parse(value)
-            if(dataRate != null) {
-              // value previously stored
-              setBusinessRate(dataRate.appDataRate)
-            }
-            else{
-              setBusinessRate('')
-            }
-          } catch(e) {
-            // error reading value
+        try {
+          const value = await AsyncStorage.getItem('businessRate');
+          const dataRate = JSON.parse(value);
+    
+          if (dataRate != null) {
+            //console.log(dataRate.appDataRate);
+            setBusinessRate(dataRate.appDataRate); // ✅ now defined
+          } else {
+            setBusinessRate('');
           }
+        } catch (e) {
+          console.log(e);
         }
+      };
 
         // get app information from local storage here
         const getDataLocal = async () => {
@@ -114,12 +122,7 @@ const ReferralScreen = () => {
         }
       //console.log('Rate: ', businessRate?.signup_bonus_rate)
 
-    useEffect(() =>{
-      loadReferrals()
-      //_getAppLocalInfo()
-      getData()
-      getDataLocal()
-    },[isFocused])
+   
 
      // function to copy user tag ID and share
      const shareCopyID = async () => {
@@ -143,7 +146,7 @@ const ReferralScreen = () => {
 
   return (
     <ImageBackground style={{flex:1, backgroundColor:colors.primaryColor2}} 
-    source={proBg} resizeMode='cover'>
+    source={bgImage} resizeMode='cover'>
         <SafeAreaView style={{flex:1}}>
 
         <StatusBar style='light' />
@@ -213,7 +216,7 @@ const ReferralScreen = () => {
                     shareButtonText={gs.buttonSellText}
                     buttonLabel={'Share'}
                     desText={`Share with your friends and love once, to earn more money ${'$'+ businessRate?.signup_bonus_rate}`}
-                    iconType={<Ionicons name='close' size={20} color={colors.primaryColor2} />}
+                    iconType={<Ionicons name='close' size={25} color={colors.primaryColor2} />}
                     onPress1={() => shareCopyID()}
                     onPress2={() => closeShareWithFriends()}
                 />

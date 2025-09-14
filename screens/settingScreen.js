@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import {ToastAndroid, View, Text, TextInput, StyleSheet, TouchableOpacity, Switch, SafeAreaView, ScrollView, Platform } from 'react-native';
+import {ToastAndroid, View, Text, TextInput, StyleSheet, TouchableOpacity, Switch, SafeAreaView, ScrollView, Platform, ImageBackground } from 'react-native';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import Modal from "react-native-modal";
 import RBSheet from "react-native-raw-bottom-sheet";
@@ -15,9 +15,10 @@ import client from '../contextAPI/client';
 import { Alert } from 'react-native';
 import { ALERT_TYPE, Dialog, Toast } from 'react-native-alert-notification';
 import { noticeData } from '../components/errorNotice';
-import { GetLocalStorage, ShowLogoutModal, send2FANotification, sendEmailNotification, sendInAppNotification } from '../components/controls';
+import { GetLocalStorage, LogoutModal, ShowLogoutModal, send2FANotification, sendEmailNotification, sendInAppNotification } from '../components/controls';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator } from 'react-native';
+import bgImage from '../assets/images/app_land2.jpg';
 
 
 const SettingScreen = () => {
@@ -421,299 +422,298 @@ const copyToClipboard = async () => {
 };
   return (
     
-        <SafeAreaView style={{flex:1, backgroundColor:colors.primaryColor2}}>
-
-                    {
-                     isFocused &&
-                        <StatusBar
-                        style='light'/>
+        <ImageBackground style={{flex:1,}} source={bgImage} resizeMode='cover'>
+            <SafeAreaView style={{flex:1}}>
+                {
+                isFocused &&
+                    <StatusBar
+                    style='light'/>
+                }
+                {!acctPin &&
+                    <StatusBar
+                    style='light'/>
                     }
-                    {!acctPin &&
-                        <StatusBar
-                        style='light'/>
-                        }
-                    <HeaderMenu 
-                        buttonHome={
-                        <TouchableOpacity onPress={() =>{}}>
-                            <View style={gs.homeSideMenu}>
-                            {/* <Ionicons name='arrow-back' size={23} color={colors.textColor}/> */}
-                         </View>
-                        </TouchableOpacity>
-                        }
-                        titleName={'Settings'}
-                        profileTitle={styles.settingTitle}
-                    />
-                
-                 <View style={{marginBottom:30}}></View>
-                 <View style={{flex:1, backgroundColor:colors.bgColor}}>
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>App Settings</Text>
-                        </View>
-                
-                        <TouchableOpacity style={styles.formPage} onPress={() =>navigation.navigate('contacts')}>
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                                <MaterialIcons name='support-agent' size={25} color={colors.primaryColor2} />
-                                <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Help</Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        <View style={{borderRadius:10, marginHorizontal:10, backgroundColor:colors.textColor, marginTop:20}}>
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between', marginHorizontal:10}}>
-                                <Text style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}}>Account details</Text>
-                                <Pressable style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}} onPress={() => refSellRBSheet.current.open()}><Text>View</Text></Pressable>
-                                
-                            </View>
-
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between', marginHorizontal:10}}>
-                                <Text style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}}>Account type</Text>
-                                <Text style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}}>Virtual</Text>
-                                
-                            </View>
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between', marginHorizontal:10}}>
-                                <Text style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}}>Account ID</Text>
-                                
-                                <View style={{flexDirection:'row'}}>
-                                    <TouchableOpacity onPress={() =>copyToClipboard()}>
-                                        <Ionicons name='copy-outline' size={20} color={colors.primaryColor2} />
-                                    </TouchableOpacity>
-                                    <Text style={{fontFamily:'_regular', fontSize:15, textAlign:'right',color:colors.textColor1}}> {userInfo.userData.tag_id} </Text>
-                                </View>
-                            </View>
-                            
-                        </View>
-
-                        <View style={styles.formPage}>
-                            
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}>
-                                    <View style={{flexDirection:'row'}}>
-                                        <MaterialIcons name='email' size={25} color={colors.primaryColor2} />
-                                        <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Email Notifications</Text>
-                                    </View>
-                                <Switch 
-                                    trackColor={{true: colors.lightGreenColor2}}
-                                    thumbColor={isEmailEnabled ? colors.primaryColor1 : '#f4f3f4'}
-                                    onValueChange={toggleEmailSwitch}
-                                    value={isEmailEnabled}
-                                    
-                                />
-                            </View>
-
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}>
-                                    <View style={{flexDirection:'row'}}>
-                                        <MaterialIcons name='security' size={25} color={colors.primaryColor2} />
-                                        <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>2FA</Text>
-                                    </View>
-                                <Switch 
-                                    trackColor={{true: colors.lightGreenColor2}}
-                                    thumbColor={f2AMode ? colors.primaryColor1 : '#f4f3f4'}
-                                    onValueChange={toggle2FASwitch}
-                                    value={f2AMode}
-                                />
-                                
-                            </View>
-
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}>
-                                    <View style={{flexDirection:'row'}}>
-                                        <MaterialIcons name='notifications-active' size={25} color={colors.primaryColor2} />
-                                        <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>In-App Notifications</Text>
-                                    </View>
-                                <Switch 
-                                    trackColor={{true: colors.lightGreenColor2}}
-                                    thumbColor={isInAppMode ? colors.primaryColor1 : '#f4f3f4'}
-                                    onValueChange={toggleInAppSwitch}
-                                    value={isInAppMode}
-                                />
-                                
-                            </View>
-
-                            <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
-                            onPress={() => navigation.navigate('ResetPassword')}>
-                                    <View style={{flexDirection:'row', marginBottom:10}}>
-                                        <MaterialIcons name='lock' size={25} color={colors.primaryColor2} />
-                                        <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Reset Password</Text>
-                                    </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
-                            onPress={() => openAcctPinModal(true)}>
-                                    <View style={{flexDirection:'row', marginBottom:10}}>
-                                        <Entypo name='flickr-with-circle' size={25} color={colors.primaryColor2} />
-                                        <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Account Pin</Text>
-                                    </View>
-                             </TouchableOpacity>
-
-                             {/* <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
-                             onPress={() =>navigation.navigate('Profile')}>
-                                    <View style={{flexDirection:'row', marginBottom:10}}>
-                                        <Ionicons name='person' size={25} color={colors.primaryColor2} />
-                                        <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Account</Text>
-                                    </View>
-                             </TouchableOpacity> */}
-
-                             <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
-                             onPress={() =>blockNotice()}>
-                                    <View style={{flexDirection:'row', marginBottom:10}}>
-                                        <Entypo name='block' size={25} color={colors.primaryColor2} />
-                                        <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Block Account</Text>
-                                    </View>
-                             </TouchableOpacity>
-
-                            <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
-                            onPress={() =>navigation.navigate('About')}>
-                                    <View style={{flexDirection:'row', marginBottom:10}}>
-                                        <Ionicons name='people' size={25} color={colors.primaryColor2} />
-                                        <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>About Us</Text>
-                                    </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
-                            onPress={() =>navigation.navigate('Privacy_Policy')}>
-                                    <View style={{flexDirection:'row', marginBottom:10}}>
-                                        <MaterialIcons name='privacy-tip' size={25} color={colors.primaryColor2} />
-                                        <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Privacy Policy</Text>
-                                    </View>
-                            </TouchableOpacity>
-             
-                        </View>
-
-                        <TouchableOpacity style={[styles.formPage, {marginBottom:30}]}
-                        onPress={() =>logoutUser()}>
-                            <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                                <MaterialIcons name='logout' size={25} color={colors.primaryColor2} />
-                                <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Log Out</Text>
-                            </View>
-                            
-                        </TouchableOpacity>
-                            <View style={{flex:1, justifyContent:'center', alignItems:'center', marginBottom:20}}>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>{appSettingDetails?.app_version}</Text>
-                                <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>{appSettingDetails?.app_name}</Text>
-                            </View>
-                        
-                        <Modal isVisible={acctPin}
-                            animationIn={'zoomIn'}
-                            animationInTiming={900}
-                            animationOut={'slideOutDown'}
-                            animationOutTiming={700}
-                            backdropOpacity={0.60}>
-                        <View style={styles.dialogView1}>
-                        <View style={styles.dialogView2}>
-                        <Text style={styles.dialogText1}>
-                            Reset PIN
-                        </Text>
-                        <Pressable style={styles.dialogCancelBtn}
-                        onPress={() =>openAcctPinModal(false)}>
-                            <Ionicons name='close' size={20} />
-                        </Pressable>
+                <HeaderMenu 
+                    buttonHome={
+                    <TouchableOpacity onPress={() =>{}}>
+                        <View style={gs.homeSideMenu}>
+                        {/* <Ionicons name='arrow-back' size={23} color={colors.textColor}/> */}
                     </View>
-                        <Text style={styles.dialogText2}>
-                            We recommend that you reset/update your account pin and do not share it with anyone for security reasons.
-                        </Text>
-                
-                        <View style={styles.dialogInputText1}>
-                                <Ionicons name='lock-closed-outline' size={20} color='#666' style={{marginRight:5, marginTop:15, opacity:0.4}} />
-                                <TextInput 
-                                placeholder='Enter Pin' style={{flex:1, }} 
-                                secureTextEntry={userDetails.confirm_secureTextEntry ? true : false}
-                                autoCorrect={false}
-                                value={userDetails.new_pin}
-                                onChangeText={(val) => handleInputChange("new_pin", val)}
-                                />
-                                <TouchableOpacity onPress={updateSecureTextConfirmPassword}>
-                                        
-                                        {userDetails.confirm_secureTextEntry ?
-                                            <Feather
-                                                name="eye-off"
-                                                color="#666"
-                                                size={20}
-                                                style={{marginRight:8, marginTop:15, opacity:0.4}}
-                                            />
-                                            :
-                                            <Feather
-                                                name="eye"
-                                                color="#666"
-                                                size={20}
-                                                style={{marginRight:8, marginTop:15, opacity:0.4}}
-                                            />
-                                        }
-                                </TouchableOpacity>
-                            </View>
-                
-                            <View style={{justifyContent:'center', alignItems:'center', marginBottom:10}}>
-                                <TouchableOpacity style={styles.dialogActionBtn}
-                                onPress={() => resetPinAction()}>
-                                    <Text style={{fontFamily:'_semiBold', fontSize:17, color:colors.primaryColor1, marginTop:4}}>{acctPinLoading? <ActivityIndicator size={25} color={colors.primaryColor1}/>:'Reset'}</Text>
-                                </TouchableOpacity>
-                            </View>
+                    </TouchableOpacity>
+                    }
+                    titleName={'Settings'}
+                    profileTitle={styles.settingTitle}
+                />
 
+                <View style={{marginBottom:30}}></View>
+                <View style={{flex:1, backgroundColor:colors.bgColor}}>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                    <View style={{marginHorizontal:10, marginTop:10}}>
+                        <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Settings</Text>
+                    </View>
+
+                    <TouchableOpacity style={styles.formPage} onPress={() =>navigation.navigate('contacts')}>
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
+                            <MaterialIcons name='support-agent' size={20} color={colors.primaryColor2} />
+                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Help</Text>
                         </View>
-                        </Modal>
+                    </TouchableOpacity>
 
-                        <ShowLogoutModal 
-                        openModal={logoutModalShow}
-                        animationType={'slide'}
-                        modalTitle={'Caution!'}
-                        ModalDesc={'Are you sure you want to logout ?'}
-                        closeBtn={() => closeModal(!logoutModalShow)}
-                        logoutBtn={() => signMeOut()}
-                        modalBgColor={"rgba(0,0,0,0.3)"}
-                        bntYesText={'Logout'}
-                        />
-            </ScrollView>
-        </View>
-                         {/* create custom component and add it */}
-                        <RBSheet
-                            ref={refSellRBSheet}
-                            closeOnDragDown={true}
-                            closeOnPressMask={true}
-                            openDuration={900}
-                            closeDuration={400}
-                            height={350}
-                            closeOnPressBack={true}
-                            keyboardAvoidingViewEnabled={true}
-                            customStyles={{
-                            container:{
-                                backgroundColor: colors.bgColor,
-                            },
-                            draggableIcon: {
-                                backgroundColor: "#000"
-                            }
-                            }}>
+                    <View style={{borderRadius:10, marginHorizontal:10, backgroundColor:colors.textColor, marginTop:20}}>
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between', marginHorizontal:10}}>
+                            <Text style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}}>Account details</Text>
+                            <Pressable style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}} onPress={() => refSellRBSheet.current.open()}><Text>View</Text></Pressable>
                             
-                            <View style={{marginHorizontal: 20}}>
-                                <Text style={{fontFamily:'_semiBold', fontSize:25, color:colors.textBlack}}>Account Details: </Text>
-                                    
-                                <ScrollView showsVerticalScrollIndicator={false}>
-                                        <View style={{paddingVertical:5, marginBottom:20}}>
-                                            <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textSecColor}}>Easily manage your account details on the go</Text>
-                                        </View>
-                                    <View style={styles.accountView}>
-                                        <Text style={styles.accountDetailsTile}>Account Name</Text>
-                                        <Text style={styles.accountDetails}>{userBankInfo?.bank_acct_name}</Text>
-                                    </View>
-                                
-                                    <View style={styles.accountView}>
-                                        <Text style={styles.accountDetailsTile}>Account Number</Text>
-                                        <Text style={styles.accountDetails}>{userBankInfo?.bank_acct_number}</Text>
-                                    </View>
-                                
-                                    <View style={styles.accountView}>
-                                        <Text style={styles.accountDetailsTile}>Bank Name</Text>
-                                        <Text style={styles.accountDetails}>{userBankInfo?.bank_name}</Text>
-                                    </View>
-                                    <View style={styles.accountView}>
-                                        <Text style={styles.accountDetailsTile}>Account PIN</Text>
-                                        <Text style={styles.accountDetails}>{userInfo.userData.acct_cot_pin}</Text>
-                                    </View>
-                                    <View style={[styles.accountView, {marginBottom:30}]}>
-                                        <Text style={styles.accountDetailsTile}>Tag ID</Text>
-                                        <Text style={styles.accountDetails}>{userInfo.userData.tag_id}</Text>
-                                    </View>
-                                </ScrollView>
+                        </View>
+
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between', marginHorizontal:10}}>
+                            <Text style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}}>Account type</Text>
+                            <Text style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}}>Virtual</Text>
+                            
+                        </View>
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between', marginHorizontal:10}}>
+                            <Text style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}}>Customer ID</Text>
+                            
+                            <View style={{flexDirection:'row'}}>
+                                <TouchableOpacity onPress={() =>copyToClipboard()}>
+                                    <Ionicons name='copy-outline' size={20} color={colors.primaryColor2} />
+                                </TouchableOpacity>
+                                <Text style={{fontFamily:'_regular', fontSize:15, textAlign:'right',color:colors.textColor1}}> {userInfo.userData.tag_id} </Text>
                             </View>
-                     </RBSheet>
-              
-</SafeAreaView>
+                        </View>
+                        
+                    </View>
+
+                    <View style={styles.formPage}>
+                        
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}>
+                                <View style={{flexDirection:'row'}}>
+                                    <MaterialIcons name='email' size={20} color={colors.primaryColor2} />
+                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Email Notifications</Text>
+                                </View>
+                            <Switch 
+                                trackColor={{true: colors.primaryColor2}}
+                                thumbColor={isEmailEnabled ? colors.primaryColor1 : '#f4f3f4'}
+                                onValueChange={toggleEmailSwitch}
+                                value={isEmailEnabled}
+                                
+                            />
+                        </View>
+
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}>
+                                <View style={{flexDirection:'row'}}>
+                                    <MaterialIcons name='security' size={20} color={colors.primaryColor2} />
+                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>2FA</Text>
+                                </View>
+                            <Switch 
+                                trackColor={{true: colors.primaryColor2}}
+                                thumbColor={f2AMode ? colors.primaryColor1 : '#f4f3f4'}
+                                onValueChange={toggle2FASwitch}
+                                value={f2AMode}
+                            />
+                            
+                        </View>
+
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}>
+                                <View style={{flexDirection:'row'}}>
+                                    <MaterialIcons name='notifications-active' size={20} color={colors.primaryColor2} />
+                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>In-App Notifications</Text>
+                                </View>
+                            <Switch 
+                                trackColor={{true: colors.primaryColor2}}
+                                thumbColor={isInAppMode ? colors.primaryColor1 : '#f4f3f4'}
+                                onValueChange={toggleInAppSwitch}
+                                value={isInAppMode}
+                            />
+                        </View>
+
+                        <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
+                        onPress={() => navigation.navigate('ResetPassword')}>
+                                <View style={{flexDirection:'row', marginBottom:10}}>
+                                    <MaterialIcons name='lock' size={20} color={colors.primaryColor2} />
+                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Reset Password</Text>
+                                </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
+                        onPress={() => openAcctPinModal(true)}>
+                                <View style={{flexDirection:'row', marginBottom:10}}>
+                                    <Entypo name='flickr-with-circle' size={20} color={colors.primaryColor2} />
+                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Account Pin</Text>
+                                </View>
+                        </TouchableOpacity>
+
+                        {/* <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
+                        onPress={() =>navigation.navigate('Profile')}>
+                                <View style={{flexDirection:'row', marginBottom:10}}>
+                                    <Ionicons name='person' size={25} color={colors.primaryColor2} />
+                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Account</Text>
+                                </View>
+                        </TouchableOpacity> */}
+
+                        <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
+                        onPress={() =>blockNotice()}>
+                                <View style={{flexDirection:'row', marginBottom:10}}>
+                                    <Entypo name='block' size={20} color={colors.primaryColor2} />
+                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Block Account</Text>
+                                </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
+                        onPress={() =>navigation.navigate('About')}>
+                                <View style={{flexDirection:'row', marginBottom:10}}>
+                                    <Ionicons name='people' size={20} color={colors.primaryColor2} />
+                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>About Us</Text>
+                                </View>
+                        </TouchableOpacity>
+
+                        {/* <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
+                        onPress={() =>navigation.navigate('Privacy_Policy')}>
+                                <View style={{flexDirection:'row', marginBottom:10}}>
+                                    <MaterialIcons name='privacy-tip' size={20} color={colors.primaryColor2} />
+                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Privacy Policy</Text>
+                                </View>
+                        </TouchableOpacity> */}
+
+                    </View>
+
+                    <TouchableOpacity style={[styles.formPage, {marginBottom:30}]}
+                    onPress={() =>logoutUser()}>
+                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
+                            <MaterialIcons name='logout' size={25} color={colors.red} />
+                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Log Out</Text>
+                        </View>
+                        
+                    </TouchableOpacity>
+                        <View style={{flex:1, justifyContent:'center', alignItems:'center', marginBottom:20}}>
+                        <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>{appSettingDetails?.app_version}</Text>
+                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>{appSettingDetails?.app_name}</Text>
+                        </View>
+                    
+                    <Modal isVisible={acctPin}
+                        animationIn={'zoomIn'}
+                        animationInTiming={900}
+                        animationOut={'slideOutDown'}
+                        animationOutTiming={700}
+                        backdropOpacity={0.60}>
+                    <View style={styles.dialogView1}>
+                    <View style={styles.dialogView2}>
+                    <Text style={styles.dialogText1}>
+                        Reset PIN
+                    </Text>
+                    <Pressable style={styles.dialogCancelBtn}
+                    onPress={() =>openAcctPinModal(false)}>
+                        <Ionicons name='close' size={20} />
+                    </Pressable>
+                </View>
+                    <Text style={styles.dialogText2}>
+                        We recommend that you reset/update your account pin and do not share it with anyone for security reasons.
+                    </Text>
+
+                    <View style={styles.dialogInputText1}>
+                        <Ionicons name='lock-closed-outline' size={20} color='#666' style={{marginRight:5, marginTop:15, opacity:0.4}} />
+                        <TextInput 
+                        placeholder='Enter Pin' style={{flex:1, }} 
+                        secureTextEntry={userDetails.confirm_secureTextEntry ? true : false}
+                        autoCorrect={false}
+                        value={userDetails.new_pin}
+                        onChangeText={(val) => handleInputChange("new_pin", val)}
+                        />
+                        <TouchableOpacity onPress={updateSecureTextConfirmPassword}>
+                                
+                            {userDetails.confirm_secureTextEntry ?
+                                <Feather
+                                    name="eye-off"
+                                    color="#666"
+                                    size={20}
+                                    style={{marginRight:8, marginTop:15, opacity:0.4}}
+                                />
+                                :
+                                <Feather
+                                    name="eye"
+                                    color="#666"
+                                    size={20}
+                                    style={{marginRight:8, marginTop:15, opacity:0.4}}
+                                />
+                            }
+                        </TouchableOpacity>
+                    </View>
+
+                        <View style={{justifyContent:'center', alignItems:'center', marginBottom:10}}>
+                            <TouchableOpacity style={styles.dialogActionBtn}
+                            onPress={() => resetPinAction()}>
+                                <Text style={{fontFamily:'_semiBold', fontSize:17, color:colors.primaryColor1, marginTop:4}}>{acctPinLoading? <ActivityIndicator size={25} color={colors.primaryColor1}/>:'Reset'}</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                    </View>
+                    </Modal>
+
+                </ScrollView>
+                </View>
+                <LogoutModal 
+                    openModal={logoutModalShow}
+                    modalTitle={'Caution'}
+                    ModalDesc={'Are you sure you want to logout?'}
+                    closeBtn={() => closeModal(!logoutModalShow)}
+                    logoutBtn={() => signMeOut()}
+                    bntYesText={'Logout'}
+                    />
+                    {/* create custom component and add it */}
+                    <RBSheet
+                        ref={refSellRBSheet}
+                        closeOnDragDown={true}
+                        closeOnPressMask={true}
+                        openDuration={900}
+                        closeDuration={400}
+                        height={350}
+                        closeOnPressBack={true}
+                        keyboardAvoidingViewEnabled={true}
+                        customStyles={{
+                        container:{
+                            backgroundColor: colors.bgColor,
+                        },
+                        draggableIcon: {
+                            backgroundColor: "#000"
+                        }
+                        }}>
+                        
+                        <View style={{marginHorizontal: 20}}>
+                            <Text style={{fontFamily:'_semiBold', fontSize:25, color:colors.textBlack}}>Account Details: </Text>
+                                
+                            <ScrollView showsVerticalScrollIndicator={false}>
+                                    <View style={{paddingVertical:5, marginBottom:20}}>
+                                        <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textSecColor}}>Easily manage your account details on the go</Text>
+                                    </View>
+                                <View style={styles.accountView}>
+                                    <Text style={styles.accountDetailsTile}>Account Name</Text>
+                                    <Text style={styles.accountDetails}>{userBankInfo?.bank_acct_name}</Text>
+                                </View>
+                            
+                                <View style={styles.accountView}>
+                                    <Text style={styles.accountDetailsTile}>Account Number</Text>
+                                    <Text style={styles.accountDetails}>{userBankInfo?.bank_acct_number}</Text>
+                                </View>
+                            
+                                <View style={styles.accountView}>
+                                    <Text style={styles.accountDetailsTile}>Bank Name</Text>
+                                    <Text style={styles.accountDetails}>{userBankInfo?.bank_name}</Text>
+                                </View>
+                                <View style={styles.accountView}>
+                                    <Text style={styles.accountDetailsTile}>Account PIN</Text>
+                                    <Text style={styles.accountDetails}>{userInfo.userData.acct_cot_pin}</Text>
+                                </View>
+                                <View style={[styles.accountView, {marginBottom:30}]}>
+                                    <Text style={styles.accountDetailsTile}>Tag ID</Text>
+                                    <Text style={styles.accountDetails}>{userInfo.userData.tag_id}</Text>
+                                </View>
+                            </ScrollView>
+                        </View>
+                </RBSheet>
+
+                </SafeAreaView>
+        </ImageBackground>
+        
         
   );
 }
@@ -838,6 +838,44 @@ dialogCancelBtn:{
         shadowRadius: 0.9,
         elevation: 1, 
         },
+
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        },
+        modalContent: {
+        width: 300,
+        padding: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        alignItems: 'center',
+        },
+        modalText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        },
+        modalSubText: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 20,
+        },
+    
+        retryButtonText: {
+            color: '#aaa',  // Text color matching border color
+            fontSize: 16,
+        },
+        btn:{
+            paddingVertical: 10,
+            paddingHorizontal: 20,
+            borderRadius:20, 
+            borderColor:colors.primaryColor1, 
+            borderWidth:0.8, 
+            justifyContent:'center', 
+            alignItems:'center', 
+            }
 
 });
 

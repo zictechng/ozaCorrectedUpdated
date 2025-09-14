@@ -206,7 +206,7 @@ const LoginScreen = ({navigation}) =>{
                 </View>
                 
             </ScrollView>
-            <View source={appBgLocal} resizeMode='cover' style={{flex:1, backgroundColor:colors.primaryColor1, opacity:0.9}}>
+            <View source={appBgLocal} resizeMode='cover' style={{flex:1,opacity:0.9}}>
                 <View style={{justifyContent:'center', alignItems:'center', margin:20}}>
                 <Text style={gs.loginPageDescTitle}>Don't have an account?</Text>
                 <TouchableOpacity style={{marginTop:5}}

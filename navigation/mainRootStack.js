@@ -384,8 +384,6 @@ const MainRootStack = ({navigation}) =>{
         component={UploadPaymentProof}
         />
         </Stack.Group>
-        
-        
     </Stack.Navigator>
   );
 }

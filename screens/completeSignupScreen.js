@@ -300,7 +300,7 @@ return (
                         <Text></Text>
                         <TouchableOpacity onPress={() =>navigation.navigate('SignupSteps')}>
                             <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                            <Ionicons name='close-outline' size={25} color={colors.textColor}/>
+                            <Ionicons name='close-outline' size={25} color={colors.blackColor1}/>
                             </View>
                             </TouchableOpacity>
 
@@ -322,7 +322,7 @@ return (
                     <View style={{flex:1, backgroundColor:colors.bgColor}}>
                         <ScrollView contentContainerStyle={{flexGrow:1}} showsVerticalScrollIndicator={false}>
                             <View style={{marginHorizontal:10, marginTop:10}}>
-                                <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Complete Registration</Text>
+                                <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Complete Registration</Text>
                             </View>
 
                             <View style={{marginHorizontal:15, marginTop:10}}>

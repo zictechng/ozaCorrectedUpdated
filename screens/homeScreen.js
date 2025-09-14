@@ -19,8 +19,7 @@ import Collapsible from 'react-native-collapsible';
 //import { StatusBar } from 'expo-status-bar';
 import { Ionicons, Feather, Entypo } from '@expo/vector-icons';
 import { gs, colors } from '../styles';
-import { PaymentIcon } from 'react-native-payment-icons';
-import background from '../assets/images/sec1.png';
+import background from '../assets/images/sec3.png';
 const { width } = Dimensions.get('window');
 import {windowWidth } from '../utils/Dimensions'
 import BannerSlider from '../components/BannerSlider';
@@ -39,6 +38,7 @@ import HeaderMenu from '../components/headerMenu';
 import { AuthContext } from '../contextAPI/authContext';
 import * as Updates from 'expo-updates';
 import FirstWord from '../components/firstWord';
+import { getGreeting } from '../components/getGreeting';
 import { 
     AppModeModal,
     CheckRegistrationStage,  
@@ -455,6 +455,7 @@ const HomeScreen = ({navigation}) =>{
                  'Authorization': 'Bearer '+userToken,
                      }
              })
+             console.log(recentChart)
              if(recentChart.data.msg =='201'){
               let result = recentChart.data;
               
@@ -465,7 +466,7 @@ const HomeScreen = ({navigation}) =>{
               
               }
                 const objArr = recentChart.data;
-                //console.log(objArr.bitcoin.length)
+                console.log(objArr)
                 if(objArr.paypal.length < 1 && objArr.payoneer.length < 1 && objArr.bitcoin.length < 1) {
                 setHomeChartDisplay(true);    
                 }
@@ -577,15 +578,13 @@ const HomeScreen = ({navigation}) =>{
                 {!appMode &&
                 <>
                  <HeaderMenu 
-                buttonHome={
-                        <Text style={styles.loginTitle}>Hi {myName},</Text>
-                        }
-                // bell notification icon
-                    // buttonLeft={<TouchableOpacity style={gs.homeSideMenu} onPress={() =>navigation.navigate('Message')} >
-                    // <Feather name='bell' size={20} color={colors.textColor}/>
-                    //     {notifications > 0 && 
-                    // <View style={{position: "absolute", top: -1, right: -10, marginRight: 10, borderRadius:50, backgroundColor: colors.greenColor, width:8, height:8}}></View>}
-                    // </TouchableOpacity>}
+                 buttonHome={<TouchableOpacity style={gs.homeSideMenu} onPress={() =>navigation.navigate('profile')} >
+                 <Feather name='user' size={27} color={colors.primaryColor1}/>
+                     {/* {notifications > 0 && 
+                 <View style={{position: "absolute", top: -1, right: -10, marginRight: 10, borderRadius:50, backgroundColor: colors.greenColor, width:8, height:8}}></View>} */}
+                 </TouchableOpacity>}
+
+                 greeting={<Text style={{ fontSize: 12, fontFamily:'_regular' }}>{getGreeting(myName)}</Text>}
                 />
                 
                 <View style={[styles.LoginDivTitle, {marginHorizontal:20}]}>
@@ -619,12 +618,9 @@ const HomeScreen = ({navigation}) =>{
                             </View>
                             <View style={{flexDirection:'column', marginTop:10}}>
                                 <View style={{marginHorizontal:15, flexDirection:'row', justifyContent:'flex-end', marginTop:20}}>
-                                    {/* <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.textColor}}>Accepted</Text>
-                                    <PaymentIcon type='master' width={30}/> */}
+                                    
                                 </View>
-                                {/* <View style={{justifyContent:'center', alignItems:'center', padding:15}}>
-                                    <Text style={{color:'#fff', fontFamily:'_semiBold', fontSize:14}}>Bonus: <NumberDollarValueFormat value={userInfo.userData?.signup_account}/></Text>
-                                </View> */}
+                                
                             <View style={{marginHorizontal:15, flexDirection:'row', justifyContent:'flex-end'}}>
                             <TouchableOpacity style={styles.actionButtonMoreBar} onPress={() =>refMoreRBSheet.current.open()}>
                             <Text><Ionicons name='ellipsis-vertical'
@@ -632,11 +628,10 @@ const HomeScreen = ({navigation}) =>{
                             color='#ffffff'/></Text>
                             </TouchableOpacity>
                             </View>
-                            
                             </View>
                             </View>                                 
                             
-                             </ImageBackground>
+                        </ImageBackground>
                         
                         </View>
 
@@ -645,25 +640,49 @@ const HomeScreen = ({navigation}) =>{
                     </View>
 
                     {/* action buttons */}
-                    <View style={styles.actionButtonView}>
-                        
-                        <TouchableOpacity style={styles.actionButton} onPress={() => refSellRBSheet.current.open()}>
-                            <Text style={styles.buttonSellText}>Sell</Text>
-                        </TouchableOpacity>
+                    
+                    <View style={styles.actionRowButton}>
+                        <View style={styles.buttonRow}>
+                            {/* SELL Button */}
+                            <TouchableOpacity style={styles.actionButton} onPress={() => refSellRBSheet.current.open()}>
+                                <Text style={styles.buttonSellText}>Sell</Text>
+                            </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.actionButtonBuy} onPress={() => refBuyRBSheet.current.open()}>
-                            <Text style={styles.buttonBuyText}>Buy</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={styles.actionButtonMore} onPress={() =>refMoreRBSheet.current.open()}>
-                            <Text style={styles.buttonAddText}><Ionicons name='ellipsis-horizontal'/></Text>
-                        </TouchableOpacity>
-
-                       
+                            <TouchableOpacity style={styles.actionButtonBuy} onPress={() => refBuyRBSheet.current.open()}>
+                                <Text style={styles.buttonBuyText}>Buy</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
-                      {/* Chart data goes here */}
-                    <View style={[styles.recentTranView, {marginTop: 15, marginHorizontal:15}]}>
+                     {/* recent transaction */}
+                    <View style={styles.recentTranView}>
+                        <Text style={styles.recentTranText}>Transactions</Text>
+                        {}<TouchableOpacity onPress={() =>navigation.navigate('History')}>
+                            <Ionicons name="chevron-forward-circle-sharp" size={30} color={colors.primaryColor1} />
+                        </TouchableOpacity>
+                    </View>
+
+                     {/* <Text style={styles.recentChartText}>Transactions Flow</Text>
+                        <View style={styles.chartView}>
+                            <ChartData />
+                        </View> */}
+
+                    {/* slider images and text */}
+                    <View style={{marginVertical: 10,}}>
+                        
+                    </View>
+                   
+                    <Carousel 
+                        ref={carouselRef}
+                        data={sliderData }
+                        renderItem={renderBanner}
+                        sliderWidth={windowWidth -40} // - 40 means subtract 20 from left margin, 20 from right margin
+                        itemWidth={280}
+                        loop={true}
+                    />
+
+                     {/* Chart data goes here */}
+                     <View style={[styles.recentTranView, {marginTop: 15, marginHorizontal:5}]}>
                         <Text style={styles.recentTranText}>Transactions Flow</Text>
                         {!homeChartDisplay &&
                         <TouchableOpacity onPress={() => openCollapsedState()}>
@@ -707,42 +726,6 @@ const HomeScreen = ({navigation}) =>{
                         <PopulationPyramid data = {[{left:10,right:12}, {left:9,right:8}]} /> */}
 
                         </View>}
-                     {/* Chart data goes here */}
-                     {/* <Text style={styles.recentChartText}>Transactions Flow</Text>
-                        <View style={styles.chartView}>
-                            <ChartData />
-                        </View> */}
-
-                    {/* slider images and text */}
-                    <View style={{marginVertical: 10,}}>
-                        {/* <View style={{backgroundColor:colors.lightGreenColor2, height:130, borderRadius:10}}>
-                            <View style={{flexDirection:'row', marginTop: 5, marginHorizontal:5, alignItems:'center'}}>
-                                <Image source={productImage} style={{borderRadius:10, width:50, height:50}} />
-                                <Text style={{marginLeft: 5, fontFamily:'_semiBold', fontSize:14}}>Awesome Rate with Bitcoin </Text>
-                            </View>
-                            <View style={{marginVertical:5, marginHorizontal:8}}>
-                                <Text style={{marginLeft: 5, fontFamily:'_regular', fontSize:12}}>Enjoy amazing rate with your bitcoin sale with us selling your bitcoin, No better place than mappido </Text>
-                            </View>
-                            
-                        </View> */}
-                    </View>
-                   
-                    <Carousel 
-                        ref={carouselRef}
-                        data={sliderData }
-                        renderItem={renderBanner}
-                        sliderWidth={windowWidth -40} // - 40 means subtract 20 from left margin, 20 from right margin
-                        itemWidth={280}
-                        loop={true}
-                    />
-
-                    {/* recent transaction */}
-                    <View style={styles.recentTranView}>
-                        <Text style={styles.recentTranText}>Transactions</Text>
-                        {}<TouchableOpacity onPress={() =>navigation.navigate('History')}>
-                            <Ionicons name="chevron-forward-circle-sharp" size={30} color={colors.primaryColor1} />
-                        </TouchableOpacity>
-                    </View>
                     <View>
                         
                     </View>
@@ -811,7 +794,7 @@ const HomeScreen = ({navigation}) =>{
                             <View style={{justifyContent:'center', alignItems:'center', marginBottom:50, marginTop:8}}>
                         
                             <TouchableOpacity onPress={() => navigation.navigate('SignupSteps')}
-                                    style={{borderRadius:50, borderColor:colors.greenColor, width:90, height:40, borderWidth:1, justifyContent:'center', alignItems:'center', marginBottom:40}}>
+                                    style={{borderRadius:50, borderColor:colors.textBlack, width:90, height:40, borderWidth:1, justifyContent:'center', alignItems:'center', marginBottom:40}}>
                                     <Text style={{color:colors.blackColor1, fontFamily:'_semiBold', fontSize:14}}>Okay</Text>
                             </TouchableOpacity>
                         </View>
@@ -925,9 +908,9 @@ const HomeScreen = ({navigation}) =>{
                         titleText={'More'}
                         titleStyle={{fontFamily:'_semiBold', fontSize:25, color:colors.textBlack}}
                         buttonStyle={styles.bottomSheetButton}
-                        iconType1={<Feather name='plus-circle' style={{fontSize:20}} />}
-                        iconType2={<Feather name='minus-circle' style={{fontSize:20}} />}
-                        iconType3={<Ionicons name='wallet-outline' style={{fontSize:20}} />}
+                        iconType1={<Feather name='plus-circle' style={{fontSize:20, color:colors.primaryColor2}} />}
+                        iconType2={<Feather name='minus-circle' style={{fontSize:20, color:colors.primaryColor2}} />}
+                        iconType3={<Ionicons name='wallet-outline' style={{fontSize:20, color:colors.primaryColor2}} />}
                         imageStyle={styles.bottomSheetImageStyle}
                         buttonTextStyle={styles.bottomSheetButtonText}
                         buttonLabel_paypal={'Fund Account'}
@@ -971,18 +954,6 @@ const HomeScreen = ({navigation}) =>{
 
                 {/* show if user profile is not complete */}
                 
-
-                {/* Call Logout modal function */}
-                <ShowLogoutModal 
-                    openModal={logoutModal}
-                    animationType={'fade'}
-                    modalTitle={'Caution!'}
-                    ModalDesc={'Are you sure you want to logout ?'}
-                    closeBtn={() => closeModal(!logoutModal)}
-                    logoutBtn={() => signMeOut()}
-                    modalBgColor={"rgba(0,0,0,0.5)"}
-                    bntYesText={'Logout'}
-                />
                  </>
                 }
 
@@ -1012,6 +983,55 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       justifyContent: 'center',
     },
+
+    actionRowButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 15, 
+        backgroundColor: colors.textColor, 
+        marginTop: 30, 
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.5,
+        shadowRadius: 0.5,
+        elevation: 1,
+        marginBottom:10,
+        
+      },
+      
+      buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 10, // space between buttons
+        height:50,
+        alignItems:'center',
+      },
+      
+      button: {
+        flex: 1, // both buttons take equal width
+        alignItems: 'center',
+        justifyContent: 'center', // center text vertically
+        paddingVertical: 12,
+        borderRadius: 8,
+      },
+      
+      sellButton: {
+        borderWidth: 1,
+        borderColor: colors.greenColor,
+        backgroundColor: 'transparent',
+      },
+      
+      buyButton: {
+        backgroundColor: colors.greenColor,
+      },
+      
+      buttonText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        textAlign: 'center', // correct property
+        margin: 0, // remove left margin
+      },
+
     closeBnt:{
         borderRadius:50, 
         borderWidth:2, 
@@ -1050,7 +1070,7 @@ const styles = StyleSheet.create({
       balanceTitle:{
         fontFamily:'_semiBold', 
         fontSize:15, 
-        color:colors.textSecColor
+        color:colors.bannerTextColor
     },
     amtStyle:{
         fontFamily:'_bold', 
@@ -1070,7 +1090,7 @@ const styles = StyleSheet.create({
     },
     actionButton:{
         width:95, 
-        height:45, 
+        height:35, 
         borderRadius:50, 
         backgroundColor:colors.primaryColor1, 
         justifyContent:'center', 
@@ -1079,12 +1099,14 @@ const styles = StyleSheet.create({
     },
     actionButtonBuy:{
         width: 95,
-        height:45, 
+        height:35, 
         borderRadius:50, 
-        backgroundColor:colors.greenColor, 
         justifyContent:'center', 
         alignItems:'center', 
-        marginRight:5
+        marginRight:5,
+        borderWidth: 1,
+        borderColor: colors.secondaryColor,
+        backgroundColor: 'transparent',
     },
     actionButtonAdd:{
         width:90,
@@ -1142,7 +1164,7 @@ const styles = StyleSheet.create({
         fontFamily:'_semiBold', 
         fontSize:17, 
         marginLeft:15, 
-        color:colors.primaryColor1
+        color:colors.textBlack
     },
     buttonSellText:{
         color:colors.textColor, 
@@ -1160,7 +1182,7 @@ const styles = StyleSheet.create({
         fontSize:15
     },
     buttonBuyText:{
-        color:colors.textColor,
+        color:colors.blackColor2,
         fontFamily:'_semiBold', 
         fontSize:15
     },
@@ -1196,6 +1218,7 @@ const styles = StyleSheet.create({
         fontFamily:'_bold', 
         fontSize:17, 
         color:'#333', 
+        
      },
      loginTitleDesc:{
         fontFamily:'_regular',  
@@ -1228,12 +1251,13 @@ const styles = StyleSheet.create({
         justifyContent:'space-between', 
         flexDirection:'row', 
         marginBottom: 10, 
-        marginTop: 50
+        marginTop: 40,
+        marginHorizontal:5,
     },
     recentTranText:{
         fontFamily:'_regular', 
-        fontSize:14, 
-        color:colors.lightBg
+        fontSize:15, 
+        color:colors.fadeText
     },
     historyMainView:{
         flex: 1, 

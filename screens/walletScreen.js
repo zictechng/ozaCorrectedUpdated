@@ -1,12 +1,12 @@
 import React, { useContext, useState, useEffect, useRef }  from 'react';
-import { Dimensions , StyleSheet, View, Text, TextInput, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, RefreshControl } from 'react-native';
+import { Dimensions , StyleSheet, View, Text, TextInput, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, RefreshControl,ActivityIndicator } from 'react-native';
 import { gs,colors } from '../styles';
 import { useIsFocused } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { Feather, Ionicons,} from '@expo/vector-icons';
 import moment from "moment";
 import {windowWidth } from '../utils/Dimensions'
-import background from '../assets/images/money_ex.png';
+import bgImage from '../assets/images/app_land2.jpg';
 import { PaymentIcon } from 'react-native-payment-icons';
 import { NumberValueFormat } from '../components/formatValue';
 import WalletChartData from '../model/walletChartData';
@@ -14,7 +14,7 @@ import { AuthContext } from '../contextAPI/authContext';
 import client from '../contextAPI/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BarChart, LineChart, PieChart, PopulationPyramid } from "react-native-gifted-charts";
-import { ActivityIndicator } from 'react-native';
+import Collapsible from 'react-native-collapsible';
 
 import Carousel from 'react-native-snap-carousel';
 import { NumberDollarValueFormat } from '../components/formatDollarValue';
@@ -33,16 +33,26 @@ const WalletScreen = ({navigation}) => {
     const [withdrawTotalBalance, setWithdrawTotalBalance] = useState({})
     const [isRefreshing, setIsRefreshing] = useState(false);
 
+    const [homeChartDisplay, setHomeChartDisplay] = useState(false);
+    const [dataOption, setDataOption] = useState([]);
+    const [dataPayoneer, setDataPayoneer] = useState([]);
+    const [dataBitcoin, setDataBitcoin] = useState([]);
+    const [isCollapsed, setIsCollapsed] = useState(true);
+
     const [weeklyData, setWeeklyData] = useState('');
     const [monthlyData, setMonthlyData] = useState('');
     const [yearlyData, setYearlyData] = useState('');
     const [chartLoading, setChartLoading] = useState(false);
+    const [chartDataLoading, setChartDataLoading] = useState(false);
     const [chartDetails, setChartDetails] = useState(false);
 
     const carouselRef = useRef(null);
     const [activeIndex, setActiveIndex] = useState(0);
     //console.log("Active Slider", activeIndex)
-
+    // open collapsed state
+    const openCollapsedState = ()=>{
+      setIsCollapsed(!isCollapsed)
+    }
     const dataWallet = [
       { id: 1, 
         title: 'Current Funding Balance', 
@@ -78,6 +88,63 @@ const WalletScreen = ({navigation}) => {
         alert('Sorry, something went wrong!')
       }
     }
+
+    useEffect(() =>{
+      fetchDataChart()
+      //walletID()
+    },[])
+
+    // fetch chart data
+           const fetchDataChart = async()=>{
+            myId = userInfo.userData._id
+            if(myId == '' || myId == null){
+             //console.log('Access denied')
+             return console.log('Access denied')
+            }
+             try{
+              setChartDataLoading(true)
+             const recentChart = await client.get('/api/chart_transactions/'+myId,{
+                 headers: {
+                     'Authorization': 'Bearer '+userToken,
+                         }
+                 })
+                 console.log('Data 1 ', result)
+                 if(recentChart.data.msg =='201'){
+                  let result = recentChart.data;
+                  console.log('Data ', result)
+                  const objArr = recentChart.data; 
+                  setDataOption(objArr.paypal[0]?.totalAmount) 
+                  setDataPayoneer(objArr.payoneer[0]?.totalAmount)
+                  setDataBitcoin(objArr.bitcoin[0]?.totalAmount)
+                  
+                  }
+                    const objArr = recentChart.data;
+                    console.log(objArr.paypal.length)
+                    if(objArr.paypal.length < 1 && objArr.payoneer.length < 1 && objArr.bitcoin.length < 1) {
+                    setHomeChartDisplay(true);    
+                    }
+                    if(objArr.paypal.length > 0 || objArr.payoneer.length > 0 || objArr.bitcoin.length > 0) {
+                    setHomeChartDisplay(false);    
+                    }
+          
+                 else if(recentChart.data.status == '402'){
+                     //console.log('Login failed')
+                     return
+                 }
+                 else if(recentChart.data.status == '404'){
+                     console.log('No chart data ',)
+                  }
+                 else{
+                     console.log('chart balance')
+                 }
+                 }catch (e){
+                 console.log(e.message);
+                 }
+                 finally{
+                  setChartDataLoading(false);
+                 }
+          
+             }
     // fetching all history base on paypal transaction with pagination
     const getWalletHistory = async() =>{
          setIsLoading(true);
@@ -166,7 +233,7 @@ const WalletScreen = ({navigation}) => {
   }
 
   // get latest transaction details
-const fetchData = async()=>{
+    const fetchData = async()=>{
   myId = userInfo.userData._id
   if(myId == '' || myId == null){
    console.log('Access denied')
@@ -188,10 +255,10 @@ const fetchData = async()=>{
         setYearlyData(result.yearly)
          //console.log('Yes ', result.yearly) 
          if(result.weekly == '0' && result.monthly == '0' && result.yearly == '0') {
-          setChartDetails(true);
+          setHomeChartDisplay(true);
          } 
          else if(result.weekly != '0' || result.monthly != '0' || result.yearly != '0' ) {
-          setChartDetails(false);
+          setHomeChartDisplay(false);
          } 
        }
        else if(recentChart.data.status == '402'){
@@ -212,13 +279,14 @@ const fetchData = async()=>{
         setChartLoading(false);
        }
        
-   }
+    }
 
    useEffect(() =>{
     getWalletBalance()
     getWalletHistory();
     RefreshUserDetails();
     fetchData()
+    fetchDataChart()
     //walletID()
   },[isFocused])
    //console.log('Weekly ', weeklyData)
@@ -233,6 +301,10 @@ const fetchData = async()=>{
         setIsRefreshing(false);
         }, 1000);
       }, []);
+
+
+       //xAxisLabelTexts={['PayPal', 'Payoneer', 'Bitcoin']}
+       const dataChart=[{value:dataOption == null ? 0 : dataOption, label: 'PayPal'}, {value:dataPayoneer == null ? 0:  dataPayoneer, label:'Payoneer'}, {value:dataBitcoin == null ? 0 : dataBitcoin, label:'Bitcoin'}]
 
 
       const renderItem = ({ item }) => (
@@ -271,7 +343,7 @@ const fetchData = async()=>{
       const data=[{value:weeklyData == '0' ? 0: weeklyData, label: 'Weekly'}, {value:monthlyData == '0'? 0: monthlyData, label:'Monthly'}, {value:yearlyData == '0' ? 0 : yearlyData, label:'Yearly'}]
          
   return (
-    <View style={{flex:1, backgroundColor:colors.primaryColor2}}>
+    <ImageBackground style={{flex:1}} source={bgImage} resizeMode='cover'>
         <SafeAreaView style={{flex:1}}>
 
         <StatusBar style='light' />
@@ -444,12 +516,59 @@ const fetchData = async()=>{
                           </View>                          
                   </View>
                 }
+
+
+                 {/* Chart data goes here */}
+                  <View style={[styles.recentTranView, {marginTop: 15, marginHorizontal:5}]}>
+                    <Text style={styles.recentTranText}>Transactions Flow</Text>
+                    {!homeChartDisplay &&
+                    <TouchableOpacity onPress={() => openCollapsedState()}>
+                        <View style={{width:50, height:50, justifyContent:'center', alignItems:'center', marginTop:-15}}>
+                          {isCollapsed ? <Ionicons name="stats-chart-sharp" size={20} color={colors.primaryColor1} />: <Ionicons name="stats-chart-sharp" size={20} color={colors.textSecColor} />}
+                        </View>
+                    
+                    </TouchableOpacity> }
+                </View>
+                    <Collapsible collapsed={isCollapsed}>
+                          <View style={{marginTop:10, borderColor: '#dededc', marginBottom:5}}>
+                              <View style={styles.chartView}>
+                                {chartDataLoading ? <ActivityIndicator size={'large'} color={colors.primaryColor1} />:
+                                <BarChart
+                                    key={'xyz'}
+                                    hideRules={true}
+                                    barBorderTopLeftRadius ={5}
+                                    barBorderTopRightRadius ={5}
+                                    xAxisColor ="lightgrey"
+                                    frontColor="#1D2667"
+                                    yAxisColor ="lightgrey"
+                                    noOfSections={5}
+                                    height={250}
+                                    spacing={25}
+                                    isAnimated ={true}
+                                    animationDuration={800}
+                                    animationEasing={'Easing.ease'}
+                                    barWidth={41}
+                                    data = {dataChart}
+                                    xAxisLabelTextStyle={styles.chartText}
+                                />
+                                }
+                            </View>    
+                        </View>
+                              
+                    </Collapsible>
+                    {isCollapsed &&<View style={{marginTop:20}}>
+                    
+                    {/* <LineChart data = {data} />
+                    <PieChart data = {data} />
+                    <PopulationPyramid data = {[{left:10,right:12}, {left:9,right:8}]} /> */}
+
+                    </View>}
                   
               </ScrollView> 
             </View>
 
     </SafeAreaView>
-     </View>     
+     </ImageBackground>     
   );
 }
     
@@ -462,6 +581,24 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       justifyContent: 'center',
     },
+    chartText:{
+      fontFamily:'_regular', 
+      fontSize:14, 
+      color:colors.darkBg
+  },
+    recentTranView:{
+      flex: 1, 
+      justifyContent:'space-between', 
+      flexDirection:'row', 
+      marginBottom: 10, 
+      marginTop: 40,
+      marginHorizontal:5,
+  },
+  recentTranText:{
+      fontFamily:'_regular', 
+      fontSize:15, 
+      color:colors.fadeText
+  },
     chartText:{
       fontFamily:'_regular', 
       fontSize:14, 
