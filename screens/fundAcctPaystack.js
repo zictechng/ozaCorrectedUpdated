@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect, useRef }  from 'react';
-import { Animated, View, Text, SafeAreaView, TouchableOpacity, StyleSheet, StatusBar, ActivityIndicator, Image } from 'react-native';
+import { Animated, View, Text, TouchableOpacity, StyleSheet, StatusBar, ActivityIndicator, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import HeaderMenu from '../components/headerMenu';
 import { Ionicons } from '@expo/vector-icons';
 import { gs, colors } from "../styles";

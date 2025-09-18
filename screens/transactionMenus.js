@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, ImageBackground} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import Modal from "react-native-modal";
 import { MaterialIcons, Ionicons} from '@expo/vector-icons';

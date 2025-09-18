@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons, Feather, Entypo, MaterialCommunityIcons, FontAwesome5} from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable'
 import { gs,colors } from '../styles';

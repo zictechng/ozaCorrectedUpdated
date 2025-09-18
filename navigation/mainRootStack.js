@@ -377,6 +377,14 @@ const MainRootStack = ({navigation}) =>{
         />
         </Stack.Group>
 
+        {/* <Stack.Group screenOptions={{ animation: 'slide_from_right'}}>
+        <Stack.Screen 
+        screenOptions={{animation: 'slide_from_right'}}
+        name='camera'
+        component={OpenCamera}
+        />
+        </Stack.Group> */}
+
         <Stack.Group screenOptions={{ animation: 'slide_from_right'}}>
         <Stack.Screen 
         screenOptions={{animation: 'slide_from_right'}}

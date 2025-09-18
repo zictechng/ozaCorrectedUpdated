@@ -241,8 +241,7 @@ export const gs = StyleSheet.create({
       homeHeaderRow:{
         backgroundColor:'transparent', 
         marginTop:Platform.OS ==='ios'? 10 : 40, 
-        
-        marginHorizontal:15
+        marginHorizontal:10
       },
       homeSideMenu:{
         borderRadius: 50, 

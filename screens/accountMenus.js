@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Share, TouchableOpacity, SafeAreaView, ScrollView , Platform, ToastAndroid, ImageBackground} from 'react-native';
+import { View, Text, StyleSheet, Share, TouchableOpacity, ScrollView , Platform, ToastAndroid, ImageBackground} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { FontAwesome6, Ionicons, Entypo, AntDesign} from '@expo/vector-icons';
 

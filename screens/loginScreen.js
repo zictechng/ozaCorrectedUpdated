@@ -1,5 +1,6 @@
 import React , {useContext, useCallback, useState, useEffect } from 'react';
-import { Platform,Dimensions, View, Text, TextInput, StyleSheet, SafeAreaView, ScrollView, TouchableWithoutFeedback, Keyboard, TouchableOpacity, StatusBar} from 'react-native';
+import { Platform,Dimensions, View, Text, TextInput, StyleSheet, ScrollView, TouchableWithoutFeedback, Keyboard, TouchableOpacity, StatusBar} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';

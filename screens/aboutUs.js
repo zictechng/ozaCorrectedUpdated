@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, StyleSheet, View, Text, TextInput, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, ActivityIndicator } from 'react-native';
+import { Platform, StyleSheet, View, Text, TextInput, TouchableOpacity,  ScrollView, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { gs,colors } from '../styles';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';

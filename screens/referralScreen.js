@@ -1,5 +1,6 @@
 import React, { useContext,useState, useEffect } from 'react';
-import { ToastAndroid, Alert, ActivityIndicator, FlatList, StyleSheet, View, Text, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, Platform } from 'react-native';
+import { ToastAndroid, Alert, ActivityIndicator, FlatList, StyleSheet, View, Text, TouchableOpacity, ImageBackground, ScrollView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { gs,colors } from '../styles';
 import * as Clipboard from 'expo-clipboard';
 import { StatusBar } from 'expo-status-bar';

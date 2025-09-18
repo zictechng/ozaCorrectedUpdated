@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react';
-import { StyleSheet, View, Text,TouchableOpacity, SafeAreaView, FlatList, ImageBackground } from 'react-native';
+import { StyleSheet, View, Text, RefreshControl, TouchableOpacity, FlatList, ImageBackground } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused} from '@react-navigation/native';
 import * as Animatable from 'react-native-animatable'
 import { gs,colors } from '../styles';
@@ -38,7 +39,9 @@ const HistoryScreen = ({navigation}) => {
       const [isListEndPaypal, setIsListEndPaypal] = useState();
       const [isListEndPayooner, setIsListEndPayooner] = useState();
       const [category, setCategory] = useState(1);
-      const [isRefreshing, setIsRefreshing] = useState(false);
+      const [isRefreshAll, setIsRefreshAll] = useState(false);
+      const [isRefreshPaypal, setIsRefreshPaypal] = useState(false);
+      const [isRefreshPayooner, setIsRefreshPayooner] = useState(false);
       
       //check which button was clicked
       const checkBtnClicked = (value) =>{
@@ -315,26 +318,26 @@ useEffect(() =>{
 },[isFocused, isPaypalLoading, isPayoonerLoading])
 
 const handleRefreshPaypal = React.useCallback(() => {
-  setIsRefreshing(true);
+  setIsRefreshPaypal(true);
   paypalHistory()
   setTimeout(() => {
-  setIsRefreshing(false);
+  setIsRefreshPaypal(false);
   }, 2000);
 }, []);
 
 const handleRefreshPayoneer = React.useCallback(() => {
-  setIsRefreshing(true);
+  setIsRefreshPayooner(true);
   payoonerHistory()
   setTimeout(() => {
-  setIsRefreshing(false);
+  setIsRefreshPayooner(false);
   }, 2000);
 }, []);
 //page refreshing function goes here
 const handleRefresh = React.useCallback(() => {
-  setIsRefreshing(true);
+  setIsRefreshAll(true);
   loadMessages()
   setTimeout(() => {
-  setIsRefreshing(false);
+    setIsRefreshAll(false);
   }, 2000);
 }, []);
 
@@ -427,8 +430,17 @@ const handleRefresh = React.useCallback(() => {
                           onEndReached={loadMessages}
                           onEndReachedThreshold={0.5}
                           showsVerticalScrollIndicator={false}
-                          refreshing={isRefreshing}
-                          onRefresh={handleRefresh}
+                          // refreshing={isRefreshAll}
+                          // onRefresh={handleRefresh}
+                          refreshControl={
+                            <RefreshControl
+                              refreshing={isRefreshAll}
+                              onRefresh={handleRefresh}
+                              tintColor='#7f8cda'             // iOS color
+                                colors={['#7f8cda']}             // Android color
+                                progressBackgroundColor={colors.primaryColor2}
+                            />
+                          }
                           />}
                             
                             {category == 2 &&
@@ -439,19 +451,35 @@ const handleRefresh = React.useCallback(() => {
                             onEndReached={paypalHistory}
                             onEndReachedThreshold={0.5}
                             //ListEmptyComponent={paypalEmptyList}
-                            refreshing={isRefreshing}
-                            onRefresh={handleRefreshPaypal}
+                            
+                            refreshControl={
+                              <RefreshControl
+                                refreshing={isRefreshPaypal}
+                                onRefresh={handleRefreshPaypal}
+                                tintColor={colors.primaryColor2}             // iOS color
+                                colors={[colors.primaryColor2]}             // Android color
+                                progressBackgroundColor={colors.primaryColor2}
+                              />
+                            }
                             />}
                             {category == 3 &&
                             <FlatList 
                             data={fetchPayoonerData}
                             renderItem={payoonerHistorySheet}
                             //ListFooterComponent={payoonerRenderFooter}
-                            onEndReached={paypalHistory}
+                            onEndReached={payoonerHistory}
                             onEndReachedThreshold={0.5}
                             //ListEmptyComponent={paypalEmptyList}
-                            refreshing={isRefreshing}
-                            onRefresh={handleRefreshPayoneer}
+                            
+                            refreshControl={
+                              <RefreshControl
+                                refreshing={isRefreshPayooner}
+                                onRefresh={handleRefreshPayoneer}
+                                tintColor={colors.primaryColor2}             // iOS color
+                                colors={[colors.primaryColor2]}             // Android color
+                                progressBackgroundColor={colors.primaryColor2}
+                              />
+                            }
                             />}
 
                             {!isLoading && category == 1 && fetchMessageData.length <1 ? <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>

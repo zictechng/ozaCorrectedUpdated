@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { flexGrow, StatusBar, View, Text, TextInput, StyleSheet, Platform, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, Modal,Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native';
+import { flexGrow, StatusBar, View, Text, TextInput, StyleSheet, Platform, TouchableOpacity, ScrollView, Modal,Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { MaterialIcons, Ionicons, AntDesign, Fontisto} from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable'

@@ -2,7 +2,8 @@ import React, { useContext, useState, useEffect} from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Animatable from 'react-native-animatable'
-import { View, Button, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Image, ImageBackground, ScrollView } from 'react-native';
+import { View, Button, Text, TextInput, StyleSheet, TouchableOpacity, Image, ScrollView , ToastAndroid, Platform} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { gs,colors } from '../styles';
@@ -34,12 +35,8 @@ const UploadPaymentProof = ({route, navigation}) => {
       useEffect(() => {
         if(isFocused){
        // console.log("navigation changed ", userInfo?.userData )
-       
             }
-          //   if(userInfo?.userData.reg_stage2 !="Yes"){
-          //     navigation.navigate('CompleteSignup');
-          //  }
-         
+          
          }, [isFocused]);
       // Get user details from local storage after every request/operation into the database
       const FetchLocalStorage = async()=>{
@@ -115,7 +112,7 @@ const UploadPaymentProof = ({route, navigation}) => {
 
       // function to upload file to cloudinary here
       const uploadPaymentProofDocument = async() => {
-        if(image === undefined || image ==='' || image===null) {
+        if(!image) {
           Toast.show({
             type: ALERT_TYPE.DANGER,
             title:'Error',
@@ -136,26 +133,25 @@ const UploadPaymentProof = ({route, navigation}) => {
         data.append('upload_preset', CLOUDINARY_PRESET_NAME)
         data.append('upload_name', CLOUDINARY_ACCOUNT_NAME)
           try {
-            res = await fetch("https://api.cloudinary.com/v1_1/ddm1owlon/image/upload", {
+            const response = await fetch("https://api.cloudinary.com/v1_1/ddm1owlon/image/upload", {
                 method: 'POST',
                 body: data
-              }).then(res => res.json())
-                .then(data =>{
-                const secureUrl = data.secure_url;
-                console.log('After Upload ', data.public_id);
-                setImageValue(data.public_id)
-                if(secureUrl){
-                  uploadDocumentUrl(secureUrl)
-                  //setDeleteImageId(data.public_id)
-                  setLoading(false)
+              });
+
+              const result = await response.json(); // Parse JSON
+              const secureUrl = result.secure_url;
+              setImageValue(result.public_id);
+            
+                if (secureUrl) {
+                  uploadDocumentUrl(secureUrl);
+                  setLoading(false);
                 }
-              })
-         } catch (error) {
-          deleteImageId(imageValue)
-          console.log(error.message)
-          setLoading(false)
-        }
-      }
+              } catch (error) {
+                deleteImageId(imageValue)
+                console.log(error.message)
+                setLoading(false)
+              }
+            }
 
       //function to save uploaded file details to database
       const uploadDocumentUrl = async(data) => {
@@ -262,34 +258,66 @@ const UploadPaymentProof = ({route, navigation}) => {
 
         // function to pick files
         const pickPaymentProof = async () => {
-            let result = await DocumentPicker.getDocumentAsync({ 
-                type: ['image/*', 'application/pdf']
-                });
-                if (!result.canceled) {
-                // Upload the document
-                const fileType = isImageOrPdf(result.assets[0].mimeType);
-                setFileUploadType(fileType)
-                setSelectedFile(result.uri, result.name);
-                setImage(result.assets[0].uri);
-                // console.log("Show ", result);
-                // console.log("Show File ", fileType);
-                // console.log("Type ", result.assets[0].mimeType)
-                }
-             };
+           try {
+              const result = await DocumentPicker.getDocumentAsync({
+                type: ["image/*", "application/pdf"], 
+                copyToCacheDirectory: true,
+              });
+          
+              if (result.type === 'cancel') return;
+          
+              const file = result.assets[0]; // get the first selected file
+              const { name, uri, mimeType } = file;
+
+              // fallback if name or mimeType missing
+              const fileName = name || uri.split('/').pop();
+              const fileMime = mimeType || getMimeTypeFromFileName(fileName);
+
+              const fileType = isImageOrPdf(fileMime);
+          
+              if (fileType === 'unknown') {
+                const message = 'Unsupported file type. Please select an image or PDF.';
+                Platform.OS === 'android'
+                  ? ToastAndroid.show(message, ToastAndroid.SHORT)
+                  : alert(message);
+                return;
+              }
+          
+              // Save selected file
+              setFileUploadType(fileType);
+              setSelectedFile(uri, name);
+              setImage(uri);
+          
+            } catch (error) {
+              console.log('Error picking document:', error);
+            }
+              };
+
+          // Helper for mime type fallback
+          const getMimeTypeFromFileName = (filename) => {
+            if (!filename) return 'unknown';
+            const ext = filename.split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff'].includes(ext))
+              return `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+            if (ext === 'pdf') return 'application/pdf';
+            return 'unknown';
+          };
 
         // function to check file mime type
-    const isImageOrPdf = (mimeType) => {
-        const imageMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp', 'image/tiff'];
-        const pdfMimeType = 'application/pdf';
-        
-        if (imageMimeTypes.includes(mimeType)) {
-            return 'image';
-        } else if (mimeType === pdfMimeType) {
-            return 'pdf';
-        } else {
+          const isImageOrPdf = (mimeType) => 
+          {
+            const imageMimeTypes = [
+              'image/jpeg',
+              'image/png',
+              'image/gif',
+              'image/bmp',
+              'image/webp',
+              'image/tiff',
+            ];
+            if (imageMimeTypes.includes(mimeType)) return 'image';
+            if (mimeType === 'application/pdf') return 'pdf';
             return 'unknown';
-        }
-        };
+          };
         
   return (
     <View style={{flex:1, backgroundColor:colors.bgColor}}>

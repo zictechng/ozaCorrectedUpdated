@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useIsFocused } from '@react-navigation/native';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Image, ImageBackground, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity,  ScrollView, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons} from '@expo/vector-icons';
 import { gs,colors } from '../styles';
 import { StatusBar } from 'expo-status-bar';

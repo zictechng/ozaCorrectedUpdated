@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import {ToastAndroid, View, Text, TextInput, StyleSheet, TouchableOpacity, Switch, SafeAreaView, ScrollView, Platform, ImageBackground } from 'react-native';
+import {ToastAndroid, View, Text, TextInput, StyleSheet, TouchableOpacity, Switch, ScrollView, Platform, ImageBackground } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import Modal from "react-native-modal";
 import RBSheet from "react-native-raw-bottom-sheet";

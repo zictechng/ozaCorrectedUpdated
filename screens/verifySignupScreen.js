@@ -2,7 +2,8 @@ import React , {useContext, useCallback, useState, useEffect, useRef } from 'rea
 import OTPInputView from '@twotalltotems/react-native-otp-input';
 import { ALERT_TYPE, Toast, Dialog } from 'react-native-alert-notification';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
-import {Platform, Alert, Dimensions, StatusBar, View, Text, BackHandler, TextInput, StyleSheet, SafeAreaView, ScrollView, TouchableWithoutFeedback, Keyboard, TouchableOpacity, Modal, Image, ImageBackground, KeyboardAvoidingView} from 'react-native';
+import {Platform, Alert, Dimensions, StatusBar, View, Text, BackHandler, TextInput, StyleSheet, ScrollView, TouchableWithoutFeedback, Keyboard, TouchableOpacity, Modal, Image, ImageBackground, KeyboardAvoidingView} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
 import { gs, colors } from '../styles';
 //import { StatusBar } from 'expo-status-bar';

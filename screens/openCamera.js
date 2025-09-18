@@ -1,39 +1,41 @@
-import React, { useState } from 'react';
-import { Button, Image, View, Platform , StyleSheet, Text, TouchableOpacity,} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
+import { useState, useEffect } from 'react';
+import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const OpenCamera = () => {
+export default function OpeCamera() {
+  const [facing, setFacing] = useState();
+  const [type, setType] = useState('front');
+  const [permission, requestPermission] = useCameraPermissions();
 
-  const [image, setImage] = useState(null);
+  if (!permission) {
+    // Camera permissions are still loading.
+    return <View />;
+  }
 
-  const openUserCamera = async () => {
-    // Ask for camera permissions
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Camera permission is required!');
-      return;
-    }
+  if (!permission.granted) {
+    // Camera permissions are not granted yet.
+    return (
+      <View style={styles.container}>
+        <Text style={styles.message}>We need your permission to show the camera</Text>
+        <Button onPress={requestPermission} title="grant permission" />
+      </View>
+    );
+  }
 
-    // Launch camera
-    let result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-      cameraType: ImagePicker.CameraType.front,  // This specifies the front camera
-    });
+  function toggleCameraFacing() {
+    setFacing(current => (current === 'back' ? 'front' : 'back'));
+  }
 
-    console.log(result);
-
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-    }
-  };
+  console.log('Camera Type ', facing)
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Button title="Open Camera" onPress={openUserCamera} />
-      {image && <Image source={{ uri: image }} style={{ width: 200, height: 200 }} />}
+    <View style={styles.container}>
+      <CameraView style={styles.camera} facing={type} />
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
+          <Text style={styles.text}>Flip Camera</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -51,14 +53,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   buttonContainer: {
-    flex: 1,
+    position: 'absolute',
+    bottom: 64,
     flexDirection: 'row',
     backgroundColor: 'transparent',
-    margin: 64,
+    width: '100%',
+    paddingHorizontal: 64,
   },
   button: {
     flex: 1,
-    alignSelf: 'flex-end',
     alignItems: 'center',
   },
   text: {
@@ -67,5 +70,3 @@ const styles = StyleSheet.create({
     color: 'white',
   },
 });
-
-export default OpenCamera

@@ -8,12 +8,12 @@ import {
     KeyboardAvoidingView, 
     Keyboard, 
     TouchableWithoutFeedback, 
-    SafeAreaView, 
     Image, 
     ImageBackground, 
     ScrollView, 
     Platform,
     Alert} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons, FontAwesome} from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable'

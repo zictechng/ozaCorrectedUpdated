@@ -5,15 +5,15 @@ import {
     Text, 
     TextInput, 
     TouchableOpacity, 
-    SafeAreaView, 
     ScrollView,
     Keyboard,
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
     Platform
  } from 'react-native';
- import { useIsFocused } from '@react-navigation/native';
- import * as Animatable from 'react-native-animatable'
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useIsFocused } from '@react-navigation/native';
+import * as Animatable from 'react-native-animatable'
 import { gs,colors } from '../styles';
 import { StatusBar } from 'expo-status-bar';
 import {Entypo, Ionicons} from '@expo/vector-icons';

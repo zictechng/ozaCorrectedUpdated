@@ -1,13 +1,12 @@
 import React , {useContext, useCallback, useState, useEffect, useRef } from 'react';
 import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
-import { useIsFocused} from '@react-navigation/native';
+import { useIsFocused, useFocusEffect} from '@react-navigation/native';
 import { 
     Dimensions, 
     View, 
     Text,
     StyleSheet, 
     ScrollView,
-    SafeAreaView,
     TouchableOpacity, 
     ImageBackground,
     RefreshControl,
@@ -15,6 +14,7 @@ import {
     ActivityIndicator,
     Linking
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Collapsible from 'react-native-collapsible';
 //import { StatusBar } from 'expo-status-bar';
 import { Ionicons, Feather, Entypo } from '@expo/vector-icons';
@@ -152,6 +152,43 @@ const HomeScreen = ({navigation}) =>{
         logoutAction()
         setLogoutModal(false);
         }
+
+        useEffect(() =>{
+            // check for new updates
+            async function checkForUpdate() {
+                try {
+                const update = await Updates.checkForUpdateAsync();
+                if (update.isAvailable) {
+                    setIsUpdateAvailable(true);
+                    console.log('Update available')
+                }
+                } catch (error) {
+                console.error('Error checking for updates:', error);
+                }
+            }
+            checkForUpdate();
+            getBonusRate();
+    
+            //console.log(('Home ' ,userInfo.userData))
+             if(isFocused && checkRegStage != 'true'){
+                 setCompleteRegData(true);
+                 RefreshUserDetails();
+                 //console.log('Incomplete registration Focus ', checkRegStage)
+               }
+               else{
+                setCompleteRegData(false);
+               }
+               latestTransaction();
+               getMessageCount();
+               //accessCheck()
+               checkUserToken()
+               setStatusBarState(true);
+               
+               _AppSystemSettings()
+               
+           }, [isFocused]) 
+
+           
 
     // action to close incomplete registration popup
         const closeIncompleteRegistration = () =>{
@@ -443,19 +480,20 @@ const HomeScreen = ({navigation}) =>{
     
     // fetch chart data
        const fetchData = async()=>{
-        myId = userInfo.userData._id
-        if(myId == '' || myId == null){
-         //console.log('Access denied')
-         return console.log('Access denied')
-        }
          try{
+            const myId = userInfo?.userData?._id;
+            console.log('fetchData called, Access ID:', myId);
+
+            if (!myId) {
+            console.log('Access denied – no user ID yet');
+            return;
+            }
             setChartLoading(true)
          const recentChart = await client.get('/api/chart_transactions/'+myId,{
              headers: {
                  'Authorization': 'Bearer '+userToken,
                      }
              })
-             console.log(recentChart)
              if(recentChart.data.msg =='201'){
               let result = recentChart.data;
               
@@ -466,7 +504,7 @@ const HomeScreen = ({navigation}) =>{
               
               }
                 const objArr = recentChart.data;
-                console.log(objArr)
+                //console.log(objArr)
                 if(objArr.paypal.length < 1 && objArr.payoneer.length < 1 && objArr.bitcoin.length < 1) {
                 setHomeChartDisplay(true);    
                 }
@@ -485,7 +523,7 @@ const HomeScreen = ({navigation}) =>{
                  console.log('chart balance')
              }
              }catch (e){
-             console.log(e.message);
+             console.error('fetchData error', e);
              }
              finally{
                 setChartLoading(false);
@@ -493,41 +531,12 @@ const HomeScreen = ({navigation}) =>{
       
          }
 
-      useEffect(() =>{
-        // check for new updates
-        async function checkForUpdate() {
-            try {
-            const update = await Updates.checkForUpdateAsync();
-            if (update.isAvailable) {
-                setIsUpdateAvailable(true);
-                console.log('Update available')
-            }
-            } catch (error) {
-            console.error('Error checking for updates:', error);
-            }
-        }
-        checkForUpdate();
-        getBonusRate();
-
-        //console.log(('Home ' ,userInfo.userData))
-         if(isFocused && checkRegStage != 'true'){
-             setCompleteRegData(true);
-             RefreshUserDetails();
-             //console.log('Incomplete registration Focus ', checkRegStage)
-           }
-           else{
-            setCompleteRegData(false);
-           }
-           latestTransaction();
-           getMessageCount();
-           //accessCheck()
-           checkUserToken()
-           setStatusBarState(true);
-           fetchData()
-           _AppSystemSettings()
-           
-       }, [isFocused]) 
-
+     
+         useEffect(() => {
+            console.log('HomeScreen useEffect running...', isFocused);
+            // wrap async logic in functions
+            fetchData()
+          }, [isFocused]);
 // this function will be called and redirect user to google app store to download new version
     const openPlayStore = () => {
         Linking.openURL('market://details?id=com.ozaapp.mobile')
@@ -564,9 +573,9 @@ const HomeScreen = ({navigation}) =>{
       //xAxisLabelTexts={['PayPal', 'Payoneer', 'Bitcoin']}
       const data=[{value:dataOption == null ? 0 : dataOption, label: 'PayPal'}, {value:dataPayoneer == null ? 0:  dataPayoneer, label:'Payoneer'}, {value:dataBitcoin == null ? 0 : dataBitcoin, label:'Bitcoin'}]
 
-      return (
+return (
         
-        <SafeAreaView style={{flex:1, backgroundColor:colors.bgColor}}>
+    <SafeAreaView style={{flex:1, backgroundColor:colors.bgColor}}>
                     {
                     isFocused &&
                     <StatusBar
@@ -578,7 +587,7 @@ const HomeScreen = ({navigation}) =>{
                 {!appMode &&
                 <>
                  <HeaderMenu 
-                 buttonHome={<TouchableOpacity style={gs.homeSideMenu} onPress={() =>navigation.navigate('profile')} >
+                 buttonHome={<TouchableOpacity style={[gs.homeSideMenu]} onPress={() =>navigation.navigate('profile')} >
                  <Feather name='user' size={27} color={colors.primaryColor1}/>
                      {/* {notifications > 0 && 
                  <View style={{position: "absolute", top: -1, right: -10, marginRight: 10, borderRadius:50, backgroundColor: colors.greenColor, width:8, height:8}}></View>} */}
@@ -592,12 +601,13 @@ const HomeScreen = ({navigation}) =>{
                     <HTMLView
                         value={appSettingDetails?.app_short_name}
                         stylesheet={styles.loginTitleDesc}/>
-                    
                 </View>
                 
                 <ScrollView showsVerticalScrollIndicator={true} style={{paddingHorizontal:20}}
                     refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={handleHomeRefresh} />
+                        <RefreshControl refreshing={isRefreshing} onRefresh={handleHomeRefresh} tintColor={colors.primaryColor2}
+                        colors={[colors.primaryColor2]}
+                        progressBackgroundColor={colors.primaryColor2} />
                       }>
                         <View style={styles.balanceStyle}>
                             <ImageBackground source={background} resizeMode='cover' imageStyle={{opacity: 0.3}} style={{flex:1}}>
@@ -682,7 +692,7 @@ const HomeScreen = ({navigation}) =>{
                     />
 
                      {/* Chart data goes here */}
-                     <View style={[styles.recentTranView, {marginTop: 15, marginHorizontal:5}]}>
+                     {/* <View style={[styles.recentTranView, {marginTop: 15, marginHorizontal:5}]}>
                         <Text style={styles.recentTranText}>Transactions Flow</Text>
                         {!homeChartDisplay &&
                         <TouchableOpacity onPress={() => openCollapsedState()}>
@@ -719,16 +729,10 @@ const HomeScreen = ({navigation}) =>{
                            </View>
                                  
                         </Collapsible>
-                        {isCollapsed &&<View style={{marginTop:20}}>
-                        
-                        {/* <LineChart data = {data} />
-                        <PieChart data = {data} />
-                        <PopulationPyramid data = {[{left:10,right:12}, {left:9,right:8}]} /> */}
-
-                        </View>}
+                    {isCollapsed &&<View style={{marginTop:20}}></View> }
                     <View>
                         
-                    </View>
+                    </View> */}
 
                     <ShowUpdateModal 
                         openModal={isUpdateAvailable}

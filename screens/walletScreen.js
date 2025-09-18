@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect, useRef }  from 'react';
-import { Dimensions , StyleSheet, View, Text, TextInput, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, RefreshControl,ActivityIndicator } from 'react-native';
+import { Dimensions , StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ImageBackground, ScrollView, RefreshControl,ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { gs,colors } from '../styles';
 import { useIsFocused } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
@@ -15,6 +16,7 @@ import client from '../contextAPI/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BarChart, LineChart, PieChart, PopulationPyramid } from "react-native-gifted-charts";
 import Collapsible from 'react-native-collapsible';
+import background from '../assets/images/sec3.png';
 
 import Carousel from 'react-native-snap-carousel';
 import { NumberDollarValueFormat } from '../components/formatDollarValue';
@@ -38,6 +40,10 @@ const WalletScreen = ({navigation}) => {
     const [dataPayoneer, setDataPayoneer] = useState([]);
     const [dataBitcoin, setDataBitcoin] = useState([]);
     const [isCollapsed, setIsCollapsed] = useState(true);
+
+    const [dataOptionBar, setDataOptionBar] = useState([]);
+    const [dataPayoneerBar, setDataPayoneerBar] = useState([]);
+    const [dataBitcoinBar, setDataBitcoinBar] = useState([]);
 
     const [weeklyData, setWeeklyData] = useState('');
     const [monthlyData, setMonthlyData] = useState('');
@@ -89,44 +95,33 @@ const WalletScreen = ({navigation}) => {
       }
     }
 
-    useEffect(() =>{
-      fetchDataChart()
-      //walletID()
-    },[])
 
-    // fetch chart data
+        // fetch chart data for weekly, monthly and yearly
            const fetchDataChart = async()=>{
-            myId = userInfo.userData._id
-            if(myId == '' || myId == null){
-             //console.log('Access denied')
-             return console.log('Access denied')
-            }
              try{
+              const myId = userInfo?.userData?._id;
+              if (!myId) {
+                console.log('Access denied – no user ID yet');
+                return;
+               }
               setChartDataLoading(true)
              const recentChart = await client.get('/api/chart_transactions/'+myId,{
                  headers: {
                      'Authorization': 'Bearer '+userToken,
                          }
-                 })
-                 console.log('Data 1 ', result)
+                    })
+                  setWeeklyData(recentChart.data.weekly ?? 0);
+                  setMonthlyData(recentChart.data.monthly ?? 0);
+                  setYearlyData(recentChart.data.yearly ?? 0);
+
                  if(recentChart.data.msg =='201'){
-                  let result = recentChart.data;
-                  console.log('Data ', result)
-                  const objArr = recentChart.data; 
-                  setDataOption(objArr.paypal[0]?.totalAmount) 
-                  setDataPayoneer(objArr.payoneer[0]?.totalAmount)
-                  setDataBitcoin(objArr.bitcoin[0]?.totalAmount)
+                  const objArr = recentChart.data;
+
+                  setDataOption(objArr.paypal[0]?.totalAmount ?? 0);
+                  setDataPayoneer(objArr.payoneer[0]?.totalAmount ?? 0);
+                  setDataBitcoin(objArr.bitcoin[0]?.totalAmount ?? 0);
                   
                   }
-                    const objArr = recentChart.data;
-                    console.log(objArr.paypal.length)
-                    if(objArr.paypal.length < 1 && objArr.payoneer.length < 1 && objArr.bitcoin.length < 1) {
-                    setHomeChartDisplay(true);    
-                    }
-                    if(objArr.paypal.length > 0 || objArr.payoneer.length > 0 || objArr.bitcoin.length > 0) {
-                    setHomeChartDisplay(false);    
-                    }
-          
                  else if(recentChart.data.status == '402'){
                      //console.log('Login failed')
                      return
@@ -143,7 +138,6 @@ const WalletScreen = ({navigation}) => {
                  finally{
                   setChartDataLoading(false);
                  }
-          
              }
     // fetching all history base on paypal transaction with pagination
     const getWalletHistory = async() =>{
@@ -169,7 +163,7 @@ const WalletScreen = ({navigation}) => {
            }
          }
 
-       // fetching all history base on paypal transaction with pagination
+    // fetching all history base on paypal transaction with pagination
     const getWalletBalance = async() =>{
         setIsWalletLoading(true);
          try {
@@ -233,53 +227,57 @@ const WalletScreen = ({navigation}) => {
   }
 
   // get latest transaction details
-    const fetchData = async()=>{
-  myId = userInfo.userData._id
-  if(myId == '' || myId == null){
-   console.log('Access denied')
-   return console.log('Access denied')
-  }
-  setChartLoading(true)
-   try{
-
-   const recentChart = await client.get('/api/chart_transactions/'+myId,{
-       headers: {
-           'Authorization': 'Bearer '+userToken,
-               }
-       })
-       if(recentChart.data.msg =='201'){
-        let result = recentChart.data;
-        const objArr = recentChart.data; 
-        setWeeklyData(result.weekly) 
-        setMonthlyData(result.monthly)
-        setYearlyData(result.yearly)
-         //console.log('Yes ', result.yearly) 
-         if(result.weekly == '0' && result.monthly == '0' && result.yearly == '0') {
-          setHomeChartDisplay(true);
-         } 
-         else if(result.weekly != '0' || result.monthly != '0' || result.yearly != '0' ) {
-          setHomeChartDisplay(false);
-         } 
-       }
-       else if(recentChart.data.status == '402'){
-           //console.log('Login failed')
-           return
-       }
-       else if(recentChart.data.status == '404'){
-           console.log('No chart data ',)
-        }
-       else{
-           console.log('chart balance')
-       }
-       }catch (e){
-       console.log(e.message);
-       }
-       
-       finally{
-        setChartLoading(false);
-       }
-       
-    }
+          const fetchData = async()=>{
+             try{
+                const myId = userInfo?.userData?._id;
+                //console.log('fetchData called, Access ID:', myId);
+    
+                if (!myId) {
+                console.log('Access denied – no user ID yet');
+                return;
+                }
+                setChartLoading(true)
+             const recentChart = await client.get('/api/chart_transactions/'+myId,{
+                 headers: {
+                     'Authorization': 'Bearer '+userToken,
+                         }
+                 })
+                 if(recentChart.data.msg =='201'){
+                  let result = recentChart.data;
+                  
+                  const objArr = recentChart.data; 
+                  setDataOption(objArr.paypal[0]?.totalAmount) 
+                  setDataPayoneer(objArr.payoneer[0]?.totalAmount)
+                  setDataBitcoin(objArr.bitcoin[0]?.totalAmount)
+                  
+                  }
+                    const objArr = recentChart.data;
+                    //console.log(objArr)
+                    if(objArr.paypal.length < 1 && objArr.payoneer.length < 1 && objArr.bitcoin.length < 1) {
+                    setHomeChartDisplay(true);    
+                    }
+                    if(objArr.paypal.length > 0 || objArr.payoneer.length > 0 || objArr.bitcoin.length > 0) {
+                    setHomeChartDisplay(false);    
+                    }
+          
+                 else if(recentChart.data.status == '402'){
+                     //console.log('Login failed')
+                     return
+                 }
+                 else if(recentChart.data.status == '404'){
+                     console.log('No chart data ',)
+                  }
+                 else{
+                     console.log('chart balance')
+                 }
+                 }catch (e){
+                 console.error('fetchData error', e);
+                 }
+                 finally{
+                    setChartLoading(false);
+                 }
+          
+             }
 
    useEffect(() =>{
     getWalletBalance()
@@ -289,17 +287,17 @@ const WalletScreen = ({navigation}) => {
     fetchDataChart()
     //walletID()
   },[isFocused])
-   //console.log('Weekly ', weeklyData)
-        //page refreshing function goes here
-      const handleRefresh = React.useCallback(() => {
-        setIsRefreshing(true);
-        RefreshUserDetails()
-        getWalletBalance()
-        getWalletHistory()
-        fetchData()
-        setTimeout(() => {
-        setIsRefreshing(false);
-        }, 1000);
+   
+  //page refreshing function goes here
+  const handleRefresh = React.useCallback(() => {
+    setIsRefreshing(true);
+    RefreshUserDetails()
+    getWalletBalance()
+    getWalletHistory()
+    fetchData()
+    setTimeout(() => {
+    setIsRefreshing(false);
+    }, 1000);
       }, []);
 
 
@@ -340,8 +338,16 @@ const WalletScreen = ({navigation}) => {
             </View>
             );
      
-      const data=[{value:weeklyData == '0' ? 0: weeklyData, label: 'Weekly'}, {value:monthlyData == '0'? 0: monthlyData, label:'Monthly'}, {value:yearlyData == '0' ? 0 : yearlyData, label:'Yearly'}]
-         
+      const data=[{ value: weeklyData == '0' ? 0 : weeklyData, label: 'Weekly', text:'Weekly', color: colors.primaryLightBlue },
+        { value: monthlyData == '0' ? 0 : monthlyData, label: 'Monthly', 
+          text:'Monthly', color: colors.primaryColor2 },
+        { value: yearlyData == '0' ? 0 : yearlyData, label: 'Yearly', 
+          text: 'Yearly', color: colors.blueColor }]
+
+        // const data=[{ value: weeklyData, text: `Weekly ${weeklyData}`, color: '#FF6384' },
+        //   { value: monthlyData, text: `Monthly ${monthlyData}`, color: '#36A2EB' },
+        //   { value: yearlyData, text: `Yearly ${yearlyData}`, color: '#FFCE56' }]
+      //console.log('weekly data ', weeklyData)
   return (
     <ImageBackground style={{flex:1}} source={bgImage} resizeMode='cover'>
         <SafeAreaView style={{flex:1}}>
@@ -371,7 +377,10 @@ const WalletScreen = ({navigation}) => {
                         
             <ScrollView showsVerticalScrollIndicator={false} style={{paddingHorizontal:20}}
                   refreshControl={
-                <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}>
+                <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh}
+                tintColor='#7f8cda'
+                colors={['#7f8cda']}
+                progressBackgroundColor='#7f8cda' />}>
               
               {/* <View style={{flex: 1, borderRadius:8, marginTop:15, backgroundColor:colors.primaryColor1,
               shadowRadius:5, shadowColor:'#000', shadowOffset:{width: 0,
@@ -404,7 +413,7 @@ const WalletScreen = ({navigation}) => {
                       ref={carouselRef}
                       data={dataWallet}
                       renderItem={renderItem}
-                      sliderWidth={windowWidth -40} // - 40 means subtract 20 from left margin, 20 from right margin
+                      sliderWidth={windowWidth -45} // - 40 means subtract 20 from left margin, 20 from right margin
                       itemWidth={width * 0.8}
                       onSnapToItem={(index) => setActiveIndex(index)}
                     />
@@ -412,63 +421,91 @@ const WalletScreen = ({navigation}) => {
 
                 {activeIndex == 0 &&
                   <View>
+                  <View>
                     {/* Wallet Chart data goes here */}
                     
-                        <View style={styles.chartView}>
-                            {/* <WalletChartData /> */}
-                              <View style={{marginTop: 20}}></View>
-                                {chartLoading ? <ActivityIndicator size={'large'} color={colors.primaryColor1} />
-                                :
-                                  ! chartDetails &&
-                                    <BarChart
-                                        key={'xyz'}
-                                        hideRules={true}
-                                        barBorderTopLeftRadius ={5}
-                                        barBorderTopRightRadius ={5}
-                                        xAxisColor ="lightgrey"
-                                        frontColor="#1D2667"
-                                        yAxisColor ="lightgrey"
-                                        noOfSections={5}
-                                        height={250}
-                                        spacing={25}
-                                        isAnimated ={true}
-                                        animationDuration={800}
-                                        animationEasing={'Easing.ease'}
-                                        barWidth={41}
-                                        data = {data}
-                                        xAxisLabelTextStyle={styles.chartText}
-                                    />
-                                  }
-                                    
+                  <View style={styles.chartView}>
+                        {/* <WalletChartData /> */}
+                      <View style={{marginTop: 20}}></View>
+                        {chartLoading ? <ActivityIndicator size={'large'} color={colors.primaryColor1} />
+                        :
+                          ! chartDetails &&
+                            // <BarChart
+                            //     key={'xyz'}
+                            //     hideRules={true}
+                            //     barBorderTopLeftRadius ={5}
+                            //     barBorderTopRightRadius ={5}
+                            //     xAxisColor ="lightgrey"
+                            //     frontColor="#1D2667"
+                            //     yAxisColor ="lightgrey"
+                            //     noOfSections={5}
+                            //     height={250}
+                            //     spacing={25}
+                            //     isAnimated ={true}
+                            //     animationDuration={800}
+                            //     animationEasing={'Easing.ease'}
+                            //     barWidth={41}
+                            //     data = {data}
+                            //     xAxisLabelTextStyle={styles.chartText}
+                            // />
+
+                        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 5, marginBottom: 10 }}>
+                            {/* Pie Chart */}
+                            <PieChart 
+                              data={data} 
+                              showText={true} 
+                              donut={false} 
+                              style={{ flex: 1 }} />
+                          
+                            {/* Legend */}
+                          <View style={{ marginLeft: 20, justifyContent: 'center' }}>
+                            {data.map((item, index) => (
+                              <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                                {/* Color indicator */}
+                                <View style={{ width: 16, height: 16, backgroundColor: item.color, marginRight: 8 }} />
+                                {/* Label + Value */}
+                                <View>
+                                  <Text style={{ fontFamily:'_bold' }}>{item.label}</Text>
+                                  <Text>{Number(item?.value).toLocaleString()}</Text>
+                                </View>
+                              </View>
+                            ))}
+                          </View>
                         </View>
+                    
+                      }
+                                    
+                    </View>
 
                     {/* recent added fund map list here */}
                   
-                    {!isLoading && walletHistory.map((item, index) => (
+              {!isLoading && walletHistory.map((item, index) => (
                     
-                    <TouchableOpacity style={[styles.historyMainView,{ marginBottom:15}]} onPress={()=>{}}
+               <TouchableOpacity style={[styles.historyMainView,{ marginBottom:15}]} onPress={()=>{}}
                     key={index}>
-                            <View style={styles.historyView}>
-                             <View style={{marginHorizontal:10, marginTop:5, flexDirection:'row'}}>
-                                <Feather name="arrow-up-left" size={30} color="#09d97b"/>
-                                  <View style={{flexDirection:'column'}}>
-                                    <Text style={styles.historyTextDate}>{moment(item.creditOn).format("DD/MM/YYYY hh:mm:ss")}</Text>
-                                    <Text style={[styles.historyTextStatus, {marginRight:5}]}>{item.fund_type}</Text>
-                                  </View>
-                                    
-                              </View>
-                                    <View style={styles.historyViewIn}>
-                                        <View style={{flexDirection:'column'}}>
-                                        <Text style={styles.historyAmtText}><NumberValueFormat value={item.amount} /></Text>
-                                        <Text style={[styles.historyTextStatus, {fontSize:10, marginBottom:-10}]}>{item.fund_status}</Text>
-                                        </View>
-                                      
-                                    </View>
+                    <View style={styles.historyView}>
+                      <View style={{marginHorizontal:10, marginTop:5, flexDirection:'row'}}>
+                        <Feather name="arrow-up-left" size={30} color="#09d97b"/>
+                          <View style={{flexDirection:'column'}}>
+                            <Text style={styles.historyTextDate}>{moment(item.creditOn).format("DD/MM/YYYY hh:mm:ss")}</Text>
+                            <Text style={[styles.historyTextStatus, {marginRight:5}]}>{item.fund_type}</Text>
+                          </View>
+                            
+                      </View>
+                      <View style={styles.historyViewIn}>
+                          <View style={{flexDirection:'column'}}>
+                          <Text style={styles.historyAmtText}><NumberValueFormat value={item.amount} /></Text>
+                          <Text style={[styles.historyTextStatus, {fontSize:10, marginBottom:-10}]}>{item.fund_status}</Text>
+                          </View>
+                        
+                      </View>
+                        
+                    </View>
                                 
-                            </View>
-                                
-                    </TouchableOpacity>
-                        ))}
+               </TouchableOpacity>
+                 ))}
+                  </View>
+                    
                   </View>
                   }
 
@@ -479,47 +516,43 @@ const WalletScreen = ({navigation}) => {
                       }
                   {/* bonus summary block */}
                 {activeIndex == 1 &&
-                  <View style={{flex: 1, flexDirection:'row', justifyContent:'center', alignItems:'center', marginHorizontal:5}}>
-                        
-                        <View style={{flex: 1, borderRadius:8, marginTop:15, backgroundColor:colors.colorWhite,
-                              shadowRadius:5, shadowColor:'#000', shadowOffset:{width: 0,
-                            height:2,}, shadowOpacity: 0.23, elevation: 1, marginBottom:10, marginLeft:8}}>
-                                <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:5}}>
-                                    <View style={{marginHorizontal:5, marginTop:10}}>
-                                        <Text style={{fontFamily:'_semiBold', fontSize:13, color:colors.lightHl}}>{'Pending Bonus'} </Text>
-                                        <Text style={{fontFamily:'_bold', fontSize:23, color:colors.lightBg, marginBottom: 8}}>
-                                          {/* <NumberValueFormat value={walletBalance[0]?.totalAmount? walletBalance[0]?.totalAmount : '0.0'} /> */}
-                                            {bonusTotalBalance == 0 || bonusTotalBalance == null ? '$0.00' : bonusTotalBalance > 1000000 ? <Text>$1M</Text> : <NumberDollarValueFormat value={bonusTotalBalance} />}
-                                          </Text>
-                                          <Text style={{fontFamily:'_regular', fontSize:11, color:colors.textSecColor, marginBottom: 8}}>
-                                            Current pending bonus balance
-                                          </Text>
-                                    </View>
-                              </View>
-                        </View>
+                <View>
+                  <View style={{flex: 1, justifyContent:'center', alignItems:'center', marginHorizontal:5}}></View>
 
-                            <View style={{flex: 1, borderRadius:8, marginTop:15, backgroundColor:colors.colorWhite,
-                                shadowRadius:5, shadowColor:'#000', shadowOffset:{width: 0,
-                                height:2,}, shadowOpacity: 0.23, elevation: 1, marginBottom:10, marginLeft:8}}>
-                             <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8}}>
-                                <View style={{marginHorizontal:5, marginTop:10}}>
-                                    <Text style={{fontFamily:'_semiBold', fontSize:13, color:colors.lightHl}}>{'Total Withdraw'} </Text>
-                                    <Text style={{fontFamily:'_bold', fontSize:23, color:colors.lightBg, marginBottom: 5}}>
-                                      {/* <NumberValueFormat value={walletBalance[0]?.totalAmount? walletBalance[0]?.totalAmount : '0.0'} /> */}
-                                      {withdrawTotalBalance == 0 || withdrawTotalBalance == null ? '$0.00' : withdrawTotalBalance > 1000000 ? <Text>$1M</Text> : <NumberDollarValueFormat value={withdrawTotalBalance} />}
-                                      </Text>
-                                      <Text style={{fontFamily:'_regular', fontSize:11, color:colors.textSecColor, marginBottom: 8}}>
-                                        All time Withdrawal from your account.
-                                      </Text>
-                                </View>                                    
-                            </View>
-                          </View>                          
+                  <View style={{flex: 1, marginHorizontal:18, borderRadius:8, marginTop:15, backgroundColor:colors.colorWhite,
+                  shadowRadius:5, shadowColor:'#000', shadowOffset:{width: 0,
+                height:2, justifyContent:'center', alignItems:'center',}, shadowOpacity: 0.23, elevation: 1, marginBottom:10, marginLeft:8}}>
+                    <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:5}}>
+                    <View style={{marginHorizontal:15, marginTop:10}}>
+                      <Text style={{fontFamily:'_semiBold', fontSize:15, color:colors.lightHl}}>{'Pending Bonus'} </Text>
+                      <Text style={{fontFamily:'_bold', fontSize:23, color:colors.lightBg, marginBottom: 8}}>
+                        {/* <NumberValueFormat value={walletBalance[0]?.totalAmount? walletBalance[0]?.totalAmount : '0.0'} /> */}
+                          {bonusTotalBalance == 0 || bonusTotalBalance == null ? '$0.00' : bonusTotalBalance > 1000000 ? <Text>$1M</Text> : <NumberDollarValueFormat value={bonusTotalBalance} />}
+                        </Text>
+                        <Text style={{fontFamily:'_regular', fontSize:13, color:colors.textSecColor, marginBottom: 8}}>
+                          Current pending bonus balance
+                        </Text>
+                    </View>
                   </View>
-                }
+                  </View> 
+                  <View style={{flex: 1, marginHorizontal:18, borderRadius:8, marginTop:15, backgroundColor:colors.colorWhite,
+                  shadowRadius:3, shadowColor:'#000', shadowOffset:{width: 0,
+                  height:2,}, shadowOpacity: 0.23, elevation: 1, marginBottom:10, marginLeft:8}}>
+                      <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8}}>
+                    <View style={{marginHorizontal:20, marginTop:10}}>
+                  <Text style={{fontFamily:'_semiBold', fontSize:15, color:colors.lightHl}}>{'Total Withdraw'} </Text>
+                  <Text style={{fontFamily:'_bold', fontSize:23, color:colors.lightBg, marginBottom: 5}}>
+                    {/* <NumberValueFormat value={walletBalance[0]?.totalAmount? walletBalance[0]?.totalAmount : '0.0'} /> */}
+                    {withdrawTotalBalance == 0 || withdrawTotalBalance == null ? '$0.00' : withdrawTotalBalance > 1000000 ? <Text>$1M</Text> : <NumberDollarValueFormat value={withdrawTotalBalance} />}
+                    </Text>
+                    <Text style={{fontFamily:'_regular', fontSize:13, color:colors.textSecColor, marginBottom: 5}}>
+                      All time Withdrawal from your account.
+                    </Text>
+                    </View>                                    
+                    </View>
+                  </View> 
 
-
-                 {/* Chart data goes here */}
-                  <View style={[styles.recentTranView, {marginTop: 15, marginHorizontal:5}]}>
+                  <View style={[styles.recentTranView, {marginTop: 25, marginHorizontal:5}]}>
                     <Text style={styles.recentTranText}>Transactions Flow</Text>
                     {!homeChartDisplay &&
                     <TouchableOpacity onPress={() => openCollapsedState()}>
@@ -530,39 +563,42 @@ const WalletScreen = ({navigation}) => {
                     </TouchableOpacity> }
                 </View>
                     <Collapsible collapsed={isCollapsed}>
-                          <View style={{marginTop:10, borderColor: '#dededc', marginBottom:5}}>
-                              <View style={styles.chartView}>
-                                {chartDataLoading ? <ActivityIndicator size={'large'} color={colors.primaryColor1} />:
-                                <BarChart
-                                    key={'xyz'}
-                                    hideRules={true}
-                                    barBorderTopLeftRadius ={5}
-                                    barBorderTopRightRadius ={5}
-                                    xAxisColor ="lightgrey"
-                                    frontColor="#1D2667"
-                                    yAxisColor ="lightgrey"
-                                    noOfSections={5}
-                                    height={250}
-                                    spacing={25}
-                                    isAnimated ={true}
-                                    animationDuration={800}
-                                    animationEasing={'Easing.ease'}
-                                    barWidth={41}
-                                    data = {dataChart}
-                                    xAxisLabelTextStyle={styles.chartText}
-                                />
-                                }
-                            </View>    
-                        </View>
+                      <View style={{marginTop:10, borderColor: '#dededc', marginBottom:5}}>
+                          <View style={styles.chartView}>
+                            {chartDataLoading ? <ActivityIndicator size={'large'} color={colors.primaryColor1} />:
+                            <BarChart
+                                key={'xyz'}
+                                hideRules={true}
+                                barBorderTopLeftRadius ={5}
+                                barBorderTopRightRadius ={5}
+                                xAxisColor ="lightgrey"
+                                frontColor={colors.primaryColor1}
+                                yAxisColor ="lightgrey"
+                                noOfSections={5}
+                                height={250}
+                                spacing={25}
+                                isAnimated ={true}
+                                animationDuration={800}
+                                animationEasing={'Easing.ease'}
+                                barWidth={41}
+                                data = {dataChart}
+                                xAxisLabelTextStyle={styles.chartText}
+                            />
+                            }
+                        </View>    
+                    </View>
                               
-                    </Collapsible>
-                    {isCollapsed &&<View style={{marginTop:20}}>
-                    
-                    {/* <LineChart data = {data} />
-                    <PieChart data = {data} />
-                    <PopulationPyramid data = {[{left:10,right:12}, {left:9,right:8}]} /> */}
+                  </Collapsible>
+                </View>
+                }
 
-                    </View>}
+
+                 {/* Chart data goes here */}
+                  
+                    {/* <LineChart data = {data} /> */}
+                    
+                    {/* <PopulationPyramid data = {[{left:10,right:12}, {left:9,right:8}]} /> */}
+
                   
               </ScrollView> 
             </View>

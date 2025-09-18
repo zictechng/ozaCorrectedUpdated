@@ -9,11 +9,12 @@ import {
      Keyboard, 
      KeyboardAvoidingView, 
      TouchableOpacity, 
-     SafeAreaView, 
      Image, 
      ImageBackground, 
      Platform,
      ScrollView } from 'react-native';
+     
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AntDesign, MaterialIcons, Ionicons, Feather, Entypo, MaterialCommunityIcons, FontAwesome5, Fontisto, FontAwesome} from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable'

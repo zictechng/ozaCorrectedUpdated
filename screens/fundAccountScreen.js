@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useRef} from 'react';
-import { View, Text,Platform, TextInput, StatusBar, StyleSheet, TouchableOpacity, SafeAreaView, Image, ImageBackground, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from 'react-native';
+import { View, Text,Platform, TextInput, StatusBar, StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 import * as Animatable from 'react-native-animatable'
 import { Ionicons,FontAwesome} from '@expo/vector-icons';

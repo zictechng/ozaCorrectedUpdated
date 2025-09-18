@@ -1,5 +1,6 @@
 import React, { useContext, useState } from 'react';
-import { StyleSheet, View, Text, TextInput, Keyboard, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Alert, Platform } from 'react-native';
+import { StyleSheet, View, Text, TextInput, Keyboard, TouchableOpacity, ImageBackground, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Alert, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { gs,colors } from '../styles';
 import * as Animatable from 'react-native-animatable'
 import { useIsFocused } from '@react-navigation/native';

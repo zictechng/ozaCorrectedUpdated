@@ -1,5 +1,6 @@
 import React , {useContext, useCallback, useState, useEffect } from 'react';
-import { Dimensions, StatusBar, View, Text, TextInput, StyleSheet, SafeAreaView, ScrollView, Keyboard, KeyboardAvoidingView, TouchableOpacity, TouchableWithoutFeedback, ActivityIndicator, Platform } from 'react-native';
+import { Dimensions, StatusBar, View, Text, TextInput, StyleSheet, ScrollView, Keyboard, KeyboardAvoidingView, TouchableOpacity, TouchableWithoutFeedback, ActivityIndicator, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
 import Checkbox from 'expo-checkbox';
 import { gs, colors } from '../styles';

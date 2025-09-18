@@ -1,9 +1,11 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, ImageBackground, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Platform, Alert, Button, Linking } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system'
+import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 import * as Animatable from 'react-native-animatable'
 import { gs,colors } from '../styles';
 import { StatusBar } from 'expo-status-bar';
@@ -20,6 +22,7 @@ import {CLOUDINARY_ACCOUNT_NAME, CLOUDINARY_PRESET_NAME} from '@env'
 
 const UploadDocumentScreen = ({navigation}) => {
       const isFocused = useIsFocused();
+      const MAX_FILE_SIZE_MB = 5;
       const {userInfo, setUserInfo, userToken} = useContext(AuthContext)
 
       const [value, setValue] = useState(null);
@@ -113,19 +116,47 @@ const UploadDocumentScreen = ({navigation}) => {
         return null;
       };
 
+      const checkPermissions = async () => {
+              // First request permission (may show prompt if undetermined)
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          
+            if (status === 'granted') {
+              return true;
+            }
+          
+            if (status === 'denied') {
+              Alert.alert(
+                'Permission required',
+                Platform.OS === 'ios'
+                  ? 'Please enable full photo access in your device settings and reopen the app.'
+                  : 'Please enable media library access in your device settings.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Open Settings', onPress: () => Linking.openSettings() },
+                ]
+              );
+              return false;
+              }
+            const { status: newStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              return newStatus === 'granted';
+            };
+
+
       const pickImage = async () => {
-        // No permissions request is necessary for launching the image library
+      const hasPermission = await checkPermissions();
+        if (!hasPermission) return;
+
         let result = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.All,
           aspect: [4, 3],
           quality: 1,
         });
         // check file type here
-        if(result.assets[0].type =='video') {
+        if(result.assets[0].type !== 'image') {
           Toast.show({
               type: ALERT_TYPE.WARNING,
               title:'Error',
-              textBody: 'Videos files are not supported',
+              textBody: 'Files type not supported',
               titleStyle: noticeData[0].errorTitleStyle,
               textBodyStyle: noticeData[0].errorMessageStyle,
             })
@@ -133,22 +164,24 @@ const UploadDocumentScreen = ({navigation}) => {
             setImage(null)
             return
           }
+          
         if (!result.canceled) {
-          setImage(result.assets[0].uri);
-          let fileInfo = await FileSystem.getInfoAsync(result.assets[0].uri);
-          fileSize = 1024 * 1024 * 5
-          if(fileInfo.size > fileSize) {
-            console.log('file size smaller than expected')
+          const file = new File(result.assets[0].uri);
+          const fileInfo = await file.info({ size: true });
+        
+          if (!fileInfo.exists || fileInfo.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
             Toast.show({
-                  type: ALERT_TYPE.DANGER,
-                  title:'Error',
-                  textBody: 'File size is larger than 5MB',
-                  titleStyle: noticeData[0].errorTitleStyle,
-                  textBodyStyle: noticeData[0].errorMessageStyle,
-                })
-              setImage(null)
-            return
+              type: ALERT_TYPE.WARNING,
+              title:'Error',
+              textBody: `File size must be smaller than ${MAX_FILE_SIZE_MB}MB`,
+              titleStyle: noticeData[0].errorTitleStyle,
+              textBodyStyle: noticeData[0].errorMessageStyle,
+              });
+            return;
           }
+          // File is valid, use it
+          setImage(result.assets[0].uri);
+          
         }
       };
 
@@ -174,7 +207,7 @@ const UploadDocumentScreen = ({navigation}) => {
 
       // function to upload photo here
       const uploadDocument = async() => {
-        if(image === undefined || image ==='' || image===null) {
+        if(!image) {
           Toast.show({
             type: ALERT_TYPE.DANGER,
             title:'Error',
@@ -195,14 +228,6 @@ const UploadDocumentScreen = ({navigation}) => {
           return
         }
         setLoading(true)
-        //  const formData = new FormData();
-        //   formData.append('documentData', {
-        //     name: 'documentData.jpg',
-        //     uri: image,
-        //     type: 'image/jpg', // mime type of file
-        //     });
-        //   formData.append('userId', myId);
-        //   formData.append('document_name', value);
 
           let newfile = {
             uri: image,
@@ -214,24 +239,27 @@ const UploadDocumentScreen = ({navigation}) => {
           data.append('upload_preset', CLOUDINARY_PRESET_NAME)
           data.append('upload_name', CLOUDINARY_ACCOUNT_NAME)
           try {
-            res = await fetch("https://api.cloudinary.com/v1_1/ddm1owlon/image/upload", {
+              const response = await fetch("https://api.cloudinary.com/v1_1/ddm1owlon/image/upload", 
+              {
                 method: 'POST',
                 body: data
-              }).then(res => res.json())
-                .then(data =>{
-                const secureUrl = data.secure_url;
-                setImageValue(data.public_id)
-                if(secureUrl){
-                  uploadPhotoURL(secureUrl)
-                  setLoading(false)
+              }
+            );
+
+              const result = await response.json(); // Parse JSON
+              const secureUrl = result.secure_url;
+                setImageValue(result.public_id);
+            
+                if (secureUrl) {
+                  uploadPhotoURL(secureUrl);
+                  setLoading(false);
                 }
-              })
-         } catch (error) {
-          deleteImageId(imageValue)
-          console.log(error.message)
-          setLoading(false)
-        }
-      }
+              } catch (error) {
+                deleteImageId(imageValue)
+                console.log(error.message)
+                setLoading(false)
+              }
+          }
 
       const uploadPhotoURL = async(data) => {
         setLoading2(true)
@@ -335,19 +363,13 @@ const UploadDocumentScreen = ({navigation}) => {
 
                 <View style={gs.homeHeaderRow}>
                     <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                        <Text></Text>
+                      <Text></Text>
                         <TouchableOpacity onPress={() => navigation.goBack()}>
-                          <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                          <Ionicons name='close-outline' size={23} color={colors.textColor}/>
-                        </View>
-                            </TouchableOpacity>
-
-                        {/* <Text style={styles.settingTitle}>Settings</Text> */}
+                            <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
+                            <Ionicons name='close-outline' size={23} color={colors.blackColor1}/>
+                          </View>
+                        </TouchableOpacity>
                         
-                        {/* <TouchableOpacity style={gs.homeSideMenu}>
-                            <Feather name='bell' size={20} color={colors.textColor}/>
-                            
-                        </TouchableOpacity> */}
                     </View>
                     <View style={{marginBottom:30}}></View>
                     
@@ -364,7 +386,7 @@ const UploadDocumentScreen = ({navigation}) => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Documents Upload</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Documents Upload</Text>
                         </View>
 
                         <View style={{marginHorizontal:20, marginTop:10}}>

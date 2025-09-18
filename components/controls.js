@@ -395,11 +395,8 @@ export const LogoutModal = ({
     <Modal
             visible={openModal}
             transparent={true}
-            animationType="slide"
-            onRequestClose={() => {
-              // Prevent modal from closing if there is no internet
-            }}
-          >
+            animationType="slide" 
+            >
             <View style={styles.modalContainer}>
               <View style={styles.modalContent}>
                 <Text style={styles.modalText}>{modalTitle}</Text>
@@ -424,8 +421,6 @@ export const LogoutModal = ({
                   </Pressable>
                 </View>
                 </View>
-               
-
               </View>
             </View>
           </Modal>

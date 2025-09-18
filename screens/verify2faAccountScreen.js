@@ -1,9 +1,12 @@
 import React, { useContext, useState, useEffect, useRef  } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons, Entypo, Fontisto} from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable'
-import * as FileSystem from 'expo-file-system'
+import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
 import Collapsible from 'react-native-collapsible';
 import { gs,colors } from '../styles';
 import { StatusBar } from 'expo-status-bar';
@@ -18,11 +21,11 @@ import { noticeData } from '../components/errorNotice';
 import { ActivityIndicator } from 'react-native';
 import client from '../contextAPI/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Verify2faSuccess from '../components/veriy2faSuccess';
 import {CLOUDINARY_ACCOUNT_NAME, CLOUDINARY_PRESET_NAME} from '@env'
 import CheckPhotoType from '../components/checkPhotoType';
 
-const MAX_FILE_SIZE_MB = 5 * 1024 * 1024; // 5MB in bytes
+const MAX_FILE_SIZE_MB = 5; // 5 MB
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const Verify2faAccountScreen = ({route, navigation}) => {
       const isFocused = useIsFocused();
@@ -43,28 +46,33 @@ const Verify2faAccountScreen = ({route, navigation}) => {
       let myId = userInfo.userData._id; // get logged in user ID
 
       useEffect(() => {
+
         if(isFocused){
-          setImage(newPhoto);
-          CheckPhotoType(newPhoto).then((res)=>{
-            setDocumentType(res)
-            //console.log("Image Type ", res )
-          })
-       
-        if(userInfo?.userData.reg_stage5 =="Yes"){
-            navigation.navigate('Home');
-             }
+        const processPhoto = async () => {
+          if (newPhoto) {
+            // Await the resized URI
+            const resizedUri = await CheckFileSize(newPhoto);
+            setImage(resizedUri);
+      
+            // Check photo type
+            const type = await CheckPhotoType(resizedUri);
+            setDocumentType(type);
+      
+            // Optional: navigate based on user info
+            if (userInfo?.userData.reg_stage5 === "Yes") {
+              navigation.navigate('Home');
             }
-
-            CheckFileSize()
-         }, [isFocused, navigation]);
-
+          }
+        };
+          processPhoto();
+        }
+      }, [isFocused, navigation, newPhoto]);
 
       // open collapsed state
       const openCollapsedState = ()=>{
         setIsCollapsed(!isCollapsed)
       }
 
-      
       // open collapsed state
       const openCollapsedStateReason = ()=>{
         setIsCollapsedReason(!isCollapsedReason)
@@ -82,7 +90,6 @@ const Verify2faAccountScreen = ({route, navigation}) => {
           setModalVisible(!isModalVisible);
       };
      
-   
      // go to camera page
      const takeSelfie = () =>{
       navigation.navigate('OpeCamera')
@@ -96,64 +103,52 @@ const Verify2faAccountScreen = ({route, navigation}) => {
     }
 
     //check file size
-    const CheckFileSize = async ()=>{
-      if (!newPhoto) {
-        return null;
-      }
+
+    const CheckFileSize = async (uri) => {
       try {
-        const fileInfo = await FileSystem.getInfoAsync(newPhoto);
-        if (!fileInfo) {
-          return 'unknown';
+        let file = new File(uri);
+        let info = await file.info({ size: true });
+  
+        // If file does not exist
+        if (!info.exists) {
+          Alert.alert('Error', 'File does not exist');
+          return uri;
         }
-        
-        const fileSize = fileInfo.size;
-
-          // Check if file size is greater than 5MB, if so resize it
-          if (fileSize > MAX_FILE_SIZE_MB) {
-            const resizedUri = await ImageSizeReside(newPhoto);
-            //console.log("New Photo Size ", resizedUri); //
-            setImage(resizedUri);
-          } else {
-            setImage(newPhoto); // If it's already under 5MB, use original image
-          }
-       } catch (error) {
-        console.error("Error getting file info:", error);
-      }
-    
-    }
-
-    const ImageSizeReside = async(uri) =>{
-      if (!uri) {
-        //console.error('No URI provided for image resize check.');
-        return 'unknown';
-      }
-
-    try {
-      let resizedImage = await ImageManipulator.manipulateAsync(
-        uri,
-        [{ resize: { width: 500 } }], // Adjust the width to your requirement (aspect ratio is maintained)
-        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG } // Adjust compression level
-      );
-
-      const resizedFileInfo = await FileSystem.getInfoAsync(resizedImage.uri);
-
-      // Continue resizing if it's still larger than 5MB
-      while (resizedFileInfo.size > MAX_FILE_SIZE_MB) {
-        resizedImage = await ImageManipulator.manipulateAsync(
-          resizedImage.uri,
-          [{ resize: { width: resizedImage.width * 0.8 } }], // Gradually reduce size
-          { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG } // Lower compression
+  
+        // If under max size, return original
+        if (info.size <= MAX_FILE_SIZE_MB * 1024 * 1024) return uri;
+  
+        // Resize iteratively until under max size
+        let resizedImage = await ImageManipulator.manipulateAsync(
+          uri,
+          [{ resize: { width: 500 } }],
+          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
         );
+  
+        file = new File(resizedImage.uri);
+        info = await file.info({ size: true });
+  
+        while (info.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+          resizedImage = await ImageManipulator.manipulateAsync(
+            resizedImage.uri,
+            [{ resize: { width: resizedImage.width * 0.8 } }],
+            { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+          );
+          file = new File(resizedImage.uri);
+          info = await file.info({ size: true });
+        }
+  
+        return resizedImage.uri;
+      } catch (error) {
+        console.error('Error checking/resizing image:', error);
+        return uri; // fallback to original
       }
+    };
 
-      return resizedImage.uri; // Return resized image URI
-    } catch (error) {
-      console.error("Error resizing image:", error);
-      return uri; // Return original URI if resizing fails
-    }
-    }
      // Get user details from local storage after every request/operation into the database
-   const FetchLocalStorage = async()=>{
+   
+   
+     const FetchLocalStorage = async()=>{
     setLoading(true)
     try {
       let userInfoDetails = await AsyncStorage.getItem('userInfo');
@@ -198,13 +193,7 @@ const Verify2faAccountScreen = ({route, navigation}) => {
               })
 
               if(res.data.msg == '201'){
-                // Toast.show({
-                //   type: ALERT_TYPE.SUCCESS,
-                //   title:'Success',
-                //   textBody: 'OTP Have been to your email successfully',
-                //   titleStyle: noticeData[0].errorTitleStyle,
-                //   textBodyStyle: noticeData[0].errorMessageStyle,
-                // })
+                
                 FetchLocalStorage()
                 setOtpSend(true)
                 setCompleteRegData(false)
@@ -278,7 +267,7 @@ const Verify2faAccountScreen = ({route, navigation}) => {
         const sendData = {
           'userId': myId,
           'delete_url': data
-        }
+            }
           try {
               const res = await client.post('/api/deleteUploaded_image', sendData,{
                 headers: {
@@ -290,176 +279,62 @@ const Verify2faAccountScreen = ({route, navigation}) => {
              userInfo = JSON.parse(userInfo)
             setUserInfo(userInfo)
            }
-          else if(res.data.status == '401'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Failed',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return
-          }
-          else if(res.data.status == '402'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: 'You need to login and try again.',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return
-          }
-          else if(res.data.status == '500'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return
-          }
+          else {'file delete ', res.data.message}
         } catch (error) {
-          console.log(error.message)
+          console.log('Just error ', error.message)
         }
       }
 
     // function to upload 2FA verification here
-      const upload2FADocument = async() => {
-        if(image === undefined || image ==='' || image===null) {
-          Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title:'Error',
-            textBody: 'Please select a document to upload',
-            titleStyle: noticeData[0].errorTitleStyle,
-            textBodyStyle: noticeData[0].errorMessageStyle,
-          })
-          return
-        }
-
-        // ResizeImageSize(image).then((data)=>{
-        //   console.log("Image Size ", data )
-        // })
-        
-        setLoading(true)
-        //  const formData = new FormData();
-        //   formData.append('document2FA', {
-        //     name: 'document2FA',
-        //     uri: image,
-        //     type: 'image/jpg', // mime type of file
-        //     });
-        //   formData.append('userId', myId);
-          let newfile = {
-            uri: image,
-            type:`document2FA/${image.split(".")[1]}`,
-            name:`document2FA.${image.split(".")[1]}`,
+        const upload2FADocument = async () => {
+          if (!image) {
+            Toast.show({
+              type: ALERT_TYPE.DANGER,
+              title: 'Error',
+              textBody: 'Please select a document to upload',
+              titleStyle: noticeData[0].errorTitleStyle,
+              textBodyStyle: noticeData[0].errorMessageStyle,
+            });
+            return;
           }
-          const data = new FormData()
-          data.append('file', newfile)
-          data.append('upload_preset', CLOUDINARY_PRESET_NAME)
-          data.append('upload_name', CLOUDINARY_ACCOUNT_NAME)
-
-        //   try {
-        //       const res = await client.post('/api/user_upload2fa', formData,{
-        //         headers: {
-        //         'Content-Type': 'multipart/form-data',
-        //         'Authorization': 'Bearer '+userToken,
-        //       }
-        //   })
-          
-        //   if(res.data.msg == '201'){
-        //     let userInfoReturn = res.data;
-        //     AsyncStorage.setItem('userInfo', JSON.stringify(userInfoReturn));
-
-        //     FetchLocalStorage()
-        //     setDocumentSend(true)
-        //     setCompleteRegData(false)
-        //     setImage(null)
-        //     let userInfo = await AsyncStorage.getItem('userInfo');
-        //         userInfo = JSON.parse(userInfo)
-        //         setUserInfo(userInfo)
-        //     //navigation.navigate('Verify2faces')
-        //     navigation.navigate('UploadProofAddress')
-        //   }
-        //   else if(res.data.status == '401'){
-        //     Toast.show({
-        //       type: ALERT_TYPE.DANGER,
-        //       title:'Failed',
-        //       textBody: res.data.message,
-        //       titleStyle: noticeData[0].errorTitleStyle,
-        //       textBodyStyle: noticeData[0].errorMessageStyle,
-        //     })
-        //   }
-        //   else if(res.data.status == '400'){
-        //     Toast.show({
-        //       type: ALERT_TYPE.DANGER,
-        //       title:'Error',
-        //       textBody: 'File too large',
-        //       titleStyle: noticeData[0].errorTitleStyle,
-        //       textBodyStyle: noticeData[0].errorMessageStyle,
-        //     })
-        //   }
-        //   else if(res.data.status == '404'){
-        //     Toast.show({
-        //       type: ALERT_TYPE.DANGER,
-        //       title:'Failed',
-        //       textBody: 'You need to have an account',
-        //       titleStyle: noticeData[0].errorTitleStyle,
-        //       textBodyStyle: noticeData[0].errorMessageStyle,
-        //     })
-        //   }
-        //   else if(res.data.status == '402'){
-        //     Toast.show({
-        //       type: ALERT_TYPE.DANGER,
-        //       title:'Error',
-        //       textBody: 'You need to login and try again.',
-        //       titleStyle: noticeData[0].errorTitleStyle,
-        //       textBodyStyle: noticeData[0].errorMessageStyle,
-        //     })
-        //   }
-        //   else if(res.data.status == '500'){
-        //     Toast.show({
-        //       type: ALERT_TYPE.DANGER,
-        //       title:'Error',
-        //       textBody: res.data.message,
-        //       titleStyle: noticeData[0].errorTitleStyle,
-        //       textBodyStyle: noticeData[0].errorMessageStyle,
-        //     })
-        //   }
-        //   else{
-        //     Toast.show({
-        //       type: ALERT_TYPE.SUCCESS,
-        //       title:'Error',
-        //       textBody: 'System Error Occurred',
-        //       titleStyle: noticeData[0].errorTitleStyle,
-        //       textBodyStyle: noticeData[0].errorMessageStyle,
-        //     })
-        //   }
-        // } catch (error) {
-        //   console.log(error.message)
-        // }
-        try {
-          res = await fetch("https://api.cloudinary.com/v1_1/ddm1owlon/image/upload", {
-              method: 'POST',
-              body: data
-            }).then(res => res.json())
-              .then(data =>{
-              const secureUrl = data.secure_url;
-              //console.log('After Upload ', data.public_id);
-              setImageValue(data.public_id)
-              if(secureUrl){
-                uploadPhotoURL(secureUrl)
-                //setDeleteImageId(data.public_id)
-                setLoading(false)
+        
+          setLoading(true);
+        
+          const newfile = {
+            uri: image,
+            type: `document2FA/${image.split(".")[1]}`,
+            name: `document2FA.${image.split(".")[1]}`,
+          };
+        
+          const data = new FormData();
+          data.append('file', newfile);
+          data.append('upload_preset', CLOUDINARY_PRESET_NAME);
+          data.append('upload_name', CLOUDINARY_ACCOUNT_NAME);
+        
+          try {
+            const response = await fetch(
+              "https://api.cloudinary.com/v1_1/ddm1owlon/image/upload",
+              {
+                method: 'POST',
+                body: data,
               }
-            })
+            );
+        
+            const result = await response.json(); // Parse JSON
+            const secureUrl = result.secure_url;
+        
+            setImageValue(result.public_id);
+        
+            if (secureUrl) {
+              uploadPhotoURL(secureUrl);
+              setLoading(false);
+            }
           } catch (error) {
-            deleteImageId(imageValue)
-            console.log(error.message)
-            setLoading(false)
-          } 
-        }
+            deleteImageId(imageValue);
+            console.log(error.message);
+            setLoading(false);
+          }
+        };
 
         const uploadPhotoURL = async(data) => {
           setLoading2(true)
@@ -486,6 +361,13 @@ const Verify2faAccountScreen = ({route, navigation}) => {
             let userInfo = await AsyncStorage.getItem('userInfo');
                 userInfo = JSON.parse(userInfo)
                 setUserInfo(userInfo)
+            Toast.show({
+              type: ALERT_TYPE.SUCCESS,
+              title:'Success',
+              textBody: 'KYC uploaded successfully',
+              titleStyle: noticeData[0].errorTitleStyle,
+              textBodyStyle: noticeData[0].errorMessageStyle,
+            })
             //navigation.navigate('Verify2faces')
             navigation.navigate('UploadProofAddress')
             }
@@ -498,7 +380,6 @@ const Verify2faAccountScreen = ({route, navigation}) => {
                 textBodyStyle: noticeData[0].errorMessageStyle,
               })
               return deleteImageId(imageValue)
-              
             }
             else if(res.data.status == '400'){
               Toast.show({
@@ -544,7 +425,7 @@ const Verify2faAccountScreen = ({route, navigation}) => {
             
            } catch (error) {
             deleteImageId(imageValue)
-            console.log(error.message)
+            console.log('error message here: ', error.message)
           }
           finally{
             setLoading2(false)
@@ -560,23 +441,23 @@ const Verify2faAccountScreen = ({route, navigation}) => {
 
                 <View style={gs.homeHeaderRow}>
                     <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                        
-                        {/* <Text style={styles.settingTitle}>Settings</Text> */}
                         <Text></Text>
+                        {/* <Text style={styles.settingTitle}>Settings</Text> */}
+                        <TouchableOpacity onPress={() => navigation.navigate('SignupSteps')}>
+                        <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
+                        <Ionicons name='close-outline' size={25} color={colors.blackColor1}/>
+                        </View>
+                        </TouchableOpacity>
+                        
                         {/* <TouchableOpacity style={{}}>
                             <Ionicons name='close-outline' size={30} color={colors.primaryColor1}/>
                             
                         </TouchableOpacity> */}
-                        <TouchableOpacity onPress={() => navigation.navigate('SignupSteps')}>
-                        <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                        <Ionicons name='close-outline' size={25} color={colors.textColor}/>
-                        </View>
-                            
-                        </TouchableOpacity>
+                        
                     </View>
                     <View style={{marginBottom:20}}></View>
                     <View style={{marginTop:0}}>
-                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Account Ownership Verification</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Account Ownership Verification</Text>
                         </View>
                  </View>
 

@@ -1,5 +1,6 @@
 import React, { useState, useContext, useFocusEffect, useEffect, useCallback, useRef } from 'react';
-import { View,  Platform,Text, TextInput, Pressable, StyleSheet, TouchableOpacity, SafeAreaView, Image, ImageBackground, ScrollView } from 'react-native';
+import { View,  Platform,Text, TextInput, Pressable, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useIsFocused } from '@react-navigation/native';

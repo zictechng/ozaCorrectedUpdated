@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Text, 
   View, 
-  SafeAreaView, 
   ScrollView, 
   ImageBackground, 
   TouchableOpacity, 
@@ -14,6 +13,7 @@ import {
   useWindowDimensions,
   Linking
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 //import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';

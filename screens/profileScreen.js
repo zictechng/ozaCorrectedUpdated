@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { useIsFocused } from '@react-navigation/native';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView,Image, ImageBackground, ScrollView, Alert, ToastAndroid, Platform } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Image, ImageBackground, ScrollView, Alert, ToastAndroid, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { gs,colors } from '../styles';
 import * as Clipboard from 'expo-clipboard';
 import { StatusBar } from 'expo-status-bar';

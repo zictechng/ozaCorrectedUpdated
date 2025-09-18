@@ -2,7 +2,8 @@ import React, { useContext, useState, useEffect} from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Animatable from 'react-native-animatable'
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Image, ImageBackground, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, ImageBackground, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system'
@@ -163,141 +164,55 @@ const UploadProofAddress = ({navigation}) => {
 
       // function to upload photo here
       const uploadPhoto = async() => {
-        if(image === undefined || image ==='' || image===null) {
-          Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title:'Error',
-            textBody: 'Please select a file to upload',
-            titleStyle: noticeData[0].errorTitleStyle,
-            textBodyStyle: noticeData[0].errorMessageStyle,
-          })
-          return
-        }
-        setLoading(true)
-        //console.log("Upload Image ", image)
-        //let data = image;
-        let newfile = {
-          uri: image,
-          type:`document2FA/${image.split(".")[1]}`,
-          name:`document2FA.${image.split(".")[1]}`,
-        }
-        const data = new FormData()
-        data.append('file', newfile)
-        data.append('upload_preset', CLOUDINARY_PRESET_NAME)
-        data.append('upload_name', CLOUDINARY_ACCOUNT_NAME)
-        //   try {
-        //       const res = await client.post('/api/user_uploadProof_address', formData,{
-        //         headers: {
-        //         'Content-Type': 'multipart/form-data',
-        //         'Authorization': 'Bearer '+userToken,
-        //       }
-        //   })
-        //   //console.log(" result ", res.data)
-        //   if(res.data.msg == '201'){
-        //     let userInfoReturn = res.data;
-        //     AsyncStorage.setItem('userInfo', JSON.stringify(userInfoReturn));
-
-        //     FetchLocalStorage()
-        //     setDocumentUploaded(true)
-        //     setCompleteRegData(false)
-        //     setImage(null)
-        //     let userInfo = await AsyncStorage.getItem('userInfo');
-        //         userInfo = JSON.parse(userInfo)
-        //         setUserInfo(userInfo)
-        //     //navigation.navigate('Verify2faces')
-        //   }
-        //   else if(res.data.status == '401'){
-        //     Toast.show({
-        //       type: ALERT_TYPE.DANGER,
-        //       title:'Failed',
-        //       textBody: res.data.message,
-        //       titleStyle: noticeData[0].errorTitleStyle,
-        //       textBodyStyle: noticeData[0].errorMessageStyle,
-        //     })
-        //   }
-        //   else if(res.data.status == '400'){
-        //     Toast.show({
-        //       type: ALERT_TYPE.DANGER,
-        //       title:'Error',
-        //       textBody: 'File too large',
-        //       titleStyle: noticeData[0].errorTitleStyle,
-        //       textBodyStyle: noticeData[0].errorMessageStyle,
-        //     })
-        //   }
-        //   else if(res.data.status == '413'){
-        //     Toast.show({
-        //       type: ALERT_TYPE.DANGER,
-        //       title:'Error',
-        //       textBody: 'File too large',
-        //       titleStyle: noticeData[0].errorTitleStyle,
-        //       textBodyStyle: noticeData[0].errorMessageStyle,
-        //     })
-        //   }
-        //   else if(res.data.status == '404'){
-        //     Toast.show({
-        //       type: ALERT_TYPE.DANGER,
-        //       title:'Failed',
-        //       textBody: 'You need to have an account',
-        //       titleStyle: noticeData[0].errorTitleStyle,
-        //       textBodyStyle: noticeData[0].errorMessageStyle,
-        //     })
-        //   }
-        //   else if(res.data.status == '402'){
-        //     Toast.show({
-        //       type: ALERT_TYPE.DANGER,
-        //       title:'Error',
-        //       textBody: 'You need to login and try again.',
-        //       titleStyle: noticeData[0].errorTitleStyle,
-        //       textBodyStyle: noticeData[0].errorMessageStyle,
-        //     })
-        //   }
-        //   else if(res.data.status == '500'){
-        //     Toast.show({
-        //       type: ALERT_TYPE.DANGER,
-        //       title:'Error',
-        //       textBody: res.data.message,
-        //       titleStyle: noticeData[0].errorTitleStyle,
-        //       textBodyStyle: noticeData[0].errorMessageStyle,
-        //     })
-        //   }
-        //   else{
-        //     Toast.show({
-        //       type: ALERT_TYPE.SUCCESS,
-        //       title:'Error',
-        //       textBody: 'System Error Occurred',
-        //       titleStyle: noticeData[0].errorTitleStyle,
-        //       textBodyStyle: noticeData[0].errorMessageStyle,
-        //     })
-        //   }
-        // } catch (error) {
-        //   console.log(error.message)
-        // }
-        // finally{
-        //   setLoading(false)
-        // }
-
-        try {
-          res = await fetch("https://api.cloudinary.com/v1_1/ddm1owlon/image/upload", {
-              method: 'POST',
-              body: data
-            }).then(res => res.json())
-              .then(data =>{
-              const secureUrl = data.secure_url;
-              //console.log('After Upload ', data.public_id);
-              setImageValue(data.public_id)
-              if(secureUrl){
-                uploadPhotoURL(secureUrl)
-                //setDeleteImageId(data.public_id)
-                setLoading(false)
+              if (!image) {
+                Toast.show({
+                  type: ALERT_TYPE.DANGER,
+                  title: 'Error',
+                  textBody: 'Please select a document to upload',
+                  titleStyle: noticeData[0].errorTitleStyle,
+                  textBodyStyle: noticeData[0].errorMessageStyle,
+                });
+                return;
               }
-            })
-          } catch (error) {
-            deleteImageId(imageValue)
-            console.log(error.message)
-            setLoading(false)
-          } 
+            
+              setLoading(true);
+            
+              let newfile = {
+                uri: image,
+                type:`document2FA/${image.split(".")[1]}`,
+                name:`document2FA.${image.split(".")[1]}`,
+              }
+              const data = new FormData()
+              data.append('file', newfile)
+              data.append('upload_preset', CLOUDINARY_PRESET_NAME)
+              data.append('upload_name', CLOUDINARY_ACCOUNT_NAME)
+            
+              try {
+                const response = await fetch(
+                  "https://api.cloudinary.com/v1_1/ddm1owlon/image/upload",
+                  {
+                    method: 'POST',
+                    body: data,
+                  }
+                );
+            
+                const result = await response.json(); // Parse JSON
+                const secureUrl = result.secure_url;
+            
+                setImageValue(result.public_id);
+            
+                if (secureUrl) {
+                  uploadPhotoURL(secureUrl);
+                  setLoading(false);
+                }
+
+              } catch (error) {
+                deleteImageId(imageValue);
+                console.log(error.message);
+                setLoading(false);
+              }
           
-      }
+          }
 
       const uploadPhotoURL = async(data) => {
         setLoading2(true)
@@ -322,7 +237,13 @@ const UploadProofAddress = ({navigation}) => {
             let userInfo = await AsyncStorage.getItem('userInfo');
                 userInfo = JSON.parse(userInfo)
                 setUserInfo(userInfo)
-                
+            Toast.show({
+              type: ALERT_TYPE.SUCCESS,
+              title:'Success',
+              textBody: 'Proof of address uploaded successfully',
+              titleStyle: noticeData[0].errorTitleStyle,
+              textBodyStyle: noticeData[0].errorMessageStyle,
+            })  
             navigation.navigate('Home');
               
           }
@@ -397,14 +318,13 @@ const UploadProofAddress = ({navigation}) => {
 
                 <View style={gs.homeHeaderRow}>
                     <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                        <Text></Text>
+                      <Text></Text>
                         <TouchableOpacity onPress={() => navigation.navigate('SignupSteps')}>
-                          <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                          <Ionicons name='close-outline' size={23} color={colors.textColor}/>
-                          </View>
-                           
+                              <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
+                              <Ionicons name='close-outline' size={23} color={colors.blackColor1}/>
+                              </View>
                         </TouchableOpacity>
-
+                        
                         {/* <Text style={styles.settingTitle}>Settings</Text> */}
                         
                         {/* <TouchableOpacity style={gs.homeSideMenu}>
@@ -427,7 +347,7 @@ const UploadProofAddress = ({navigation}) => {
                  <View style={{flex:1, backgroundColor:colors.bgColor}}>
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Upload Proof of Address</Text>
+                            <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Upload Proof of Address</Text>
                         </View>
 
                         <View style={{marginHorizontal:20, marginTop:10}}>

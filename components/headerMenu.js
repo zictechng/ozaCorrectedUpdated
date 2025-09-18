@@ -23,9 +23,7 @@ export default function HeaderMenu({
 }) {
   return (
         <View style={gs.homeHeaderRow}>
-                    
-            <View style={{flexDirection: 'row',
-          alignItems: 'center',
+            <View style={{flexDirection: 'row', alignItems: 'center',
           justifyContent: 'space-between',}}>
                     <View style={{ flex: 1, alignItems: 'flex-start' }}>
                       {buttonHome}
@@ -34,12 +32,10 @@ export default function HeaderMenu({
                     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                     {greeting}
                   </View>
-
-                    <Text></Text>
+                  
                     <View style={{ flex: 1, alignItems: 'flex-end' }}>
                     {buttonLeft}
                     </View>
-                    
             </View>
             
         </View>
