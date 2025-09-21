@@ -413,8 +413,8 @@ const WalletScreen = ({navigation}) => {
                       ref={carouselRef}
                       data={dataWallet}
                       renderItem={renderItem}
-                      sliderWidth={windowWidth -45} // - 40 means subtract 20 from left margin, 20 from right margin
-                      itemWidth={width * 0.8}
+                      sliderWidth={windowWidth -40} // - 40 means subtract 20 from left margin, 20 from right margin
+                      itemWidth={width * 0.75}
                       onSnapToItem={(index) => setActiveIndex(index)}
                     />
                   </View>
@@ -422,60 +422,45 @@ const WalletScreen = ({navigation}) => {
                 {activeIndex == 0 &&
                   <View>
                   <View>
-                    {/* Wallet Chart data goes here */}
+                    {/* Wallet Bar Chart data goes here */}
                     
-                  <View style={styles.chartView}>
-                        {/* <WalletChartData /> */}
-                      <View style={{marginTop: 20}}></View>
-                        {chartLoading ? <ActivityIndicator size={'large'} color={colors.primaryColor1} />
-                        :
-                          ! chartDetails &&
-                            // <BarChart
-                            //     key={'xyz'}
-                            //     hideRules={true}
-                            //     barBorderTopLeftRadius ={5}
-                            //     barBorderTopRightRadius ={5}
-                            //     xAxisColor ="lightgrey"
-                            //     frontColor="#1D2667"
-                            //     yAxisColor ="lightgrey"
-                            //     noOfSections={5}
-                            //     height={250}
-                            //     spacing={25}
-                            //     isAnimated ={true}
-                            //     animationDuration={800}
-                            //     animationEasing={'Easing.ease'}
-                            //     barWidth={41}
-                            //     data = {data}
-                            //     xAxisLabelTextStyle={styles.chartText}
-                            // />
-
-                        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 5, marginBottom: 10 }}>
-                            {/* Pie Chart */}
-                            <PieChart 
-                              data={data} 
-                              showText={true} 
-                              donut={false} 
-                              style={{ flex: 1 }} />
-                          
-                            {/* Legend */}
-                          <View style={{ marginLeft: 20, justifyContent: 'center' }}>
-                            {data.map((item, index) => (
-                              <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                                {/* Color indicator */}
-                                <View style={{ width: 16, height: 16, backgroundColor: item.color, marginRight: 8 }} />
-                                {/* Label + Value */}
-                                <View>
-                                  <Text style={{ fontFamily:'_bold' }}>{item.label}</Text>
-                                  <Text>{Number(item?.value).toLocaleString()}</Text>
-                                </View>
-                              </View>
-                            ))}
-                          </View>
+                    <View style={[styles.recentTranView, {marginTop: 25, marginHorizontal:5}]}>
+                    <Text style={styles.recentTranText}>Transactions Flow</Text>
+                    {!homeChartDisplay &&
+                    <TouchableOpacity onPress={() => openCollapsedState()}>
+                        <View style={{width:50, height:50, justifyContent:'center', alignItems:'center', marginTop:-15}}>
+                          {isCollapsed ? <Ionicons name="stats-chart-sharp" size={20} color={colors.primaryColor1} />: <Ionicons name="stats-chart-sharp" size={20} color={colors.textSecColor} />}
                         </View>
                     
-                      }
-                                    
+                    </TouchableOpacity> }
+                </View>
+                    <Collapsible collapsed={isCollapsed}>
+                      <View style={{marginTop:10, borderColor: '#dededc', marginBottom:5}}>
+                          <View style={styles.chartView}>
+                            {chartDataLoading ? <ActivityIndicator size={'large'} color={colors.primaryColor1} />:
+                            <BarChart
+                                key={'xyz'}
+                                hideRules={true}
+                                barBorderTopLeftRadius ={5}
+                                barBorderTopRightRadius ={5}
+                                xAxisColor ="lightgrey"
+                                frontColor={colors.primaryColor1}
+                                yAxisColor ="lightgrey"
+                                noOfSections={5}
+                                height={250}
+                                spacing={25}
+                                isAnimated ={true}
+                                animationDuration={800}
+                                animationEasing={'Easing.ease'}
+                                barWidth={41}
+                                data = {dataChart}
+                                xAxisLabelTextStyle={styles.chartText}
+                            />
+                            }
+                        </View>    
                     </View>
+                              
+                  </Collapsible>
 
                     {/* recent added fund map list here */}
                   
@@ -552,43 +537,38 @@ const WalletScreen = ({navigation}) => {
                     </View>
                   </View> 
 
-                  <View style={[styles.recentTranView, {marginTop: 25, marginHorizontal:5}]}>
-                    <Text style={styles.recentTranText}>Transactions Flow</Text>
-                    {!homeChartDisplay &&
-                    <TouchableOpacity onPress={() => openCollapsedState()}>
-                        <View style={{width:50, height:50, justifyContent:'center', alignItems:'center', marginTop:-15}}>
-                          {isCollapsed ? <Ionicons name="stats-chart-sharp" size={20} color={colors.primaryColor1} />: <Ionicons name="stats-chart-sharp" size={20} color={colors.textSecColor} />}
+                    <View style={styles.chartView}>
+                        {/* Wallet Chart data goes here */}
+                      <View style={{marginTop: 20}}></View>
+                        {chartLoading ? <ActivityIndicator size={'large'} color={colors.primaryColor1} />
+                        :
+                          ! chartDetails &&
+                        
+                        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 5, marginBottom: 10 }}>
+                            {/* Pie Chart */}
+                            <PieChart 
+                              data={data} 
+                              showText={true} 
+                              donut={false} 
+                              style={{ flex: 1 }} />
+                          
+                            {/* Legend */}
+                          <View style={{ marginLeft: 20, justifyContent: 'center' }}>
+                            {data.map((item, index) => (
+                              <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                                {/* Color indicator */}
+                                <View style={{ width: 16, height: 16, backgroundColor: item.color, marginRight: 8 }} />
+                                {/* Label + Value */}
+                                <View>
+                                  <Text style={{ fontFamily:'_bold' }}>{item.label}</Text>
+                                  <Text>{Number(item?.value).toLocaleString()}</Text>
+                                </View>
+                              </View>
+                            ))}
+                          </View>
                         </View>
-                    
-                    </TouchableOpacity> }
-                </View>
-                    <Collapsible collapsed={isCollapsed}>
-                      <View style={{marginTop:10, borderColor: '#dededc', marginBottom:5}}>
-                          <View style={styles.chartView}>
-                            {chartDataLoading ? <ActivityIndicator size={'large'} color={colors.primaryColor1} />:
-                            <BarChart
-                                key={'xyz'}
-                                hideRules={true}
-                                barBorderTopLeftRadius ={5}
-                                barBorderTopRightRadius ={5}
-                                xAxisColor ="lightgrey"
-                                frontColor={colors.primaryColor1}
-                                yAxisColor ="lightgrey"
-                                noOfSections={5}
-                                height={250}
-                                spacing={25}
-                                isAnimated ={true}
-                                animationDuration={800}
-                                animationEasing={'Easing.ease'}
-                                barWidth={41}
-                                data = {dataChart}
-                                xAxisLabelTextStyle={styles.chartText}
-                            />
-                            }
-                        </View>    
+                      }        
                     </View>
-                              
-                  </Collapsible>
                 </View>
                 }
 

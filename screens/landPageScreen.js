@@ -56,7 +56,6 @@ const LandPageScreen = ({navigation}) => {
     }
   }
   useEffect(() =>{
-    _getAppLocalInfo()
     isPendingOTP()
     // check for new updates
     async function checkForUpdate() {
@@ -89,42 +88,73 @@ const LandPageScreen = ({navigation}) => {
 
    //console.log('App URL ', appSettingDetails.app_baseurl)
   // fetch app laughing page information 
-    const pageInfo = async() =>{
-      try{
-        setAppLoading(true)
-        const res = await client.get('/api/fetchApp_info')
-            //console.log('response ', JSON.stringify(res.data))
-            if(res.data.msg =='200'){
-              let appSettingDetails = res.data;
-             //console.log('Yes ')
-             setAppInfo(res.data.infoData)
-             AsyncStorage.setItem('AppSettingInfo',  JSON.stringify( appSettingDetails));
-            }
-            else if(res.data.status == '404'){
-               console.log('Access Login failed ', res.data.status)
-              }
-           }catch (e){
-            console.log(e.message);
-            }
-        finally{
-          setAppLoading(false);
-        }
+  const pageInfo = async (setAppDetails, setAppLoading) => {
+    try {
+      setAppLoading(true);
+      const res = await client.get('/api/fetchApp_info');
+  
+      if (res.data.msg === '200') {
+        const appSettingDetails = res.data;
+  
+        // update state
+        setAppDetails(appSettingDetails);
+  
+        // persist locally
+        await AsyncStorage.setItem(
+          'AppSettingInfo',
+          JSON.stringify(appSettingDetails)
+        );
+  
+        console.log('Fresh settings saved locally');
+      } else if (res.data.status === '404') {
+        console.log('Access Login failed', res.data.status);
       }
+    } catch (err) {
+      console.log('Error fetching app info', err.message);
+    } finally {
+      setAppLoading(false);
+    }
+  };
       
        // get app information from local storage here
-  const _getAppLocalInfo = async () =>{
+    const getAppLocalInfo = async (setAppDetails, setAppLoading) => {
+        try {
+          setAppLoading(true);
+          const res = await AsyncStorage.getItem('AppSettingInfo');
+      
+          if (res !== null) {
+            const parsed = JSON.parse(res);
+            setAppDetails(parsed);
+            console.log('Loaded cached settings');
+          } else {
+            // If nothing in storage, fetch from API
+            await pageInfo(setAppDetails, setAppLoading);
+          }
+        } catch (err) {
+          console.log('Error reading local storage', err.message);
+        } finally {
+          setAppLoading(false);
+        }
+      };
 
-  AsyncStorage.getItem('AppSettingInfo').then(res =>{
-      if(res != null){
-          setAppDetails(JSON.parse(res))
-          //console.log(res);
-      }
-      else if(res == null || res == '' || res== undefined){
-        pageInfo()
-      }
-      }).catch(err => console.log(err.message))
-   }
-  //const bgImageLocal = require("../assets/images/bg6.png");
+  //console.log(appDetails.infoData?.app_launch_title)
+
+
+  useEffect(() => {
+    // 1. Load local storage
+    // 2. Then fetch new data
+    const init = async () => {
+      await getAppLocalInfo(setAppDetails, setAppLoading);
+      // fetch fresh data from API and update storage
+      await pageInfo(setAppDetails, setAppLoading);
+    };
+
+    init();
+  }, []);
+
+  if (appLoading && !appDetails) {
+    return <ActivityIndicator size="large" color={colors.primaryColor1} />;
+  }
 
    // this function will be called and redirect user to google app store to download new version
    const openPlayStore = () => {
