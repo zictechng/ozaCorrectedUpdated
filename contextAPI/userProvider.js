@@ -34,7 +34,7 @@ const UserProvider = ({children}) =>{
   // get user information from local storage here
   const _getAppLocalInfo = async () =>{
 
-  AsyncStorage.getItem('userInfo').then(res =>{
+  await AsyncStorage.getItem('userInfo').then(res =>{
       if(res != null){
           setUserInfo(JSON.parse(res))
           //console.log('User data ', res);
@@ -134,17 +134,44 @@ const UserProvider = ({children}) =>{
           }
       }
       
-      //logout function 
-      const logoutAction = ()=>{
-      setIsLoading(true);
-      //setUserLaunch(false)
-      setUserToken(null);
-      AsyncStorage.removeItem('userToken');
-      AsyncStorage.removeItem('userInfo');
-      AsyncStorage.removeItem('AppSettingInfo');
-      //AsyncStorage.removeItem('alreadyLaunch');
-      setIsLoading(false);
-    }
+
+      // Async logout API call
+        const logoutRequest = async (logout_data) => {
+          try {
+            const authLogout = await client.get(`/api/user_logout/${logout_data}`); // call logout endpoint
+            return authLogout.data;
+          } catch (error) {
+            console.error("Error during logout:", error.message);
+            throw new Error("Logout failed"); // Optionally handle error
+          }
+        };
+
+    // Logout Action
+      const logoutAction = async () => {
+        try {
+          setIsLoading(true);
+
+          // Call the logout API first
+          const logout_data = userInfo.userData._id 
+          await logoutRequest(logout_data);
+
+          // Clear local storage after successful logout
+          await AsyncStorage.multiRemove([
+            'userToken',
+            'userInfo',
+            'AppSettingInfo',
+            // 'alreadyLaunch' if you want to clear it too
+          ]);
+
+          // Update state after storage cleared
+          setUserToken(null);
+        } catch (error) {
+          console.error('Logout error:', error);
+          // Optionally show a message to the user here
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
     const navigateContact = ()=>{
       setContactNavigation(true);

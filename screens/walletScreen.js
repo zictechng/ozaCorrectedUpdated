@@ -41,10 +41,6 @@ const WalletScreen = ({navigation}) => {
     const [dataBitcoin, setDataBitcoin] = useState([]);
     const [isCollapsed, setIsCollapsed] = useState(true);
 
-    const [dataOptionBar, setDataOptionBar] = useState([]);
-    const [dataPayoneerBar, setDataPayoneerBar] = useState([]);
-    const [dataBitcoinBar, setDataBitcoinBar] = useState([]);
-
     const [weeklyData, setWeeklyData] = useState('');
     const [monthlyData, setMonthlyData] = useState('');
     const [yearlyData, setYearlyData] = useState('');
@@ -338,11 +334,11 @@ const WalletScreen = ({navigation}) => {
             </View>
             );
      
-      const data=[{ value: weeklyData == '0' ? 0 : weeklyData, label: 'Weekly', text:'Weekly', color: colors.primaryLightBlue },
+      const data=[{ value: weeklyData == '0' ? 0 : weeklyData, label: 'Weekly', text:'Weekly', color: colors.primaryColor1 },
         { value: monthlyData == '0' ? 0 : monthlyData, label: 'Monthly', 
-          text:'Monthly', color: colors.primaryColor2 },
+          text:'Monthly', color: colors.pierMonthly },
         { value: yearlyData == '0' ? 0 : yearlyData, label: 'Yearly', 
-          text: 'Yearly', color: colors.blueColor }]
+          text: 'Yearly', color: colors.pieYearly }]
 
         // const data=[{ value: weeklyData, text: `Weekly ${weeklyData}`, color: '#FF6384' },
         //   { value: monthlyData, text: `Monthly ${monthlyData}`, color: '#36A2EB' },

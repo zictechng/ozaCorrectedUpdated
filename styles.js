@@ -25,6 +25,8 @@ export const colors = {
     primaryColor1e:"#364cc4",
 
     primaryColor1F:"#424878",
+    pierMonthly: "#c7585b",
+    pieYearly: "#b5aa65",
     //primaryColor2: "#010A4F",
     //primaryColor2: "#d3a448",
     primaryColor2: "#7f8cda",

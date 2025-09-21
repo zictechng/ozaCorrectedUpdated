@@ -86,7 +86,6 @@ const LandPageScreen = ({navigation}) => {
 
    }, [])
 
-   //console.log('App URL ', appSettingDetails.app_baseurl)
   // fetch app laughing page information 
   const pageInfo = async (setAppDetails, setAppLoading) => {
     try {
@@ -104,8 +103,7 @@ const LandPageScreen = ({navigation}) => {
           'AppSettingInfo',
           JSON.stringify(appSettingDetails)
         );
-  
-        console.log('Fresh settings saved locally');
+        //console.log('Fresh settings saved locally');
       } else if (res.data.status === '404') {
         console.log('Access Login failed', res.data.status);
       }
