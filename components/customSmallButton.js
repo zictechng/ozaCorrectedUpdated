@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 export default function CustomSmallButton({buttonStyle, viewStyle, textStyle, textLabel, buttonAction}) {

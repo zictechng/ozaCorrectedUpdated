@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef} from 'react';
+﻿import React, { useState, useEffect, useContext, useRef} from 'react';
 import { View, Text,Platform, TextInput, StatusBar, StyleSheet, TouchableOpacity, Image, ImageBackground, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
@@ -408,7 +408,6 @@ const styles = StyleSheet.create({
     fontSize:15
 },
 textAreaContainer: {
-    borderColor: '#aaa',
     borderWidth: 0.5,
     borderRadius:10,
     marginHorizontal:10,
@@ -422,7 +421,6 @@ textAreaContainer: {
     flex: 1,
     marginTop: Platform.OS === 'ios' ? 0 : -12,
     paddingLeft: 10,
-    color: '#05375a',
     fontFamily: '_regular',
     textAlignVertical: 'top',  // hack android
     height: 150,  

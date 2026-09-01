@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+﻿import React, { useContext, useState, useEffect } from 'react';
 import { flexGrow, StatusBar, View, Text, TextInput, StyleSheet, Platform, TouchableOpacity, ScrollView, Modal,Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';

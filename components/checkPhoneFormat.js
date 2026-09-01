@@ -1,4 +1,4 @@
-// check if phone number is valid 
+﻿// check if phone number is valid 
  
 export default function IsValidPhoneNumber(data) {
     // Regular expression pattern for validating phone number

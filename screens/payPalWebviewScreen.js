@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect }  from 'react';
+﻿import React, { useContext, useState, useEffect }  from 'react';
 import { Dimensions, Animated, View, Text, TouchableOpacity, StyleSheet, StatusBar, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import HeaderMenu from '../components/headerMenu';

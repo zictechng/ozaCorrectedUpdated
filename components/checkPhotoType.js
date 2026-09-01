@@ -1,4 +1,4 @@
-
+﻿
 const CheckPhotoType = async(data) => {
   if (!data) {
     //console.error('No URI provided for MIME type check.');

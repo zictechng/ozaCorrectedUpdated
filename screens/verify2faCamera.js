@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { TouchableOpacity, Image, View, Text, StyleSheet, Dimensions, Linking, Alert, Platform, } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useIsFocused } from '@react-navigation/native';
@@ -182,17 +182,14 @@ const styles = StyleSheet.create({
   message: {
     textAlign: 'center',
     paddingBottom: 10,
-    color: '#fff',
   },
   permissionButton: {
     paddingVertical: 12,
     paddingHorizontal: 20,
-    backgroundColor: '#007AFF',
     borderRadius: 8,
     alignSelf: 'center',
   },
   permissionText: {
-    color: '#fff',
     fontWeight: 'bold',
   },
   camera: {
@@ -206,7 +203,6 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: '#ffffff55',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -214,7 +210,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#7f8cda',
   },
   bottomButtons: {
     position: 'absolute',
@@ -232,13 +227,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   retakeButton: {
-    backgroundColor: '#ff3b30',
   },
   submitButton: {
-    backgroundColor: '#5464c4',
   },
   actionText: {
-    color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
   },

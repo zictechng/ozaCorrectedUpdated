@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { StyleSheet, View, Text, Modal, ActivityIndicator, Image} from 'react-native';
 import { gs, colors } from '../styles';
 

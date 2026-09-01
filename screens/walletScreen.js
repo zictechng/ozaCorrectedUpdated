@@ -1,746 +1,846 @@
-import React, { useContext, useState, useEffect, useRef }  from 'react';
-import { Dimensions , StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ImageBackground, ScrollView, RefreshControl,ActivityIndicator } from 'react-native';
+﻿import React, { useContext, useState, useEffect, useRef, useCallback } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  RefreshControl, ActivityIndicator, Dimensions, StatusBar,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { gs,colors } from '../styles';
 import { useIsFocused } from '@react-navigation/native';
-import { StatusBar } from 'expo-status-bar';
-import { Feather, Ionicons,} from '@expo/vector-icons';
-import moment from "moment";
-import {windowWidth } from '../utils/Dimensions'
-import bgImage from '../assets/images/app_land2.jpg';
+import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import moment from 'moment';
+import { BarChart, PieChart } from 'react-native-gifted-charts';
+import Collapsible from 'react-native-collapsible';
+import Carousel from 'react-native-snap-carousel';
 import { PaymentIcon } from 'react-native-payment-icons';
-import { NumberValueFormat } from '../components/formatValue';
-import WalletChartData from '../model/walletChartData';
+
+import { gs, spacing, radius, typography, shadows } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
+
+import { isSmallPhone, sheetHeight } from '../utils/responsive';
 import { AuthContext } from '../contextAPI/authContext';
 import client from '../contextAPI/client';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BarChart, LineChart, PieChart, PopulationPyramid } from "react-native-gifted-charts";
-import Collapsible from 'react-native-collapsible';
-import background from '../assets/images/sec3.png';
-
-import Carousel from 'react-native-snap-carousel';
+import { NumberValueFormat } from '../components/formatValue';
 import { NumberDollarValueFormat } from '../components/formatDollarValue';
+import { windowWidth } from '../utils/Dimensions';
 
 const { width } = Dimensions.get('window');
 
-const WalletScreen = ({navigation}) => {
-    const isFocused = useIsFocused();
-    
-    const {userToken, userInfo, setUserInfo} = useContext(AuthContext);
-    const [isLoading, setIsLoading] = useState(false)
-    const [isWalletLoading, setIsWalletLoading] = useState(false)
-    const [walletHistory, setWalletHistory] = useState([])
-    const [walletBalance, setWalletBalance] = useState([])
-    const [bonusTotalBalance, setBonusTotalBalance] = useState({})
-    const [withdrawTotalBalance, setWithdrawTotalBalance] = useState({})
-    const [isRefreshing, setIsRefreshing] = useState(false);
+// ── Stat Card Component ───────────────────────────
+const StatCard = ({ label, value, icon, color, bgColor, isDollar }) => (
+  <View style={[styles.statCard, { borderLeftColor: color, borderLeftWidth: 3 }]}>
+    <View style={[styles.statIconBox, { backgroundColor: bgColor }]}>
+      <Ionicons name={icon} size={20} color={color} />
+    </View>
+    <View style={styles.statInfo}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, { color }]}>
+        {isDollar
+          ? <NumberDollarValueFormat value={value || '0'} />
+          : <NumberValueFormat value={value || '0'} />}
+      </Text>
+    </View>
+  </View>
+);
 
-    const [homeChartDisplay, setHomeChartDisplay] = useState(false);
-    const [dataOption, setDataOption] = useState([]);
-    const [dataPayoneer, setDataPayoneer] = useState([]);
-    const [dataBitcoin, setDataBitcoin] = useState([]);
-    const [isCollapsed, setIsCollapsed] = useState(true);
-
-    const [weeklyData, setWeeklyData] = useState('');
-    const [monthlyData, setMonthlyData] = useState('');
-    const [yearlyData, setYearlyData] = useState('');
-    const [chartLoading, setChartLoading] = useState(false);
-    const [chartDataLoading, setChartDataLoading] = useState(false);
-    const [chartDetails, setChartDetails] = useState(false);
-
-    const carouselRef = useRef(null);
-    const [activeIndex, setActiveIndex] = useState(0);
-    //console.log("Active Slider", activeIndex)
-    // open collapsed state
-    const openCollapsedState = ()=>{
-      setIsCollapsed(!isCollapsed)
-    }
-    const dataWallet = [
-      { id: 1, 
-        title: 'Current Funding Balance', 
-        buttonTitle:'Fund Account', 
-        image: require('../assets/images/money_ex.png'),
-        iconType: <Ionicons name='add' size={20} color='#fff'/>,
-        btnTittle:'Add Fund', 
-        amt: userInfo.userData.amount? userInfo.userData.amount : '0.0',
-      },
-      { id: 2, 
-        title: 'Bonus Balance', 
-        image: '' ,
-        buttonTitle:'Withdraw', 
-        iconType: <Ionicons name='arrow-down-outline' size={20} color='#fff'/>,
-        btnTittle:'Withdraw',
-
-        userAmt: userInfo.userData.all_bonus_acct? userInfo.userData.all_bonus_acct : '0.0',
-        amtBalance: userInfo.userData.all_withdraw_acct? userInfo.userData.all_withdraw_acct : '0.0',
-      },
-    ];
-
-
-    const redirectionButton =(data) =>{
-      if(data == 0 )
-      {
-        navigation.navigate('Add-fund')
-      }
-      else if(data == 1)
-      {
-        navigation.navigate('withdraw-fund')
-      }
-      else{
-        alert('Sorry, something went wrong!')
-      }
-    }
-
-
-        // fetch chart data for weekly, monthly and yearly
-           const fetchDataChart = async()=>{
-             try{
-              const myId = userInfo?.userData?._id;
-              if (!myId) {
-                console.log('Access denied – no user ID yet');
-                return;
-               }
-              setChartDataLoading(true)
-             const recentChart = await client.get('/api/chart_transactions/'+myId,{
-                 headers: {
-                     'Authorization': 'Bearer '+userToken,
-                         }
-                    })
-                  setWeeklyData(recentChart.data.weekly ?? 0);
-                  setMonthlyData(recentChart.data.monthly ?? 0);
-                  setYearlyData(recentChart.data.yearly ?? 0);
-
-                 if(recentChart.data.msg =='201'){
-                  const objArr = recentChart.data;
-
-                  setDataOption(objArr.paypal[0]?.totalAmount ?? 0);
-                  setDataPayoneer(objArr.payoneer[0]?.totalAmount ?? 0);
-                  setDataBitcoin(objArr.bitcoin[0]?.totalAmount ?? 0);
-                  
-                  }
-                 else if(recentChart.data.status == '402'){
-                     //console.log('Login failed')
-                     return
-                 }
-                 else if(recentChart.data.status == '404'){
-                     console.log('No chart data ',)
-                  }
-                 else{
-                     console.log('chart balance')
-                 }
-                 }catch (e){
-                 console.log(e.message);
-                 }
-                 finally{
-                  setChartDataLoading(false);
-                 }
-             }
-    // fetching all history base on paypal transaction with pagination
-    const getWalletHistory = async() =>{
-         setIsLoading(true);
-          try {
-            const res = await client.get('/api/history-wallet/'+userInfo.userData.tag_id,{
-                headers: {
-                    'Authorization': 'Bearer '+userToken,
-                        }
-                })
-            //console.log("response: " + res);
-          if(res.data.length > 0){
-            setWalletHistory(res.data)
-             }
-          else{
-            console.log('No record found')
-          }
-
-          } catch (error) {
-            console.log(error.message);
-          } finally {
-            setIsLoading(false);
-           }
-         }
-
-    // fetching all history base on paypal transaction with pagination
-    const getWalletBalance = async() =>{
-        setIsWalletLoading(true);
-         try {
-           const res = await client.get('/api/user_Wallet_summary/'+userInfo.userData.tag_id,{
-               headers: {
-                   'Authorization': 'Bearer '+userToken,
-                    }
-               })
-           
-            if(res.data.msg =='201'){
-            let result = res.data.feedback;
-            let resultData = res.data;
-            let bonusResult = res.data.feedbackBonus;
-            //console.log('all result ', bonusResult)
-            setBonusTotalBalance(bonusResult)
-            setWalletBalance(result)
-            setWithdrawTotalBalance(res.data.feedbackWithdraw)
-            //console.log("response: " + JSON.stringify( res.data.feedback));
-            }
-         else{
-           console.log('No record found')
-         }
-
-         } catch (error) {
-           console.log(error.message);
-         } finally {
-            setIsWalletLoading(false);
-          }    
-        }
-
-    // refresh user details from db after any operation into the database
-    const RefreshUserDetails = async()=>{
-      //console.log("Refresh ID ", data)
-    try {
-        const res = await client.get('/api/userProfileMobile/'+userInfo.userData._id,{
-          headers: {
-              'Authorization': 'Bearer '+userToken,
-                  }
-          })
-        if(res.data.msg == '200'){
-          const userDetails = res.data; 
-          const appDataInfo = res.data.appData;
-          //console.log('User Details fetch local storage ', res.data)
-          AsyncStorage.setItem('userInfo', JSON.stringify(userDetails));
-          AsyncStorage.setItem('AppSettingData', JSON.stringify(appDataInfo));
-         }
-         let userInfoDetails = await AsyncStorage.getItem('userInfo');
-         let appInfoDetails = await AsyncStorage.getItem('AppSettingData');
-            userInfoDetails = JSON.parse(userInfoDetails)
-            appInfoDetails = JSON.parse(appInfoDetails)
-        if(userInfoDetails){
-          setUserInfo(userInfoDetails);
-         // console.log('User Details fetch local storage ')
-        }
-        else{
-            console.log("something went wrong while fetching user details")
-        }
-    } catch (error) {
-        console.log( 'fetching user information failed ', error.message)
-    }   
-  }
-
-  // get latest transaction details
-          const fetchData = async()=>{
-             try{
-                const myId = userInfo?.userData?._id;
-                //console.log('fetchData called, Access ID:', myId);
-    
-                if (!myId) {
-                console.log('Access denied – no user ID yet');
-                return;
-                }
-                setChartLoading(true)
-             const recentChart = await client.get('/api/chart_transactions/'+myId,{
-                 headers: {
-                     'Authorization': 'Bearer '+userToken,
-                         }
-                 })
-                 if(recentChart.data.msg =='201'){
-                  let result = recentChart.data;
-                  
-                  const objArr = recentChart.data; 
-                  setDataOption(objArr.paypal[0]?.totalAmount) 
-                  setDataPayoneer(objArr.payoneer[0]?.totalAmount)
-                  setDataBitcoin(objArr.bitcoin[0]?.totalAmount)
-                  
-                  }
-                    const objArr = recentChart.data;
-                    //console.log(objArr)
-                    if(objArr.paypal.length < 1 && objArr.payoneer.length < 1 && objArr.bitcoin.length < 1) {
-                    setHomeChartDisplay(true);    
-                    }
-                    if(objArr.paypal.length > 0 || objArr.payoneer.length > 0 || objArr.bitcoin.length > 0) {
-                    setHomeChartDisplay(false);    
-                    }
-          
-                 else if(recentChart.data.status == '402'){
-                     //console.log('Login failed')
-                     return
-                 }
-                 else if(recentChart.data.status == '404'){
-                     console.log('No chart data ',)
-                  }
-                 else{
-                     console.log('chart balance')
-                 }
-                 }catch (e){
-                 console.error('fetchData error', e);
-                 }
-                 finally{
-                    setChartLoading(false);
-                 }
-          
-             }
-
-   useEffect(() =>{
-    getWalletBalance()
-    getWalletHistory();
-    RefreshUserDetails();
-    fetchData()
-    fetchDataChart()
-    //walletID()
-  },[isFocused])
-   
-  //page refreshing function goes here
-  const handleRefresh = React.useCallback(() => {
-    setIsRefreshing(true);
-    RefreshUserDetails()
-    getWalletBalance()
-    getWalletHistory()
-    fetchData()
-    setTimeout(() => {
-    setIsRefreshing(false);
-    }, 1000);
-      }, []);
-
-
-       //xAxisLabelTexts={['PayPal', 'Payoneer', 'Bitcoin']}
-       const dataChart=[{value:dataOption == null ? 0 : dataOption, label: 'PayPal'}, {value:dataPayoneer == null ? 0:  dataPayoneer, label:'Payoneer'}, {value:dataBitcoin == null ? 0 : dataBitcoin, label:'Bitcoin'}]
-
-
-      const renderItem = ({ item }) => (
-        <View style={{flex: 1, borderRadius:8, marginTop:15, backgroundColor:colors.primaryColor1,
-          shadowRadius:5, shadowColor:'#000', shadowOffset:{width: 0,
-              height:2,}, shadowOpacity: 0.23, elevation: 1, height: 130, marginBottom:10}}>
-              <ImageBackground source={item.image} resizeMode='cover' imageStyle={{opacity: 0.3}} style={{flex:1}}>
-                  
-                      <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8}}>
-      
-                          <View style={{marginHorizontal:10, marginTop:10}}>
-                              <Text style={{fontFamily:'_semiBold', fontSize:13, color:colors.bgColor}}>{item.title} </Text>
-                              <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textColor, marginBottom: 8}}>
-                                {/* <NumberValueFormat value={walletBalance[0]?.totalAmount? walletBalance[0]?.totalAmount : '0.0'} /> */}
-                                
-                                {item.id == 1 && item.amt > 100000000 ? <Text>{'\u20A6'}100M</Text> : item.id == 1 && item.amt < 100000000 ? <Text><NumberValueFormat value={item.amt} /></Text> : item.id == 2 && item.userAmt > 100000000 ? <Text>$100M</Text>: item.id == 2 && item.userAmt < 100000000 ? <Text><NumberDollarValueFormat value={item.userAmt} /></Text> : <Text>0.00</Text>}
-                                
-                                </Text>
-                          </View>
-                              <View style={{marginHorizontal:5, flexDirection:'row', alignItems:'center', justifyContent:'center' }}>
-                                  <PaymentIcon type='master' width={30}/>
-                              </View>
-                          </View>
-                            <View style={{marginHorizontal:5, flexDirection:'row', alignItems:'center', justifyContent:'center', marginBottom:8 }}>
-                              <TouchableOpacity onPress={() => redirectionButton(activeIndex)} style={{backgroundColor:'transparent', borderColor:'#fff', borderWidth:1, borderRadius:10, height:30, justifyContent:'center', alignItems:'center'}}>
-                                <View style={{flexDirection:'row', marginHorizontal:10}}>
-                                  <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.textColor}}>{item.buttonTitle}  </Text>
-                                  {item.iconType}
-                                </View>
-                              </TouchableOpacity>  
-                          </View>
-              </ImageBackground>
-            </View>
-            );
-     
-      const data=[{ value: weeklyData == '0' ? 0 : weeklyData, label: 'Weekly', text:'Weekly', color: colors.primaryColor1 },
-        { value: monthlyData == '0' ? 0 : monthlyData, label: 'Monthly', 
-          text:'Monthly', color: colors.pierMonthly },
-        { value: yearlyData == '0' ? 0 : yearlyData, label: 'Yearly', 
-          text: 'Yearly', color: colors.pieYearly }]
-
-        // const data=[{ value: weeklyData, text: `Weekly ${weeklyData}`, color: '#FF6384' },
-        //   { value: monthlyData, text: `Monthly ${monthlyData}`, color: '#36A2EB' },
-        //   { value: yearlyData, text: `Yearly ${yearlyData}`, color: '#FFCE56' }]
-      //console.log('weekly data ', weeklyData)
+// ── Transaction Item Component ────────────────────
+const WalletTransactionItem = ({ item }) => {
+  const { colors } = useThemeStyles();
   return (
-    <ImageBackground style={{flex:1}} source={bgImage} resizeMode='cover'>
-        <SafeAreaView style={{flex:1}}>
+  <View style={[styles.transactionItem, { backgroundColor: colors.bgCard }]}>
+    <View style={styles.transactionLeft}>
+      <View style={[styles.transactionIconBox, { backgroundColor: colors.bgLight }]}>
+        <Feather name="arrow-up-left" size={20} color={colors.successColor} />
+      </View>
+      <View style={styles.transactionInfo}>
+        <Text style={styles.transactionTitle} numberOfLines={1}>
+          {item.fund_type}
+        </Text>
+        <Text style={styles.transactionDate}>
+          {moment(item.creditOn).format('DD MMM YYYY • hh:mm A')}
+        </Text>
+      </View>
+    </View>
+    <View style={styles.transactionRight}>
+      <Text style={styles.transactionAmount}>
+        <NumberValueFormat value={item.amount} />
+      </Text>
+      <View style={[
+        item.fund_status === 'Success'
+          ? gs.badgeSuccess
+          : gs.badgeWarning,
+        { marginTop: 4 }
+      ]}>
+        <Text style={
+          item.fund_status === 'Success'
+            ? gs.badgeSuccessText
+            : gs.badgeWarningText
+        }>
+          {item.fund_status}
+        </Text>
+      </View>
+    </View>
+  </View>
+    );
+  };
 
-        <StatusBar style='light' />
+// ── Main Wallet Screen ────────────────────────────
+const WalletScreen = ({ navigation }) => {
+  const isFocused = useIsFocused();
+  const { S, colors, isDark } = useThemeStyles();
+  const { userToken, userInfo, setUserInfo } = useContext(AuthContext);
 
-                <View style={gs.homeHeaderRow}>
-                    <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                        <TouchableOpacity
-                        onPress={() => navigation.goBack()}>
-                            <View style={[gs.homeSideMenu, {borderWidth: 0}]} >
-                                <Ionicons name='arrow-back' size={23} color={colors.textColor} />
-                            </View>
-                        </TouchableOpacity>
+  const [isLoading, setIsLoading] = useState(false);
+  const [isWalletLoading, setIsWalletLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [walletHistory, setWalletHistory] = useState([]);
+  const [walletBalance, setWalletBalance] = useState([]);
+  const [bonusTotalBalance, setBonusTotalBalance] = useState(0);
+  const [withdrawTotalBalance, setWithdrawTotalBalance] = useState(0);
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [chartLoading, setChartLoading] = useState(false);
+  const [chartDataLoading, setChartDataLoading] = useState(false);
+  const [dataOption, setDataOption] = useState(0);
+  const [dataPayoneer, setDataPayoneer] = useState(0);
+  const [dataBitcoin, setDataBitcoin] = useState(0);
+  const [weeklyData, setWeeklyData] = useState(0);
+  const [monthlyData, setMonthlyData] = useState(0);
+  const [yearlyData, setYearlyData] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState('transactions');
 
-                        <Text style={styles.profileTitle}>My Wallet</Text>
-                        <Text></Text>
-                        {/* <TouchableOpacity style={gs.homeSideMenu}>
-                            <Feather name='bell' size={20} color={colors.textColor}/>
-                            
-                        </TouchableOpacity> */}
-                    </View>
-                    <View style={{marginBottom:30}}></View>
-                 </View>
-            
-            <View style={{backgroundColor:colors.bgColor, flex:1,}}>
-                        
-            <ScrollView showsVerticalScrollIndicator={false} style={{paddingHorizontal:20}}
-                  refreshControl={
-                <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh}
-                tintColor='#7f8cda'
-                colors={['#7f8cda']}
-                progressBackgroundColor='#7f8cda' />}>
-              
-              {/* <View style={{flex: 1, borderRadius:8, marginTop:15, backgroundColor:colors.primaryColor1,
-              shadowRadius:5, shadowColor:'#000', shadowOffset:{width: 0,
-                  height:2,}, shadowOpacity: 0.23, elevation: 1, height: 80}}>
-                    <ImageBackground source={background} resizeMode='cover' imageStyle={{opacity: 0.3}} style={{flex:1}}>
-                      
-                            <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8}}>
+  const carouselRef = useRef(null);
 
-                              <View style={{marginHorizontal:10, marginTop:10}}>
-                                  <Text style={{fontFamily:'_semiBold', fontSize:13, color:colors.bgColor}}>Current Wallet Balance </Text>
-                                  <Text style={{fontFamily:'_bold', fontSize:30, color:colors.textColor, marginBottom: 8}}>
-                                    
-                                    <NumberValueFormat value={userInfo.userData.amount? userInfo.userData.amount : '0.0'} />
-                                    </Text>
-                              </View>
-                                  <View style={{marginHorizontal:5, flexDirection:'row', alignItems:'center' }}>
-                                      <TouchableOpacity onPress={() =>navigation.navigate('FundAccount')}>
-                                      <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.textColor}}>Add Fund </Text>
-                                      </TouchableOpacity>
-                                      
-                                      <PaymentIcon type='master' width={30}/>
-                                  </View>
-                      </View>
-                  </ImageBackground>
-                  
-              </View> */}
-                {/* Wallet slider here */}
-                <View>
-                    <Carousel
-                      ref={carouselRef}
-                      data={dataWallet}
-                      renderItem={renderItem}
-                      sliderWidth={windowWidth -40} // - 40 means subtract 20 from left margin, 20 from right margin
-                      itemWidth={width * 0.75}
-                      onSnapToItem={(index) => setActiveIndex(index)}
-                    />
-                  </View>
+  const dataWallet = [
+    {
+      id: 1,
+      title: 'Funding Balance',
+      subtitle: 'Available to spend',
+      icon: 'wallet-outline',
+      
+      bgColor: colors.bgLight,
+      amount: userInfo?.userData?.amount || '0.0',
+      isDollar: false,
+      actionLabel: 'Fund Account',
+      actionIcon: 'add',
+    },
+    {
+      id: 2,
+      title: 'Bonus Balance',
+      subtitle: 'Earned rewards',
+      icon: 'gift-outline',
+      bgColor: '#FFF3CD',
+      amount: userInfo?.userData?.all_bonus_acct || '0.0',
+      isDollar: true,
+      actionLabel: 'Withdraw',
+      actionIcon: 'arrow-down-outline',
+    },
+  ];
 
-                {activeIndex == 0 &&
-                  <View>
-                  <View>
-                    {/* Wallet Bar Chart data goes here */}
-                    
-                    <View style={[styles.recentTranView, {marginTop: 25, marginHorizontal:5}]}>
-                    <Text style={styles.recentTranText}>Transactions Flow</Text>
-                    {!homeChartDisplay &&
-                    <TouchableOpacity onPress={() => openCollapsedState()}>
-                        <View style={{width:50, height:50, justifyContent:'center', alignItems:'center', marginTop:-15}}>
-                          {isCollapsed ? <Ionicons name="stats-chart-sharp" size={20} color={colors.primaryColor1} />: <Ionicons name="stats-chart-sharp" size={20} color={colors.textSecColor} />}
-                        </View>
-                    
-                    </TouchableOpacity> }
-                </View>
-                    <Collapsible collapsed={isCollapsed}>
-                      <View style={{marginTop:10, borderColor: '#dededc', marginBottom:5}}>
-                          <View style={styles.chartView}>
-                            {chartDataLoading ? <ActivityIndicator size={'large'} color={colors.primaryColor1} />:
-                            <BarChart
-                                key={'xyz'}
-                                hideRules={true}
-                                barBorderTopLeftRadius ={5}
-                                barBorderTopRightRadius ={5}
-                                xAxisColor ="lightgrey"
-                                frontColor={colors.primaryColor1}
-                                yAxisColor ="lightgrey"
-                                noOfSections={5}
-                                height={250}
-                                spacing={25}
-                                isAnimated ={true}
-                                animationDuration={800}
-                                animationEasing={'Easing.ease'}
-                                barWidth={41}
-                                data = {dataChart}
-                                xAxisLabelTextStyle={styles.chartText}
-                            />
-                            }
-                        </View>    
-                    </View>
-                              
-                  </Collapsible>
+  // ── Fetch Chart Data ──────────────────────────
+  const fetchDataChart = async () => {
+    try {
+      const myId = userInfo?.userData?._id;
+      if (!myId) return;
+      setChartDataLoading(true);
+      const res = await client.get('/api/chart_transactions/' + myId, {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      });
+      setWeeklyData(res.data.weekly ?? 0);
+      setMonthlyData(res.data.monthly ?? 0);
+      setYearlyData(res.data.yearly ?? 0);
+      if (res.data.msg === '201') {
+        const objArr = res.data;
+        setDataOption(objArr.paypal[0]?.totalAmount ?? 0);
+        setDataPayoneer(objArr.payoneer[0]?.totalAmount ?? 0);
+        setDataBitcoin(objArr.bitcoin[0]?.totalAmount ?? 0);
+      }
+    } catch (e) {
+      console.log('Chart data error:', e.message);
+    } finally {
+      setChartDataLoading(false);
+    }
+  };
 
-                    {/* recent added fund map list here */}
-                  
-              {!isLoading && walletHistory.map((item, index) => (
-                    
-               <TouchableOpacity style={[styles.historyMainView,{ marginBottom:15}]} onPress={()=>{}}
-                    key={index}>
-                    <View style={styles.historyView}>
-                      <View style={{marginHorizontal:10, marginTop:5, flexDirection:'row'}}>
-                        <Feather name="arrow-up-left" size={30} color="#09d97b"/>
-                          <View style={{flexDirection:'column'}}>
-                            <Text style={styles.historyTextDate}>{moment(item.creditOn).format("DD/MM/YYYY hh:mm:ss")}</Text>
-                            <Text style={[styles.historyTextStatus, {marginRight:5}]}>{item.fund_type}</Text>
-                          </View>
-                            
-                      </View>
-                      <View style={styles.historyViewIn}>
-                          <View style={{flexDirection:'column'}}>
-                          <Text style={styles.historyAmtText}><NumberValueFormat value={item.amount} /></Text>
-                          <Text style={[styles.historyTextStatus, {fontSize:10, marginBottom:-10}]}>{item.fund_status}</Text>
-                          </View>
-                        
-                      </View>
-                        
-                    </View>
-                                
-               </TouchableOpacity>
-                 ))}
-                  </View>
-                    
-                  </View>
-                  }
+  // ── Fetch Wallet History ──────────────────────
+  const getWalletHistory = async () => {
+    setIsLoading(true);
+    try {
+      const res = await client.get('/api/history-wallet/' + userInfo?.userData?.tag_id, {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      });
+      if (res.data.length > 0) setWalletHistory(res.data);
+    } catch (error) {
+      console.log('Wallet history error:', error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-                    {!chartLoading && walletHistory.length < 1 &&
-                      <View>
-                          <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor, textAlign:'center'}}>No recent transaction at the moment</Text>
-                      </View>
-                      }
-                  {/* bonus summary block */}
-                {activeIndex == 1 &&
-                <View>
-                  <View style={{flex: 1, justifyContent:'center', alignItems:'center', marginHorizontal:5}}></View>
+  // ── Fetch Wallet Balance ──────────────────────
+  const getWalletBalance = async () => {
+    setIsWalletLoading(true);
+    try {
+      const res = await client.get('/api/user_Wallet_summary/' + userInfo?.userData?.tag_id, {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      });
+      if (res.data.msg === '201') {
+        setWalletBalance(res.data.feedback);
+        setBonusTotalBalance(res.data.feedbackBonus);
+        setWithdrawTotalBalance(res.data.feedbackWithdraw);
+      }
+    } catch (error) {
+      console.log('Wallet balance error:', error.message);
+    } finally {
+      setIsWalletLoading(false);
+    }
+  };
 
-                  <View style={{flex: 1, marginHorizontal:18, borderRadius:8, marginTop:15, backgroundColor:colors.colorWhite,
-                  shadowRadius:5, shadowColor:'#000', shadowOffset:{width: 0,
-                height:2, justifyContent:'center', alignItems:'center',}, shadowOpacity: 0.23, elevation: 1, marginBottom:10, marginLeft:8}}>
-                    <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:5}}>
-                    <View style={{marginHorizontal:15, marginTop:10}}>
-                      <Text style={{fontFamily:'_semiBold', fontSize:15, color:colors.lightHl}}>{'Pending Bonus'} </Text>
-                      <Text style={{fontFamily:'_bold', fontSize:23, color:colors.lightBg, marginBottom: 8}}>
-                        {/* <NumberValueFormat value={walletBalance[0]?.totalAmount? walletBalance[0]?.totalAmount : '0.0'} /> */}
-                          {bonusTotalBalance == 0 || bonusTotalBalance == null ? '$0.00' : bonusTotalBalance > 1000000 ? <Text>$1M</Text> : <NumberDollarValueFormat value={bonusTotalBalance} />}
-                        </Text>
-                        <Text style={{fontFamily:'_regular', fontSize:13, color:colors.textSecColor, marginBottom: 8}}>
-                          Current pending bonus balance
-                        </Text>
-                    </View>
-                  </View>
-                  </View> 
-                  <View style={{flex: 1, marginHorizontal:18, borderRadius:8, marginTop:15, backgroundColor:colors.colorWhite,
-                  shadowRadius:3, shadowColor:'#000', shadowOffset:{width: 0,
-                  height:2,}, shadowOpacity: 0.23, elevation: 1, marginBottom:10, marginLeft:8}}>
-                      <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8}}>
-                    <View style={{marginHorizontal:20, marginTop:10}}>
-                  <Text style={{fontFamily:'_semiBold', fontSize:15, color:colors.lightHl}}>{'Total Withdraw'} </Text>
-                  <Text style={{fontFamily:'_bold', fontSize:23, color:colors.lightBg, marginBottom: 5}}>
-                    {/* <NumberValueFormat value={walletBalance[0]?.totalAmount? walletBalance[0]?.totalAmount : '0.0'} /> */}
-                    {withdrawTotalBalance == 0 || withdrawTotalBalance == null ? '$0.00' : withdrawTotalBalance > 1000000 ? <Text>$1M</Text> : <NumberDollarValueFormat value={withdrawTotalBalance} />}
-                    </Text>
-                    <Text style={{fontFamily:'_regular', fontSize:13, color:colors.textSecColor, marginBottom: 5}}>
-                      All time Withdrawal from your account.
-                    </Text>
-                    </View>                                    
-                    </View>
-                  </View> 
+  // ── Refresh User Details ──────────────────────
+  const RefreshUserDetails = async () => {
+    try {
+      const res = await client.get('/api/userProfileMobile/' + userInfo?.userData?._id, {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      });
+      if (res.data.msg === '200') {
+        AsyncStorage.setItem('userInfo', JSON.stringify(res.data));
+        setUserInfo(res.data);
+      }
+    } catch (error) {
+      console.log('Refresh error:', error.message);
+    }
+  };
 
-                    <View style={styles.chartView}>
-                        {/* Wallet Chart data goes here */}
-                      <View style={{marginTop: 20}}></View>
-                        {chartLoading ? <ActivityIndicator size={'large'} color={colors.primaryColor1} />
-                        :
-                          ! chartDetails &&
-                        
-                        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 5, marginBottom: 10 }}>
-                            {/* Pie Chart */}
-                            <PieChart 
-                              data={data} 
-                              showText={true} 
-                              donut={false} 
-                              style={{ flex: 1 }} />
-                          
-                            {/* Legend */}
-                          <View style={{ marginLeft: 20, justifyContent: 'center' }}>
-                            {data.map((item, index) => (
-                              <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                                {/* Color indicator */}
-                                <View style={{ width: 16, height: 16, backgroundColor: item.color, marginRight: 8 }} />
-                                {/* Label + Value */}
-                                <View>
-                                  <Text style={{ fontFamily:'_bold' }}>{item.label}</Text>
-                                  <Text>{Number(item?.value).toLocaleString()}</Text>
-                                </View>
-                              </View>
-                            ))}
-                          </View>
-                        </View>
-                      }        
-                    </View>
-                </View>
-                }
+  useEffect(() => {
+    if (isFocused) {
+      getWalletBalance();
+      getWalletHistory();
+      RefreshUserDetails();
+      fetchDataChart();
+    }
+  }, [isFocused]);
 
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    RefreshUserDetails();
+    getWalletBalance();
+    getWalletHistory();
+    fetchDataChart();
+    setTimeout(() => setIsRefreshing(false), 1500);
+  }, []);
 
-                 {/* Chart data goes here */}
-                  
-                    {/* <LineChart data = {data} /> */}
-                    
-                    {/* <PopulationPyramid data = {[{left:10,right:12}, {left:9,right:8}]} /> */}
+  const redirectionButton = (index) => {
+    if (index === 0) navigation.navigate('Add-fund');
+    else if (index === 1) navigation.navigate('withdraw-fund');
+  };
 
-                  
-              </ScrollView> 
+  // ── Chart Data ────────────────────────────────
+  const barChartData = [
+    { value: dataOption || 0, label: 'PayPal', frontcolor: '#4C5FD5' },
+    { value: dataPayoneer || 0, label: 'Payoneer', frontColor: colors.accentGold },
+    { value: dataBitcoin || 0, label: 'Bitcoin', frontColor: colors.accentGreen },
+  ];
+
+  const pieChartData = [
+    { value: weeklyData || 0,  label: 'Weekly' },
+    { value: monthlyData || 0, color: '#F0A500', label: 'Monthly' },
+    { value: yearlyData || 0, color: '#00C896', label: 'Yearly' },
+  ];
+
+  // ── Wallet Card Renderer ──────────────────────
+  const renderWalletCard = ({ item, index }) => (
+    <LinearGradient
+      colors={
+        item.id === 1
+          ? [colors.primaryColor1, colors.primaryColor1b]
+          : ['#1A1D2E', '#2D3561']
+      }
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.walletCard}>
+
+      {/* Decorative circles */}
+      <View style={styles.cardCircleLarge} />
+      <View style={styles.cardCircleSmall} />
+
+      {/* Card Header */}
+      <View style={styles.cardHeader}>
+        <View style={styles.cardIconBox}>
+          <Ionicons name={item.icon} size={20} color="#fff" />
+        </View>
+        <PaymentIcon type="master" width={36} />
+      </View>
+
+      {/* Balance */}
+      <View style={styles.cardBalanceSection}>
+        <Text style={styles.cardBalanceLabel}>{item.title}</Text>
+        <Text style={styles.cardBalanceAmount}>
+          {item.isDollar
+            ? <NumberDollarValueFormat value={item.amount} />
+            : <NumberValueFormat value={item.amount} />}
+        </Text>
+        <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
+      </View>
+
+      {/* Action Button */}
+      <TouchableOpacity
+        style={styles.cardActionBtn}
+        onPress={() => redirectionButton(index)}
+        activeOpacity={0.85}>
+        <Ionicons name={item.actionIcon} size={16} color="#fff" />
+        <Text style={styles.cardActionText}>{item.actionLabel}</Text>
+      </TouchableOpacity>
+
+    </LinearGradient>
+  );
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.bgColor}
+      />
+
+      {/* ── Header ─────────────────────────────── */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={gs.homeSideMenu}
+          onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>My Wallet</Text>
+        <TouchableOpacity
+          style={gs.homeSideMenu}
+          onPress={handleRefresh}>
+          <Ionicons name="refresh-outline" size={22} color={colors.primaryColor1} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primaryColor1}
+            colors={[colors.primaryColor1]}
+          />
+        }>
+
+        {/* ── Wallet Card Carousel ────────────── */}
+        <View style={styles.carouselContainer}>
+          <Carousel
+            ref={carouselRef}
+            data={dataWallet}
+            renderItem={renderWalletCard}
+            sliderWidth={windowWidth - 40}
+            itemWidth={windowWidth - 80}
+            onSnapToItem={(index) => setActiveIndex(index)}
+            loop={false}
+          />
+          {/* Carousel Dots */}
+          <View style={styles.dotsRow}>
+            {dataWallet.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  activeIndex === index && styles.dotActive,
+                ]}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* ── Quick Action Buttons ────────────── */}
+        <View style={styles.quickActions}>
+          <TouchableOpacity
+            style={[styles.quickActionBtn, { backgroundcolor: '#4C5FD5' }]}
+            onPress={() => navigation.navigate('Add-fund')}
+            activeOpacity={0.85}>
+            <Ionicons name="add-circle-outline" size={18} color="#fff" />
+            <Text style={styles.quickActionText}>Fund Account</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.quickActionBtn, { backgroundColor: colors.accentGreen }]}
+            onPress={() => navigation.navigate('withdraw-fund')}
+            activeOpacity={0.85}>
+            <Ionicons name="arrow-down-circle-outline" size={18} color="#fff" />
+            <Text style={styles.quickActionText}>Withdraw</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.quickActionBtn, { backgroundColor: colors.accentGold }]}
+            onPress={() => navigation.navigate('SendFund')}
+            activeOpacity={0.85}>
+            <Ionicons name="send-outline" size={18} color="#fff" />
+            <Text style={styles.quickActionText}>Send</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Stats Cards ─────────────────────── */}
+        <View style={gs.sectionHeader}>
+          <Text style={gs.sectionTitle}>Wallet Summary</Text>
+        </View>
+        <View style={styles.statsGrid}>
+          <StatCard
+            label="Pending Bonus"
+            value={bonusTotalBalance}
+            icon="gift-outline"
+            color={colors.accentGold}
+            bgColor="#FFF3CD"
+            isDollar={true}
+          />
+          <StatCard
+            label="Total Withdrawn"
+            value={withdrawTotalBalance}
+            icon="arrow-down-outline"
+            color={colors.successColor}
+            bgColor={colors.greenColorLight}
+            isDollar={true}
+          />
+          <StatCard
+            label="Total Funded"
+            value={walletBalance[0]?.totalAmount}
+            icon="wallet-outline"
+            color={colors.primaryColor1}
+            bgColor={colors.bgLight}
+            isDollar={false}
+          />
+        </View>
+
+        {/* ── Tabs ────────────────────────────── */}
+        <View style={styles.tabsRow}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'transactions' && styles.tabActive]}
+            onPress={() => setActiveTab('transactions')}>
+            <Text style={[
+              styles.tabText,
+              activeTab === 'transactions' && styles.tabTextActive,
+            ]}>
+              Transactions
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'analytics' && styles.tabActive]}
+            onPress={() => setActiveTab('analytics')}>
+            <Text style={[
+              styles.tabText,
+              activeTab === 'analytics' && styles.tabTextActive,
+            ]}>
+              Analytics
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Transactions Tab ─────────────────── */}
+        {activeTab === 'transactions' && (
+          <View style={styles.tabContent}>
+            {isLoading ? (
+              <ActivityIndicator
+                size="large"
+                color={colors.primaryColor1}
+                style={{ marginTop: spacing.xl }}
+              />
+            ) : walletHistory.length === 0 ? (
+              <View style={gs.emptyStateContainer}>
+                <Ionicons name="wallet-outline" size={48} color={colors.textSecColor2} />
+                <Text style={gs.emptyStateText}>No transactions yet</Text>
+                <Text style={gs.emptyStateSubText}>
+                  Fund your account to get started
+                </Text>
+              </View>
+            ) : (
+              walletHistory.map((item, index) => (
+                <WalletTransactionItem key={index} item={item} />
+              ))
+            )}
+          </View>
+        )}
+
+        {/* ── Analytics Tab ────────────────────── */}
+        {activeTab === 'analytics' && (
+          <View style={styles.tabContent}>
+
+            {/* Bar Chart */}
+            <View style={styles.chartCard}>
+              <View style={gs.sectionHeader}>
+                <Text style={gs.sectionTitle}>Transaction Flow</Text>
+                <TouchableOpacity onPress={() => setIsCollapsed(!isCollapsed)}>
+                  <Ionicons
+                    name={isCollapsed ? 'stats-chart' : 'stats-chart-outline'}
+                    size={20}
+                    color={colors.primaryColor1}
+                  />
+                </TouchableOpacity>
+              </View>
+              <Collapsible collapsed={isCollapsed}>
+                {chartDataLoading ? (
+                  <ActivityIndicator size="large" color={colors.primaryColor1} />
+                ) : (
+                  <BarChart
+                    hideRules
+                    barBorderTopLeftRadius={5}
+                    barBorderTopRightRadius={5}
+                    xAxisColor={colors.dividerColor}
+                    yAxisColor={colors.dividerColor}
+                    noOfSections={5}
+                    height={220}
+                    spacing={30}
+                    isAnimated
+                    animationDuration={800}
+                    barWidth={45}
+                    data={barChartData}
+                    xAxisLabelTextStyle={styles.chartLabel}
+                    yAxisTextStyle={styles.chartLabel}
+                  />
+                )}
+              </Collapsible>
             </View>
 
-    </SafeAreaView>
-     </ImageBackground>     
-  );
-}
-    
+            {/* Pie Chart */}
+            <View style={styles.chartCard}>
+              <Text style={[gs.sectionTitle, { marginBottom: spacing.lg }]}>
+                Period Breakdown
+              </Text>
+              {chartDataLoading ? (
+                <ActivityIndicator size="large" color={colors.primaryColor1} />
+              ) : (
+                <View style={styles.pieChartRow}>
+                  <PieChart
+                    data={pieChartData}
+                    showText={false}
+                    donut={true}
+                    radius={70}
+                    innerRadius={45}
+                    centerLabelComponent={() => (
+                      <View style={styles.pieCenter}>
+                        <Ionicons name="stats-chart" size={20} color={colors.primaryColor1} />
+                      </View>
+                    )}
+                  />
+                  <View style={styles.pieLegend}>
+                    {pieChartData.map((item, index) => (
+                      <View key={index} style={styles.legendRow}>
+                        <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+                        <View>
+                          <Text style={styles.legendLabel}>{item.label}</Text>
+                          <Text style={styles.legendValue}>
+                            {Number(item.value).toLocaleString()}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
 
+          </View>
+        )}
+
+        <View style={{ height: spacing.xxxl }} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
+  container: {
+    flex: 1,
     },
-    chartText:{
-      fontFamily:'_regular', 
-      fontSize:14, 
-      color:colors.darkBg
+  scrollContent: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxxl,
   },
-    recentTranView:{
-      flex: 1, 
-      justifyContent:'space-between', 
-      flexDirection:'row', 
-      marginBottom: 10, 
-      marginTop: 40,
-      marginHorizontal:5,
-  },
-  recentTranText:{
-      fontFamily:'_regular', 
-      fontSize:15, 
-      color:colors.fadeText
-  },
-    chartText:{
-      fontFamily:'_regular', 
-      fontSize:14, 
-      color:colors.darkBg
-    },
-    actionButton:{
-        width:100, 
-        height:30, 
-        borderRadius:20, 
-        backgroundColor:colors.primaryColor1, 
-        alignItems:'center',
-        },
-    buttonSellText:{
-      color:colors.textColor, 
-      fontFamily:'_semiBold', 
-      fontSize:15
-    },
-    chartView:{
-        justifyContent:'center', 
-        alignItems:'center', 
-        padding:10, 
-        borderRadius: 10
-    },
-    recentChartText:{
-        fontFamily:'_semiBold', 
-        fontSize:14, 
-        color:colors.textSecColor
-    },
-    homeHeaderRow:{
-        backgroundColor:'transparent', 
-        marginTop:40, 
-        marginHorizontal:15
-      },
-      homeSideMenu:{
-        borderRadius: 8, 
-        borderWidth: 2, 
-        backgroundColor:colors.primaryColor2, 
-        width:30, 
-        alignItems:'center', 
-        justifyContent:'center'
-      },
-      profileTitle:{
-        color:colors.textColor,
-        fontSize:20,
-        marginLeft: -20,
-        fontFamily: '_semiBold',
-      },
 
-      signInButton: {
-        width: '100%',
-        height: 50,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 10,
-        flexDirection: 'row',
-         backgroundColor: colors.primaryColor1
-    },
-
-    textSign:{
-        fontFamily:'_semiBold',
-        fontSize: 17,
-        color: colors.textColor
-    },
-
-    recentTranView:{
-        flex: 1, 
-        justifyContent:'space-between', 
-        flexDirection:'row', 
-        marginBottom: 5, 
-        marginTop: 20
-    },
-    recentTranText:{
-        fontFamily:'_regular', 
-        fontSize:14, 
-        color:colors.lightBg
-    },
-    historyMainView:{
-        flex: 1, 
-        borderRadius:10, 
-        backgroundColor:colors.textColor,
-        height: 70,
-        justifyContent:'center'
-    },
-    historyView:{
-        flexDirection:'row', 
-        justifyContent:'space-between', 
-        marginBottom:2
-    },
-    historyTextDate:{
-        fontFamily:'_semiBold', 
-        fontSize:13, 
-        color:colors.textSecColor,
-        marginLeft:5
-    },
-    historyTextStatus:{
-        fontFamily:'_bold', 
-        fontSize:13, 
-        color:colors.lightHl, 
-        marginBottom: 8,
-        marginRight: 5,
-    },
-    historyViewIn:{
-        marginHorizontal:5, 
-        flexDirection:'row', 
-        alignItems:'center'
-    },
-    historyAmtText:{
-        fontFamily:'_semiBold', 
-        fontSize:17, 
-        color:colors.lightBg
-    },
-
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
     
-    carouselItem: {
-      backgroundColor: colors.primaryColor1,
-      borderRadius: 10,
-      padding: 10,
-      alignItems: 'center',
-    },
-    image: {
-      width: 300,
-      height: 150,
-      borderRadius: 10,
-      },
-    title: {
-      marginTop: 10,
-      fontSize: 18,
-      fontWeight: 'bold',
-    },
-})
+  },
+  headerTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+    
+  },
 
+  // Carousel
+  carouselContainer: {
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+
+  // Wallet Card
+  walletCard: {
+    borderRadius: radius.xl,
+    padding: isSmallPhone ? spacing.lg : spacing.xl,
+    height: isSmallPhone ? 170 : 200,
+    overflow: 'hidden',
+    ...shadows.lg,
+  },
+  cardCircleLarge: {
+    position: 'absolute',
+    right: -40,
+    top: -40,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+  },
+  cardCircleSmall: {
+    position: 'absolute',
+    left: -20,
+    bottom: -30,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  cardIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardBalanceSection: {
+    marginBottom: spacing.md,
+  },
+  cardBalanceLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    marginBottom: 4,
+  },
+  cardBalanceAmount: {
+    fontFamily: '_bold',
+    fontSize: typography.huge,
+    marginBottom: 2,
+  },
+  cardSubtitle: {
+    fontFamily: '_regular',
+    fontSize: typography.xs,
+  },
+  cardActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderWidth: 1,
+  },
+  cardActionText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.sm,
+    marginLeft: 6,
+  },
+
+  // Dots
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginHorizontal: 3,
+  },
+  dotActive: {
+    width: 20,
+  },
+
+  // Quick Actions
+  quickActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.lg,
+    marginBottom: spacing.xl,
+    gap: spacing.sm,
+  },
+  quickActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    borderRadius: radius.lg,
+    gap: 6,
+    ...shadows.sm,
+  },
+  quickActionText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.xs,
+  },
+
+  // Stats
+  statsGrid: {
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  statCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    ...shadows.sm,
+  },
+  statIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  statInfo: {
+    flex: 1,
+  },
+  statLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    
+    marginBottom: 2,
+  },
+  statValue: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+  },
+
+  // Tabs
+  tabsRow: {
+    flexDirection: 'row',
+    
+    borderRadius: radius.lg,
+    padding: 4,
+    marginBottom: spacing.lg,
+    ...shadows.sm,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    borderRadius: radius.md,
+  },
+  tabActive: {
+  },
+  tabText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.sm,
+    
+  },
+  tabTextActive: {
+  },
+  tabContent: {
+    marginBottom: spacing.lg,
+  },
+
+  // Transactions
+  transactionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    ...shadows.sm,
+  },
+  transactionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  transactionIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  transactionInfo: {
+    flex: 1,
+  },
+  transactionTitle: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    
+  },
+  transactionDate: {
+    fontFamily: '_regular',
+    fontSize: typography.xs,
+    
+    marginTop: 2,
+  },
+  transactionRight: {
+    alignItems: 'flex-end',
+  },
+  transactionAmount: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    
+  },
+
+  // Charts
+  chartCard: {
+    
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+  chartLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.xs,
+    
+  },
+  pieChartRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pieCenter: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pieLegend: {
+    flex: 1,
+    marginLeft: spacing.xl,
+    justifyContent: 'center',
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  legendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: spacing.sm,
+  },
+  legendLabel: {
+    fontFamily: '_semiBold',
+    fontSize: typography.sm,
+    
+  },
+  legendValue: {
+    fontFamily: '_regular',
+    fontSize: typography.xs,
+    
+  },
+});
 
 export default WalletScreen;

@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect} from 'react';
+﻿import React, { useContext, useState, useEffect} from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Platform, Alert, Button, Linking } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';

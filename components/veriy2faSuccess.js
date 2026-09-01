@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+﻿import React, {useState} from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity} from 'react-native';
 import { Ionicons} from '@expo/vector-icons';
 import Modal from "react-native-modal";

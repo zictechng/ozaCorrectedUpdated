@@ -11,6 +11,7 @@ import {
 } from "react-native-alert-notification";
 
 import UserProvider from './contextAPI/userProvider';
+import ThemeProvider from './contextAPI/themeProvider';
 import AppNav from './navigation/appNav';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -69,17 +70,18 @@ export default function App() {
         );
       }
 
-  return (
+    return (
     <SafeAreaProvider>
-        <NetworkProvider >
+      <ThemeProvider>
+        <NetworkProvider>
           <UserProvider>
-              <AlertNotificationRoot>
-                <AppNav />
-               {/* <FundAccountNextScreen /> */}
-              </AlertNotificationRoot>
+            <AlertNotificationRoot>
+              <AppNav />
+            </AlertNotificationRoot>
           </UserProvider>
         </NetworkProvider>
-        </SafeAreaProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 

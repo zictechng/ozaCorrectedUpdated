@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+﻿import React, { useContext } from "react";
 import {
   View,
   Text,
@@ -427,7 +427,7 @@ export const LogoutModal = ({
   )
 }
 
-// create logout modal  function here
+// create update modal  function here
 export const ShowUpdateModal = ({
   openModal,
   modalTitle,
@@ -579,7 +579,7 @@ export const ConfirmPaymentModal = ({
   );
 };
 
-// create logout modal  function here
+// create app modal  function here
 export const AppModeModal = ({
   openModal,
   ModalShortDesc,
@@ -745,7 +745,6 @@ const styles = StyleSheet.create({
     borderWidth:1,
   },
   textStyle: {
-    color: colors.bannerTextColor,
     fontFamily: "_bold",
     fontSize: 13,
   },
@@ -760,7 +759,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   modalContent: {
     width: 300,
@@ -776,7 +774,6 @@ const styles = StyleSheet.create({
   },
   modalSubText: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 20,
   },
 

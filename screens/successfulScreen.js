@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+﻿import React, { useContext, useState } from 'react';
 import { StyleSheet, View, Text} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { gs,colors } from '../styles';

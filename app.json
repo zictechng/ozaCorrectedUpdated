@@ -2,21 +2,23 @@
   "expo": {
     "name": "Ota Mobile",
     "slug": "doc_mobile",
-    "description": "A simple, efficient, reliable, secure and profitable way to sell paypal, payoneer, bitcoin and pay bills with virtual funds",
-    "version": "2.0.1",
+    "description": "The fastest and most secure way to buy & sell PayPal, Payoneer and Bitcoin. Pay electricity bills, buy airtime, data bundles, TV subscriptions and exam scratch cards at the cheapest rates in Nigeria.",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#fff"
+      "backgroundColor": "#4C5FD5"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "your.new.package.name",
+      "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "We need access to your camera",
         "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos.",
@@ -33,7 +35,7 @@
       },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#4C5FD5"
       },
       "softwareKeyboardLayoutMode": "adjustPan",
       "permissions": [
@@ -64,6 +66,14 @@
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
           "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#4C5FD5",
+          "sounds": []
         }
       ],
       "expo-font",

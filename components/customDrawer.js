@@ -1,4 +1,4 @@
-import React, {useContext, useState} from 'react';
+﻿import React, {useContext, useState} from 'react';
 import {Alert, ToastAndroid, Share, View, Text, ImageBackground , Image, Modal} from 'react-native';
 import { useNavigation } from '@react-navigation/core';
 import { DrawerActions } from '@react-navigation/native';

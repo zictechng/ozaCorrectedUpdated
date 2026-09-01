@@ -1,0 +1,25 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="60" cy="60" r="55" fill="rgba(255,255,255,0.12)" />
+  
+  <!-- Dollar coin stack -->
+  <ellipse cx="60" cy="85" rx="30" ry="8" fill="rgba(255,255,255,0.15)" />
+  <ellipse cx="60" cy="78" rx="30" ry="8" fill="rgba(255,255,255,0.20)" />
+  <ellipse cx="60" cy="71" rx="30" ry="8" fill="rgba(255,255,255,0.25)" />
+  
+  <!-- Coin top face -->
+  <ellipse cx="60" cy="63" rx="30" ry="8" fill="rgba(255,255,255,0.9)" />
+  <ellipse cx="60" cy="63" rx="22" ry="5.5" fill="rgba(255,255,255,0.3)" />
+  <text x="60" y="66" text-anchor="middle" font-size="10" font-family="Arial" font-weight="bold" fill="rgba(76,95,213,0.9)">$</text>
+  
+  <!-- Up arrow -->
+  <polygon points="38,50 44,58 41,58 41,68 35,68 35,58 32,58" fill="rgba(255,255,255,0.9)" />
+  
+  <!-- Down arrow -->
+  <polygon points="82,68 76,60 79,60 79,50 85,50 85,60 88,60" fill="rgba(255,255,255,0.7)" />
+  
+  <!-- Sparkles -->
+  <circle cx="25" cy="30" r="3" fill="rgba(255,255,255,0.6)" />
+  <circle cx="95" cy="35" r="2" fill="rgba(255,255,255,0.5)" />
+  <circle cx="90" cy="85" r="2.5" fill="rgba(255,255,255,0.4)" />
+</svg>

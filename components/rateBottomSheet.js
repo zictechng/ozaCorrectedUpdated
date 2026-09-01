@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useContext} from 'react';
+﻿import React, {useState, useEffect, useContext} from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { gs,colors } from '../styles';
 import client from '../contextAPI/client';

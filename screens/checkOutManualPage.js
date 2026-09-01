@@ -1,4 +1,4 @@
-import React, { useState, useContext, useFocusEffect, useEffect, useCallback, useRef } from 'react';
+﻿import React, { useState, useContext, useFocusEffect, useEffect, useCallback, useRef } from 'react';
 import { View,  Platform,Text, TextInput, Pressable, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, } from '@expo/vector-icons';
@@ -253,7 +253,6 @@ const CheckOutManualPage = ({route, navigation}) => {
                                                 }}
                                                 textStyle={{
                                                     fontSize: 25,
-                                                    color: '#FFFFFF',
                                                     fontWeight: '500',
                                                     letterSpacing: 0.25,
                                                     }}
@@ -450,19 +449,16 @@ const CheckOutManualPage = ({route, navigation}) => {
 const styles = StyleSheet.create({
 action: {
     marginTop: 20,
-    borderBottomColor: '#aaa',
     paddingBottom: 5,
     
 },
 blinkStyle:{
     fontSize: 25,
-    color: '#FFFFFF',
     fontWeight: '500',
     letterSpacing: 0.25,
     },
 container: {
     flex: 1,
-    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
 },
@@ -519,7 +515,6 @@ dialogActionBtn:{
     width:80, 
     height:35, 
     alignItems:'center',
-    borderColor: colors.primaryColor1,
     borderWidth:1
 },
 formPage:{
@@ -557,7 +552,6 @@ buttonSellText:{
     fontSize:15
 },
 textAreaContainer: {
-    borderColor: '#aaa',
     borderWidth: 0.5,
     borderRadius:10,
     marginHorizontal:10,
@@ -571,7 +565,6 @@ textAreaContainer: {
     flex: 1,
     marginTop: Platform.OS === 'ios' ? 0 : -12,
     paddingLeft: 10,
-    color: '#05375a',
     fontFamily: '_regular',
 },
 

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { StyleSheet, View, Text} from 'react-native';
 import { NumericFormat } from 'react-number-format';
 

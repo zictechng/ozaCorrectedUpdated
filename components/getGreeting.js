@@ -1,4 +1,4 @@
-
+﻿
   export const getGreeting = (name) => {
   const currentHour = new Date().getHours();
 

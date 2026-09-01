@@ -1,1359 +1,1069 @@
-import React , {useContext, useCallback, useState, useEffect, useRef } from 'react';
-import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
-import { useIsFocused, useFocusEffect} from '@react-navigation/native';
-import { 
-    Dimensions, 
-    View, 
-    Text,
-    StyleSheet, 
-    ScrollView,
-    TouchableOpacity, 
-    ImageBackground,
-    RefreshControl,
-    StatusBar, 
-    ActivityIndicator,
-    Linking
+﻿import React, { useContext, useState, useEffect, useRef, useCallback } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  StatusBar, RefreshControl, ImageBackground, Dimensions,
+  ActivityIndicator, Linking, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Collapsible from 'react-native-collapsible';
-//import { StatusBar } from 'expo-status-bar';
-import { Ionicons, Feather, Entypo } from '@expo/vector-icons';
-import { gs, colors } from '../styles';
-import background from '../assets/images/sec3.png';
-const { width } = Dimensions.get('window');
-import {windowWidth } from '../utils/Dimensions'
-import BannerSlider from '../components/BannerSlider';
-import moment from "moment";
-import { sliderData } from '../model/data';
-import RBSheet from "react-native-raw-bottom-sheet";
-import BottomSheet from 'react-native-simple-bottom-sheet';
-import paypalImage from '../assets/images/paypal2.png';
-import payoonerImage from '../assets/images/payooner3.png';
-import signupImage from '../assets/images/paypal2.png';
-import bitcoinImage from '../assets/images/bitcoin1.png';
+import { useIsFocused } from '@react-navigation/native';
+import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
+import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import moment from 'moment';
+import Carousel from 'react-native-snap-carousel';
+import RBSheet from 'react-native-raw-bottom-sheet';
+import HTMLView from 'react-native-htmlview';
+
+import { gs, spacing, radius, typography, shadows } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
+
+import { AuthContext } from '../contextAPI/authContext';
+import client from '../contextAPI/client';
+import { _AppSystemSettings } from '../components/controls';
+import { noticeData } from '../components/errorNotice';
+import { NumberDollarValueFormat } from '../components/formatDollarValue';
+import { NumberValueFormat } from '../components/formatValue';
+import { windowWidth } from '../utils/Dimensions';
+import HeaderMenu from '../components/headerMenu';
 import SellBottomSheet from '../components/sellBottomSheet';
 import BuyBottomSheet from '../components/buyBottomSheet';
-import RateBottomSheet from '../components/rateBottomSheet';
-import HeaderMenu from '../components/headerMenu';
-import { AuthContext } from '../contextAPI/authContext';
-import * as Updates from 'expo-updates';
-import FirstWord from '../components/firstWord';
-import { getGreeting } from '../components/getGreeting';
-import { 
-    AppModeModal,
-    CheckRegistrationStage,  
-    NumberValueFormat, 
-    ShowLogoutModal, 
-    ShowUpdateModal, 
-    _AppSystemSettings, 
-    accessCheck} from '../components/controls';
-import client from '../contextAPI/client';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NumberDollarValueFormat } from '../components/formatDollarValue';
-import { noticeData } from '../components/errorNotice';
-import HTMLView from 'react-native-htmlview';
-import { BarChart } from "react-native-gifted-charts";
-import Carousel from 'react-native-snap-carousel';
 import MoreBottomSheet from '../components/moreBottomSheet';
+import { ShowUpdateModal, AppModeModal } from '../components/controls';
+import {
+  BuySellIcon,
+  ElectricityIcon,
+  TVIcon,
+  ExamCardIcon,
+  RewardsIcon,
+} from '../components/bannerIcons';
+const { width } = Dimensions.get('window');
 
-const HomeScreen = ({navigation}) =>{
-    const isFocused = useIsFocused();
+const paypalImage = require('../assets/images/paypal1.png');
+const payoonerImage = require('../assets/images/payooner2.png');
+const bitcoinImage = require('../assets/images/bitcoin.png');
+const background = require('../assets/images/sec3.png');
 
-    const carouselRef = useRef(null);
-    
-    const {logoutAction, userToken, userInfo, setUserInfo, appSettingDetails, setAppSettingDetails, completeRegData, setCompleteRegData,
-        logoutModal, setLogoutModal} = useContext(AuthContext)
-    const [recentTranData, setRecentTranData] = useState([]);
-    const [noTransaction, setNoTransaction] = useState(false);
-    const [notifications, setNotification] = useState({});
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [isCollapsed, setIsCollapsed] = useState(true);
-    const [statusBarState, setStatusBarState] = useState(false);
-    const [dataOption, setDataOption] = useState([]);
-    const [dataPayoneer, setDataPayoneer] = useState([]);
-    const [dataBitcoin, setDataBitcoin] = useState([]);
-    const [homeChartDisplay, setHomeChartDisplay] = useState(false);
-    const [chartLoading, setChartLoading] = useState(false);
-    const [appMode, setAppMode] = useState(false);
-    const [appModeMessage, setAppModeMessage] = useState('');
-    const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
-    
-    // _retrieveData = async () => {
-    //     try {
-    //       const value = await AsyncStorage.getItem('AppSettingData');
-    //       if (value !== null) {
-    //         // We have data!!
-    //         const data2 = JSON.parse(value)
-    //         //console.log(data2.app_paypayKey);
-    //       }
-    //     } catch (error) {
-    //       // Error retrieving data
-    //     }
-    //   };
-    
-    const renderBanner = ({item, index}) => {
-        return <BannerSlider data={item}/>
-    }
+// ── Quick Action Button Component ─────────────────
+const QuickActionBtn = ({ icon, label, onPress, color, bgColor, colors }) => (
+  <TouchableOpacity style={styles.quickActionBtn} onPress={onPress} activeOpacity={0.8}>
+    <View style={[styles.quickActionIcon, { backgroundColor: bgColor || colors.bgLight }]}>
+      <Ionicons name={icon} size={22} color={color || colors.primaryColor1} />
+    </View>
+    <Text style={[styles.quickActionLabel, { color: colors.textBlack }]}>{label}</Text>
+  </TouchableOpacity>
+);
 
-    //Paystack test API key:  pk_test_b4c6f3d49923f1825caed0c704da954d67eac8b1
-   
-    // check if user token has expired or active here
-    const checkUserToken = () =>{
-        if(userInfo?.userData == null || userInfo?.userData == undefined){
-            console.log("No ID send ",)
-        }
-        accessCheck(userInfo.userData?._id, userToken).then((res)=>{
-            //console.log('success ', res);
-            if(res == '402'){
-                Toast.show({
-                    type: ALERT_TYPE.DANGER,
-                    title: 'Error',
-                    textBody: 'Session has expired! Login again to continue...',
-                    titleStyle: noticeData[0].errorTitleStyle,
-                    textBodyStyle: noticeData[0].errorMessageStyle,
-                    })
-                logoutAction();
-                return
-            }
-            if(res == '401'){
-                Toast.show({
-                    type: ALERT_TYPE.DANGER,
-                    title: 'Authentication Failed',
-                    textBody: 'Please! Login to continue...',
-                    titleStyle: noticeData[0].errorTitleStyle,
-                    textBodyStyle: noticeData[0].errorMessageStyle,
-                    })
-                    logoutAction()
-               return
-            }
-            if(res == '404'){
-                Toast.show({
-                    type: ALERT_TYPE.DANGER,
-                    title: 'User not authorized',
-                    textBody: 'Please! Sign up for a new account',
-                    titleStyle: noticeData[0].errorTitleStyle,
-                    textBodyStyle: noticeData[0].errorMessageStyle,
-                    })
-                    logoutAction()
-               return
-            }
-        })
-      }
-      
-    const refSellRBSheet = useRef();
-    const refBuyRBSheet = useRef();
-    const refMoreRBSheet = useRef();
-    // function that show only first name // First words in a sentence
-    const myName = FirstWord(userInfo.userData?.display_name);
-    //console.log('Application details ', appSettingDetails.app_payoneer_sale)
-   
-    // call logout function
-    const signMeOut =() =>{
-        logoutAction()
-        setLogoutModal(false);
-        }
+// ── Service Status Badge ──────────────────────────
+const StatusBadge = ({ status }) => {
+  if (status === 'paused') {
+    return (
+      <View style={[gs.badgeWarning, { marginTop: 4 }]}>
+        <Text style={gs.badgeWarningText}>Maintenance</Text>
+      </View>
+    );
+  }
+  return null;
+};
 
-        useEffect(() =>{
-            // check for new updates
-            async function checkForUpdate() {
-                try {
-                const update = await Updates.checkForUpdateAsync();
-                if (update.isAvailable) {
-                    setIsUpdateAvailable(true);
-                    console.log('Update available')
-                }
-                } catch (error) {
-                console.error('Error checking for updates:', error);
-                }
-            }
-            checkForUpdate();
-            getBonusRate();
-    
-            //console.log(('Home ' ,userInfo.userData))
-             if(isFocused && checkRegStage != 'true'){
-                 setCompleteRegData(true);
-                 RefreshUserDetails();
-                 //console.log('Incomplete registration Focus ', checkRegStage)
-               }
-               else{
-                setCompleteRegData(false);
-               }
-               latestTransaction();
-               getMessageCount();
-               //accessCheck()
-               checkUserToken()
-               setStatusBarState(true);
-               
-               _AppSystemSettings()
-               
-           }, [isFocused]) 
+// ── Bill Service Card Component ───────────────────
+const BillServiceCard = ({ icon, label, color, bgColor, onPress, status, colors }) => {
+  const isDisabled = status === 'paused';
+  const isHidden = status === 'hidden';
+  if (isHidden) return null;
 
-           
-
-    // action to close incomplete registration popup
-        const closeIncompleteRegistration = () =>{
-            setCompleteRegData(false);
-        }
-
-     // refresh user details from db after any operation into the database
-     const RefreshUserDetails = async()=>{
-        //console.log("Refresh ID ", data)
-      try {
-          const res = await client.get('/api/userProfileMobile/'+userInfo.userData._id,{
-            headers: {
-                'Authorization': 'Bearer '+userToken,
-                    }
-            })
-          if(res.data.msg == '200'){
-            const userDetails = res.data; 
-            const appDataInfo = res.data.appData;
-            //console.log('User Details fetch local storage ', res.data)
-            AsyncStorage.setItem('userInfo', JSON.stringify(userDetails));
-            AsyncStorage.setItem('AppSettingData', JSON.stringify(appDataInfo));
-           }
-           let userInfoDetails = await AsyncStorage.getItem('userInfo');
-           let appInfoDetails = await AsyncStorage.getItem('AppSettingData');
-              userInfoDetails = JSON.parse(userInfoDetails)
-              appInfoDetails = JSON.parse(appInfoDetails)
-          if(userInfoDetails){
-            setUserInfo(userInfoDetails);
-            setAppSettingDetails(appInfoDetails)
-           // console.log('User Details fetch local storage ')
-          }
-          else{
-              console.log("something went wrong while fetching user details")
-          }
-      } catch (error) {
-          console.log( 'fetching user information failed ', error.message)
-      }   
-    }
-    const checkRegStage = CheckRegistrationStage();
-    // get latest transaction details
-    const latestTransaction = async()=>{
-       myId = userInfo.userData?._id
-       if(myId == '' || myId == null){
-        console.log('Access denied')
-        return console.log('Access denied')
-       }
-        try{
-        const recentTransaction = await client.get('/api/recent_transactions/'+myId,{
-            headers: {
-                'Authorization': 'Bearer '+userToken,
-                    }
-            })
-            if(recentTransaction.data.status == '402'){
-                //console.log('Login failed')
-                return
-            }
-            else if(recentTransaction.data?.length){
-                //console.log('Yes ', recentTransaction.data)
-                setRecentTranData(recentTransaction.data)
-                setNoTransaction(false)
-            }
-            else{
-                setNoTransaction(true)
-            }
-            }catch (e){
-            console.log(e.message);
-            }
-        }
-
-    const getMessageCount = async() =>{
-        myId = userInfo.userData?._id
-        try{
-          const res = await client.get('/api/user_messageCount/'+myId,{
-            headers: {
-                'Authorization': 'Bearer '+userToken,
-                    }
-            })
-          let count = res.data.userMessage;
-          //console.log('No Notification ', count)
-          if(count > 0){
-            //setNotification(res.data)
-            setNotification(res.data.userMessage)
-           // console.log('No Notification 2 ', res.data)
-          }
-          else if(res.data.status == '404') {
-            //console.log('No unread Notification')
-            setNotification(0)
-             }
-        
-        }catch (e){
-          console.log('error ',e.message);
-        }
-      };
-      
-      const sellPaypalBtn =() =>{
-
-        if(appSettingDetails?.app_paypal_sale == false){
-        Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title: 'Error',
-            textBody: 'Sorry! This service is currently not available at the moment',
-            titleStyle: noticeData[0].errorTitleStyle,
-            textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            refSellRBSheet.current.close();
-            return
-        }
-        else 
-            {
-            refSellRBSheet.current.close();
-            navigation.navigate('SalesPage', 
-            {pageName:'PayPal',
-             categoryType: 'Sales',
-            })
-            
-            }
-      }
-      const sellPayoonerBtn =() =>{
-        if(appSettingDetails?.app_payoneer_sale == false){
-            Toast.show({
-                type: ALERT_TYPE.DANGER,
-                title: 'Error',
-                textBody: 'Sorry! This service is currently not available at the moment',
-                titleStyle: noticeData[0].errorTitleStyle,
-                textBodyStyle: noticeData[0].errorMessageStyle,
-                })
-                refSellRBSheet.current.close();
-                return
-        }
-        else{
-            refSellRBSheet.current.close();
-            navigation.navigate('SalesPage', 
-            {pageName:'Payoneer',
-            categoryType: 'Sales'
-            })
-            }
-       
-      }
-      const sellBtcBtn =() =>{
-        if(appSettingDetails?.app_bitcoin_sale == false){
-            Toast.show({
-                type: ALERT_TYPE.DANGER,
-                title: 'Error',
-                textBody: 'Sorry! This service is currently not available at the moment',
-                titleStyle: noticeData[0].errorTitleStyle,
-                textBodyStyle: noticeData[0].errorMessageStyle,
-                })
-                refSellRBSheet.current.close();
-                return
-        }
-        else{
-            refSellRBSheet.current.close();
-             navigation.navigate('SalesPage', 
-             {pageName:'Bitcoin',
-             categoryType: 'Sales'
-            })
-        }
-        
-      }
-      
-      // buying link
-      const buyPaypalBtn =() =>{
-        if(appSettingDetails?.app_paypal_buy == false){
-            Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title: 'Error',
-            textBody: 'Sorry! This service is currently not available at the moment',
-            titleStyle: noticeData[0].errorTitleStyle,
-            textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            refBuyRBSheet.current.close();
-            return
-        }
-        else{
-            refBuyRBSheet.current.close();
-            navigation.navigate('BuyPage',
-            {
-            pageName:'PayPal',
-            categoryType: 'Buy',
-            })
-            }
-        }
-
-      const buyPayoneerBtn =() =>{
-        if(appSettingDetails?.app_payoneer_buy == false){
-            Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title: 'Error',
-            textBody: 'Sorry! This service is currently not available at the moment',
-            titleStyle: noticeData[0].errorTitleStyle,
-            textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            refBuyRBSheet.current.close();
-            return
-        }
-        else{
-            refBuyRBSheet.current.close();
-             navigation.navigate('BuyPage', 
-            {
-                pageName:'Payoneer',
-                categoryType: 'Buy',
-            })
-            }
-    }
-
-      const buyBtcBtn =() =>{
-        if(appSettingDetails?.app_bitcoin_buy == false){
-            Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title: 'Error',
-            textBody: 'Sorry! This service is currently not available at the moment',
-            titleStyle: noticeData[0].errorTitleStyle,
-            textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            refBuyRBSheet.current.close();
-            return
-        }
-        else{
-            refBuyRBSheet.current.close();
-            navigation.navigate('BuyPage', 
-             {
-            pageName:'Bitcoin',
-            categoryType: 'Buy',
-             })
-            }
-       }
-
-        // get bonus rates
-        const getBonusRate = async()=>{
-            //console.log("Refresh ID ", data)
-          try {
-              const res = await client.get('/api/bonus_rate')
-              if(res.data.msg == '200'){
-                const dataBillRate = res.data; 
-                AsyncStorage.setItem('businessRate', JSON.stringify( dataBillRate));
-               }
-               let dataRate = await AsyncStorage.getItem('businessRate');
-               dataRate = JSON.parse(dataRate)
-              
-          } catch (error) {
-              console.log( 'fetching user information failed ', error)
-          }   
-        }
-        // add fund link
-      const addFundBtn =() =>{
-            refMoreRBSheet.current.close();
-            navigation.navigate('Add-fund',
-            {
-            pageName:'FundAccount',
-            categoryType: 'Funding',
-            })
-            }
-
-    // withdraw link
-    const WithdrawBtn =() =>{
-        refMoreRBSheet.current.close();
-        navigation.navigate('withdraw-fund',
-        {
-        pageName:'WithdrawFund',
-        categoryType: 'Withdraw',
-        })
-        }
-
-    // wallet link
-    const walletBtn =() =>{
-        refMoreRBSheet.current.close();
-        navigation.navigate('Wallet',
-        {
-        pageName:'wallet',
-        categoryType: 'Funding',
-        })
-        }
-        
-
-// get app settings here
- _AppSystemSettings().then((res) => {
-    // yes user can not login
-    if(res?.app_operation_status == false){
-    setAppMode(true)
-    setAppModeMessage(res?.app_mode_message)
-    }
-    
-    // No user can login
-    else if(res?.app_operation_status == true){
-    setAppMode(false)
-    setAppModeMessage(res?.app_mode_message)
-    }
-    })
-    
-    // fetch chart data
-       const fetchData = async()=>{
-         try{
-            const myId = userInfo?.userData?._id;
-            console.log('fetchData called, Access ID:', myId);
-
-            if (!myId) {
-            console.log('Access denied – no user ID yet');
-            return;
-            }
-            setChartLoading(true)
-         const recentChart = await client.get('/api/chart_transactions/'+myId,{
-             headers: {
-                 'Authorization': 'Bearer '+userToken,
-                     }
-             })
-             if(recentChart.data.msg =='201'){
-              let result = recentChart.data;
-              
-              const objArr = recentChart.data; 
-              setDataOption(objArr.paypal[0]?.totalAmount) 
-              setDataPayoneer(objArr.payoneer[0]?.totalAmount)
-              setDataBitcoin(objArr.bitcoin[0]?.totalAmount)
-              
-              }
-                const objArr = recentChart.data;
-                //console.log(objArr)
-                if(objArr.paypal.length < 1 && objArr.payoneer.length < 1 && objArr.bitcoin.length < 1) {
-                setHomeChartDisplay(true);    
-                }
-                if(objArr.paypal.length > 0 || objArr.payoneer.length > 0 || objArr.bitcoin.length > 0) {
-                setHomeChartDisplay(false);    
-                }
-      
-             else if(recentChart.data.status == '402'){
-                 //console.log('Login failed')
-                 return
-             }
-             else if(recentChart.data.status == '404'){
-                 console.log('No chart data ',)
-              }
-             else{
-                 console.log('chart balance')
-             }
-             }catch (e){
-             console.error('fetchData error', e);
-             }
-             finally{
-                setChartLoading(false);
-             }
-      
-         }
-
-     
-         useEffect(() => {
-            console.log('HomeScreen useEffect running...', isFocused);
-            // wrap async logic in functions
-            fetchData()
-          }, [isFocused]);
-// this function will be called and redirect user to google app store to download new version
-    const openPlayStore = () => {
-        Linking.openURL('market://details?id=com.ozaapp.mobile')
-          .catch(() => {
-            // Fallback if Google Play Store is not available
-            Linking.openURL('https://play.google.com/store/apps/details?id=com.ozaapp.mobile');
-          });
-       };
-
-    //page refreshing function goes here
-    const handleHomeRefresh = useCallback(() => {
-        setIsRefreshing(true);
-        RefreshUserDetails()
-        getMessageCount()
-        latestTransaction()
-        checkUserToken();
-        fetchData()
-        setTimeout(() => {
-        setIsRefreshing(false);
-        }, 1000);
-        RefreshUserDetails()
-        _AppSystemSettings()
-      }, []);
-
-      // open collapsed state
-      const openCollapsedState = ()=>{
-        setIsCollapsed(!isCollapsed)
-      }
-
-      const closeModal = () =>{
-        setLogoutModal(false);
-      }
-
-      //xAxisLabelTexts={['PayPal', 'Payoneer', 'Bitcoin']}
-      const data=[{value:dataOption == null ? 0 : dataOption, label: 'PayPal'}, {value:dataPayoneer == null ? 0:  dataPayoneer, label:'Payoneer'}, {value:dataBitcoin == null ? 0 : dataBitcoin, label:'Bitcoin'}]
-
-return (
-        
-    <SafeAreaView style={{flex:1, backgroundColor:colors.bgColor}}>
-                    {
-                    isFocused &&
-                    <StatusBar
-                    barStyle={'dark-content'}
-                    translucent
-                    backgroundColor="transparent"/>
-                    }
-                
-                {!appMode &&
-                <>
-                 <HeaderMenu 
-                 buttonHome={<TouchableOpacity style={[gs.homeSideMenu]} onPress={() =>navigation.navigate('profile')} >
-                 <Feather name='user' size={27} color={colors.primaryColor1}/>
-                     {/* {notifications > 0 && 
-                 <View style={{position: "absolute", top: -1, right: -10, marginRight: 10, borderRadius:50, backgroundColor: colors.greenColor, width:8, height:8}}></View>} */}
-                 </TouchableOpacity>}
-
-                 greeting={<Text style={{ fontSize: 12, fontFamily:'_regular' }}>{getGreeting(myName)}</Text>}
-                />
-                
-                <View style={[styles.LoginDivTitle, {marginHorizontal:20}]}>
-                     {/* <Text style={styles.loginTitle}>Hi {myName},</Text> */}
-                    <HTMLView
-                        value={appSettingDetails?.app_short_name}
-                        stylesheet={styles.loginTitleDesc}/>
-                </View>
-                
-                <ScrollView showsVerticalScrollIndicator={true} style={{paddingHorizontal:20}}
-                    refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={handleHomeRefresh} tintColor={colors.primaryColor2}
-                        colors={[colors.primaryColor2]}
-                        progressBackgroundColor={colors.primaryColor2} />
-                      }>
-                        <View style={styles.balanceStyle}>
-                            <ImageBackground source={background} resizeMode='cover' imageStyle={{opacity: 0.3}} style={{flex:1}}>
-                            
-                            <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8, marginVertical:10}}>
-
-                                <View style={{marginHorizontal:10, marginTop:10}}>
-                                    <Text style={styles.balanceTitle}>Ballance</Text>
-                                    <Text style={styles.amtStyle}><NumberDollarValueFormat value={userInfo.userData?.tran_account}/></Text>
-                                </View>
-                                
-                            </View> 
-                            <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:8, marginVertical:10}}>
-
-                            <View style={{marginHorizontal:10, marginTop:10}}>
-                                <Text style={styles.balanceTitle}>Rewards</Text>
-                                <Text style={{color:'#fff', fontFamily:'_semiBold', fontSize:20}}><NumberDollarValueFormat value={userInfo.userData?.signup_account}/></Text>
-                            </View>
-                            <View style={{flexDirection:'column', marginTop:10}}>
-                                <View style={{marginHorizontal:15, flexDirection:'row', justifyContent:'flex-end', marginTop:20}}>
-                                    
-                                </View>
-                                
-                            <View style={{marginHorizontal:15, flexDirection:'row', justifyContent:'flex-end'}}>
-                            <TouchableOpacity style={styles.actionButtonMoreBar} onPress={() =>refMoreRBSheet.current.open()}>
-                            <Text><Ionicons name='ellipsis-vertical'
-                            size={24}
-                            color='#ffffff'/></Text>
-                            </TouchableOpacity>
-                            </View>
-                            </View>
-                            </View>                                 
-                            
-                        </ImageBackground>
-                        
-                        </View>
-
-                    <View style={{flex:1, justifyContent:'center', alignItems:'center', padding:5}}>
-                        <Ionicons name="chevron-down" size={20} color={colors.textSecColor} />
-                    </View>
-
-                    {/* action buttons */}
-                    
-                    <View style={styles.actionRowButton}>
-                        <View style={styles.buttonRow}>
-                            {/* SELL Button */}
-                            <TouchableOpacity style={styles.actionButton} onPress={() => refSellRBSheet.current.open()}>
-                                <Text style={styles.buttonSellText}>Sell</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={styles.actionButtonBuy} onPress={() => refBuyRBSheet.current.open()}>
-                                <Text style={styles.buttonBuyText}>Buy</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                     {/* recent transaction */}
-                    <View style={styles.recentTranView}>
-                        <Text style={styles.recentTranText}>Transactions</Text>
-                        {}<TouchableOpacity onPress={() =>navigation.navigate('History')}>
-                            <Ionicons name="chevron-forward-circle-sharp" size={30} color={colors.primaryColor1} />
-                        </TouchableOpacity>
-                    </View>
-
-                     {/* <Text style={styles.recentChartText}>Transactions Flow</Text>
-                        <View style={styles.chartView}>
-                            <ChartData />
-                        </View> */}
-
-                    {/* slider images and text */}
-                    <View style={{marginVertical: 10,}}>
-                        
-                    </View>
-                   
-                    <Carousel 
-                        ref={carouselRef}
-                        data={sliderData }
-                        renderItem={renderBanner}
-                        sliderWidth={windowWidth -40} // - 40 means subtract 20 from left margin, 20 from right margin
-                        itemWidth={280}
-                        loop={true}
-                    />
-
-                     {/* Chart data goes here */}
-                     {/* <View style={[styles.recentTranView, {marginTop: 15, marginHorizontal:5}]}>
-                        <Text style={styles.recentTranText}>Transactions Flow</Text>
-                        {!homeChartDisplay &&
-                        <TouchableOpacity onPress={() => openCollapsedState()}>
-                            <View style={{width:50, height:50, justifyContent:'center', alignItems:'center', marginTop:-15}}>
-                             {isCollapsed ? <Ionicons name="stats-chart-sharp" size={20} color={colors.primaryColor1} />: <Ionicons name="stats-chart-sharp" size={20} color={colors.textSecColor} />}
-                            </View>
-                       
-                        </TouchableOpacity> }
-                    </View>
-                        <Collapsible collapsed={isCollapsed}>
-                             <View style={{marginTop:10, borderColor: '#dededc', marginBottom:5}}>
-                                 <View style={styles.chartView}>
-                                    {chartLoading ? <ActivityIndicator size={'large'} color={colors.primaryColor1} />:
-                                    <BarChart
-                                        key={'xyz'}
-                                        hideRules={true}
-                                        barBorderTopLeftRadius ={5}
-                                        barBorderTopRightRadius ={5}
-                                        xAxisColor ="lightgrey"
-                                        frontColor="#1D2667"
-                                        yAxisColor ="lightgrey"
-                                        noOfSections={5}
-                                        height={250}
-                                        spacing={25}
-                                        isAnimated ={true}
-                                        animationDuration={800}
-                                        animationEasing={'Easing.ease'}
-                                        barWidth={41}
-                                        data = {data}
-                                        xAxisLabelTextStyle={styles.chartText}
-                                    />
-                                    }
-                                </View>    
-                           </View>
-                                 
-                        </Collapsible>
-                    {isCollapsed &&<View style={{marginTop:20}}></View> }
-                    <View>
-                        
-                    </View> */}
-
-                    <ShowUpdateModal 
-                        openModal={isUpdateAvailable}
-                        animationType={'fade'}
-                        modalTitle={'New Update!'}
-                        ModalDesc={'A new version is available please, download latest update'}
-                        logoutBtn={() => openPlayStore()}
-                        modalBgColor={"rgba(0,0,0,0.6)"}
-                        bntYesText={'Download Update'}
-                    />
-
-                    <View style={[styles.historyMainView2,{ marginBottom:15}]}>
-                    {!noTransaction && recentTranData?.map((item, index) => (
-                        
-                        <TouchableOpacity style={styles.historyView} onPress={()=>navigation.navigate('TranDetails', {
-                            record_id:item._id
-                          })}
-                        key={index}>
-                            <View style={{marginHorizontal:10, marginTop:15,}}>
-                                <Text style={styles.historyTextDate}>{moment(item.creditOn).format("DD/MM/YYYY hh:mm:ss")}</Text>
-                                <Text style={styles.historyTextStatus}>{item.transac_nature} {item.transaction_status}</Text>
-                            </View>
-                            <View style={styles.historyViewIn}>
-                                <View>
-                                <Text style={styles.historyAmtText}>
-                                {item.currency_level =='2' ? <NumberDollarValueFormat value={item.amount} />:<NumberValueFormat value={item.amount} />}
-                                    </Text>
-                                </View>
-                                <Ionicons name="chevron-forward-outline" size={24} color={colors.textSecColor} />
-                            </View>
-                        </TouchableOpacity>
-                            ))}
-                    </View>
-
-                    {noTransaction &&<View style={{marginBottom:30}}>
-                        <Text style={{fontFamily:'_regular', fontSize:12, color:colors.textSecColor, textAlign:'center'}}>No recent transaction at the moment</Text>
-                    </View>}
-                    
-                    {/* show if user profile is not complete */}
-                    {completeRegData &&
-                    <View style={{marginBottom: 20, marginTop:20}}>
-                        <View style={{backgroundColor:'#DCF2EA', height:150, borderRadius:20}}>
-                        <View style={{justifyContent:'flex-end', alignItems:'flex-end'}}>
-                            <TouchableOpacity style={styles.closeBnt}
-                            onPress={() => {closeIncompleteRegistration()}}>
-                                <View style={styles.closeBtnView}>
-                                    <Ionicons name="close" size={20} color={colors.textColor}/>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                            <View style={{flexDirection:'row', marginTop: 5, marginHorizontal:5, alignItems:'center'}}>
-                            <Ionicons name="information-circle-outline" size={24} color={colors.blackColor1}/>
-                                <Text style={{marginLeft: 5, fontFamily:'_bold', fontSize:14, color:colors=='#1D2667'? '#fff':'#51534D'}}>
-                                    Incomplete Profile
-                                </Text>
-                            </View>
-                            <View style={{marginVertical:8, marginHorizontal:8}}>
-                                <Text style={{marginLeft: 5, fontFamily:'_regular', fontSize:12, color:colors=='#1D2667'? '#fff':'#51534D'}}>
-                                    Please, complete your account registration process to remove restrictions in your account.
-                                </Text>
-                            </View>
-
-                            <View style={{justifyContent:'center', alignItems:'center', marginBottom:50, marginTop:8}}>
-                        
-                            <TouchableOpacity onPress={() => navigation.navigate('SignupSteps')}
-                                    style={{borderRadius:50, borderColor:colors.textBlack, width:90, height:40, borderWidth:1, justifyContent:'center', alignItems:'center', marginBottom:40}}>
-                                    <Text style={{color:colors.blackColor1, fontFamily:'_semiBold', fontSize:14}}>Okay</Text>
-                            </TouchableOpacity>
-                        </View>
-                                            
-                        </View>
-
-                    </View>
-                    }
-
-                    <View style={{marginTop:10, marginBottom:10}}>
-                    </View>
-
-                </ScrollView>
-
-                {/* Bottom sheet here when sell button is click */}
-                <RBSheet
-                    ref={refSellRBSheet}
-                    closeOnDragDown={true}
-                    closeOnPressMask={true}
-                    openDuration={500}
-                    closeDuration={400}
-                    height={350}
-                    
-                    closeOnPressBack={true}
-                    keyboardAvoidingViewEnabled={true}
-                    customStyles={{
-                    container:{
-                        backgroundColor: colors.bgColor,
-                    },
-                    draggableIcon: {
-                        backgroundColor: "#000"
-                    }
-                    }}>
-                        
-                    <SellBottomSheet 
-                        titleText={'Sell'}
-                        titleStyle={{fontFamily:'_semiBold', fontSize:25, color:colors.textBlack}}
-                        buttonStyle={styles.bottomSheetButton}
-                        imageIconPaypal={paypalImage}
-                        imageIconPayooner={payoonerImage}
-                        imageIconBitcoin={bitcoinImage}
-                        imageStyle={styles.bottomSheetImageStyle}
-                        buttonTextStyle={styles.bottomSheetButtonText}
-                        buttonLabel_paypal={'PayPal'}
-                        buttonLabel_payooner={'Payoneer'}
-                        buttonLabel_bitcoin={'Bitcoin'}
-                        onPress1={() => sellPaypalBtn() }
-                        onPress2={() => sellPayoonerBtn()}
-                        onPress3={() => sellBtcBtn()}
-                    />
-                </RBSheet>
-
-                {/* Buy bottom sheet */}
-                <RBSheet
-                    ref={refBuyRBSheet}
-                    closeOnDragDown={true}
-                    closeOnPressMask={true}
-                    openDuration={500}
-                    closeDuration={400}
-                    height={350}
-                    closeOnPressBack={true}
-                    keyboardAvoidingViewEnabled={true}
-                    customStyles={{
-                    container:{
-                        backgroundColor: colors.bgColor,
-                    },
-                    draggableIcon: {
-                        backgroundColor: "#000"
-                    }
-                    }}>
-                        
-                    <BuyBottomSheet 
-                        titleText={'Buy'}
-                        titleStyle={{fontFamily:'_semiBold', fontSize:25, color:colors.textBlack}}
-                        buttonStyle={styles.bottomSheetButton}
-                        imageIconPaypal={paypalImage}
-                        imageIconPayooner={payoonerImage}
-                        imageIconBitcoin={bitcoinImage}
-                        imageStyle={styles.bottomSheetImageStyle}
-                        buttonTextStyle={styles.bottomSheetButtonText}
-                        buttonLabel_paypal={'PayPal'}
-                        buttonLabel_payooner={'Payoneer'}
-                        buttonLabel_bitcoin={'Bitcoin'}
-                        onPress1={() => buyPaypalBtn()}
-                        onPress2={() => buyPayoneerBtn()}
-                        onPress3={() => buyBtcBtn()}
-                    />
-                        
-                        {/* create custom component and add it */}
-                </RBSheet>
-
-                {/* More bottom sheet */}
-                <RBSheet
-                    ref={refMoreRBSheet}
-                    closeOnDragDown={true}
-                    closeOnPressMask={true}
-                    openDuration={500}
-                    closeDuration={400}
-                    height={350}
-                    closeOnPressBack={true}
-                    keyboardAvoidingViewEnabled={true}
-                    customStyles={{
-                    container:{
-                        backgroundColor: colors.bgColor,
-                    },
-                    draggableIcon: {
-                        backgroundColor: "#000"
-                    }
-                    }}>
-                    <MoreBottomSheet 
-                        titleText={'More'}
-                        titleStyle={{fontFamily:'_semiBold', fontSize:25, color:colors.textBlack}}
-                        buttonStyle={styles.bottomSheetButton}
-                        iconType1={<Feather name='plus-circle' style={{fontSize:20, color:colors.primaryColor2}} />}
-                        iconType2={<Feather name='minus-circle' style={{fontSize:20, color:colors.primaryColor2}} />}
-                        iconType3={<Ionicons name='wallet-outline' style={{fontSize:20, color:colors.primaryColor2}} />}
-                        imageStyle={styles.bottomSheetImageStyle}
-                        buttonTextStyle={styles.bottomSheetButtonText}
-                        buttonLabel_paypal={'Fund Account'}
-                        buttonLabel_payooner={'Withdraw Funds'}
-                        buttonLabel_bitcoin={'Wallet'}
-                        onPress1={() => addFundBtn()}
-                        onPress2={() => WithdrawBtn()}
-                        onPress3={() => walletBtn()}
-                    />
-                        
-                        {/* create custom component and add it */}
-                </RBSheet>
-
-                {/* Show current rate here... */}
-                {/* <BottomSheet isOpen={false}
-                    sliderMinHeight={25}
-                    wrapperStyle={{
-                            backgroundColor: colors.textColor,
-                        }}
-                    innerContentStyle={{
-                        backgroundColor: colors.textColor,
-                    }}>
-                        
-                    {(onScrollEndDrag) => (
-                    <ScrollView onScrollEndDrag={onScrollEndDrag}>
-                    <RateBottomSheet 
-                        titleText={'Rate'}
-                        titleStyle={{fontFamily:'_semiBold', fontSize:20, color:colors.textBlack}}
-                        imageIconPaypal={paypalImage}
-                        imageIconPayooner={payoonerImage}
-                        imageIconBitcoin={bitcoinImage}
-                        imageStyle={styles.bottomSheetImageStyle}
-                        buttonTextStyle={styles.bottomSheetButtonText}
-                        textStyle={{fontFamily:'_semiBold', fontSize:14, marginTop:8}}
-                    />
-
-                    </ScrollView>
-                    )}
-
-                </BottomSheet> */}
-
-                {/* show if user profile is not complete */}
-                
-                 </>
-                }
-
-                {/* Show this when app is set to off mode from the admin */}
-                {appMode && <View style={{flex: 1}}>
-                    <AppModeModal 
-                    openModal={appMode}
-                    animationType={'slide'}
-                    ModalShortDesc={'Application Error...'}
-                    ModalDesc={appModeMessage}
-                    closeBtn={() => signMeOut()}
-                    logoutBtn={() => signMeOut()}
-                    modalBgColor={"rgba(0,0,0,0.2)"}
-                    bntYesText={'Okay'}
-                    />
-                </View>
-                }
-    </SafeAreaView>
-        
+  return (
+    <TouchableOpacity
+      style={[
+        gs.billServiceCard,
+        { backgroundColor: colors.bgCard },
+        isDisabled && { opacity: 0.6 },
+      ]}
+      onPress={isDisabled ? null : onPress}
+      activeOpacity={0.8}>
+      <View style={[gs.billServiceIcon, { backgroundColor: bgColor }]}>
+        <MaterialCommunityIcons name={icon} size={26} color={color} />
+      </View>
+      <Text style={[gs.billServiceLabel, { color: colors.textBlack }]}>{label}</Text>
+      <StatusBadge status={status} />
+    </TouchableOpacity>
   );
-}
+};
 
-const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.bgColor,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
+// ── Transaction Item Component ────────────────────
+const TransactionItem = ({ item, onPress, colors }) => (
+  <TouchableOpacity style={[styles.transactionItem, { backgroundColor: colors.bgCard }]} onPress={onPress} activeOpacity={0.8}>
+    <View style={styles.transactionLeft}>
+      <View style={[styles.transactionIconBox, { backgroundColor: colors.bgLight }]}>
+        <Ionicons
+          name={item.transac_nature === 'Credit' ? 'arrow-down' : 'arrow-up'}
+          size={18}
+          color={item.transac_nature === 'Credit' ? colors.successColor : colors.dangerColor}
+        />
+      </View>
+      <View style={styles.transactionInfo}>
+        <Text style={[styles.transactionTitle, { color: colors.textBlack }]} numberOfLines={1}>
+          {item.transac_nature} {item.transaction_status}
+        </Text>
+        <Text style={[styles.transactionDate, { color: colors.textSecColor }]}>
+          {moment(item.creditOn).format('DD MMM YYYY • hh:mm A')}
+        </Text>
+      </View>
+    </View>
+    <View style={styles.transactionRight}>
+      <Text style={[
+        styles.transactionAmount,
+        { color: item.transac_nature === 'Credit' ? colors.successColor : colors.dangerColor }
+      ]}>
+        {item.currency_level === '2'
+          ? <NumberDollarValueFormat value={item.amount} />
+          : <NumberValueFormat value={item.amount} />}
+      </Text>
+      <Ionicons name="chevron-forward" size={16} color={colors.textSecColor} />
+    </View>
+  </TouchableOpacity>
+);
 
-    actionRowButton: {
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        borderRadius: 15, 
-        backgroundColor: colors.textColor, 
-        marginTop: 30, 
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.5,
-        shadowRadius: 0.5,
-        elevation: 1,
-        marginBottom:10,
-        
-      },
-      
-      buttonRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        gap: 10, // space between buttons
-        height:50,
-        alignItems:'center',
-      },
-      
-      button: {
-        flex: 1, // both buttons take equal width
-        alignItems: 'center',
-        justifyContent: 'center', // center text vertically
-        paddingVertical: 12,
-        borderRadius: 8,
-      },
-      
-      sellButton: {
-        borderWidth: 1,
-        borderColor: colors.greenColor,
-        backgroundColor: 'transparent',
-      },
-      
-      buyButton: {
-        backgroundColor: colors.greenColor,
-      },
-      
-      buttonText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        textAlign: 'center', // correct property
-        margin: 0, // remove left margin
-      },
+// ── Main Home Screen ──────────────────────────────
+const HomeScreen = ({ navigation }) => {
+  const isFocused = useIsFocused();
+  const { S, colors, isDark } = useThemeStyles();
+  const {
+    userToken, userInfo, setUserInfo,
+    appSettingDetails, setAppSettingDetails,
+    completeRegData, setCompleteRegData,
+    logoutModal, setLogoutModal,
+  } = useContext(AuthContext);
 
-    closeBnt:{
-        borderRadius:50, 
-        borderWidth:2, 
-        borderColor:colors.lightGreenColor1, 
-        backgroundColor:colors.lightGreenColor1, 
-        marginHorizontal: 10
-    },
-    closeBtnView:{
-        borderRadius:50, 
-        borderWidth:2, 
-        borderColor:colors.textColor, 
-        backgroundColor:colors.primaryColor1, 
-        justifyContent:'center', 
-        alignItems:'center', 
-        marginTop:-15
-},
-    balanceStyle:{
-        flex: 1, 
-        borderRadius:15, 
-        height:200,
-        backgroundColor:colors.primaryColor1,
-        shadowRadius:10, 
-        marginTop:20, 
-        shadowColor:'#000', 
-        shadowOffset:{
-            width: 0,
-            height: 10,
-        }, 
-        shadowOpacity: 0.23,
-        elevation: 1
-    },
-        contentContainer: {
-        flex: 1,
-        alignItems: 'center',
-      },
-      balanceTitle:{
-        fontFamily:'_semiBold', 
-        fontSize:15, 
-        color:colors.bannerTextColor
-    },
-    amtStyle:{
-        fontFamily:'_bold', 
-        fontSize:25, 
-        color:colors.textColor, 
-        marginBottom: 8
-    },
-    actionButtonView:{
-        flex:1, 
-        height:100, 
-        justifyContent:'center', 
-        alignItems:'center', 
-        padding:10, 
-        flexDirection:'row', 
-        borderRadius: 8, 
-        marginBottom: 30
-    },
-    actionButton:{
-        width:95, 
-        height:35, 
-        borderRadius:50, 
-        backgroundColor:colors.primaryColor1, 
-        justifyContent:'center', 
-        alignItems:'center', 
-        marginRight:15
-    },
-    actionButtonBuy:{
-        width: 95,
-        height:35, 
-        borderRadius:50, 
-        justifyContent:'center', 
-        alignItems:'center', 
-        marginRight:5,
-        borderWidth: 1,
-        borderColor: colors.secondaryColor,
-        backgroundColor: 'transparent',
-    },
-    actionButtonAdd:{
-        width:90,
-        height:40, 
-        borderRadius:20, 
-        borderColor:colors.primaryColor2, 
-        borderWidth:1, 
-        justifyContent:'center', 
-        alignItems:'center', 
-        marginRight:10
-    },
-    actionButtonMore:{
-        width:45,
-        height:45, 
-        borderRadius:20, 
-        borderColor:colors.primaryColor2, 
-        borderWidth:0.8, 
-        justifyContent:'center', 
-        alignItems:'center', 
-        marginLeft:10
-    },
-    actionButtonMoreBar:{
-        width:40,
-        height:40, 
-        borderRadius:10, 
-        borderColor:colors.textColor, 
-        borderWidth:0.8, 
-        justifyContent:'center', 
-        alignItems:'center', 
-        marginLeft:10,
-    },
-    bottomSheetButton:{
-        flexDirection:'row', 
-        borderRadius:10, 
-        marginHorizontal:10, 
-        backgroundColor:colors.textColor, 
-        marginTop:20, 
-        height:50, 
-        alignItems:'center',
-        shadowColor: '#000',
-        shadowOffset: { 
-        width: 0, 
-        height: 1 
-        },
-        shadowOpacity: 0.5,
-        shadowRadius: 1,
-        elevation: 1, 
-        },
-    bottomSheetImageStyle:{
-        width:30, 
-        height:30, 
-        borderRadius:10
-    },
-    bottomSheetButtonText:{
-        fontFamily:'_semiBold', 
-        fontSize:17, 
-        marginLeft:15, 
-        color:colors.textBlack
-    },
-    buttonSellText:{
-        color:colors.textColor, 
-        fontFamily:'_semiBold', 
-        fontSize:15
-    },
-    buttonAddText:{
-        color:colors.textColor1,
-        fontFamily:'_semiBold', 
-        fontSize:15
-    },
-    buttonAddTextBar:{
-        color:colors.textSecColor,
-        fontFamily:'_semiBold', 
-        fontSize:15
-    },
-    buttonBuyText:{
-        color:colors.blackColor2,
-        fontFamily:'_semiBold', 
-        fontSize:15
-    },
-    checkboxText: {
-        margin:0,
-        marginRight:5,
-        borderRadius:5,
-        color:'lightgrey',
-      },
-      signInButton: {
-        width: '100%',
-        height: 50,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 10,
-        flexDirection: 'row',
-         backgroundColor: colors.primaryColor1
-    },
+  const refSellRBSheet = useRef();
+  const refBuyRBSheet = useRef();
+  const refMoreRBSheet = useRef();
+  const carouselRef = useRef(null);
 
-    textSign:{
-        fontFamily:'_semiBold',
-        fontSize: 17,
-        color: colors.textColor
-    },
-    bgImage:{
-        position: 'absolute',
-        width: 130,
-        height: 90,
-        bottom: -6,
-        right: -10,
-     },
-     loginTitle:{
-        fontFamily:'_bold', 
-        fontSize:17, 
-        color:'#333', 
-        
-     },
-     loginTitleDesc:{
-        fontFamily:'_regular',  
-        fontSize:14, 
-        color:'#aaa', 
-     },
-     LoginDivTitle:{
-        marginBottom:10, 
-        marginTop: 15,
-    },
-    recentChartText:{
-        fontFamily:'_semiBold', 
-        fontSize:14, 
-        color:colors.textSecColor
-    },
-    chartText:{
-        fontFamily:'_regular', 
-        fontSize:14, 
-        color:colors.darkBg
-    },
-
-    chartView:{
-        justifyContent:'center', 
-        alignItems:'center', 
-        flexDirection:'row',
-        //marginLeft:20, 
-    },
-    recentTranView:{
-        flex: 1, 
-        justifyContent:'space-between', 
-        flexDirection:'row', 
-        marginBottom: 10, 
-        marginTop: 40,
-        marginHorizontal:5,
-    },
-    recentTranText:{
-        fontFamily:'_regular', 
-        fontSize:15, 
-        color:colors.fadeText
-    },
-    historyMainView:{
-        flex: 1, 
-        borderRadius:10, 
-        backgroundColor:colors.textColor,
-        height:70,
-        justifyContent:'center',
-        
-    },
-    historyMainView2:{
-        flex: 1, 
-        borderRadius:10, 
-        backgroundColor:colors.textColor,
-        justifyContent:'center',
-        
-    },
-    historyView:{
-        flexDirection:'row', 
-        justifyContent:'space-between', 
-        marginBottom:10
-    },
-    historyTextDate:{
-        fontFamily:'_semiBold', 
-        fontSize:13, 
-        color:colors.textSecColor
-    },
-    historyTextStatus:{
-        fontFamily:'_bold', 
-        fontSize:13, 
-        color:colors.lightHl, 
-        marginBottom: 8
-    },
-    historyViewIn:{
-        marginHorizontal:5, 
-        flexDirection:'row', 
-        alignItems:'center'
-    },
-    historyAmtText:{
-        fontFamily:'_semiBold', 
-        fontSize:17, 
-        color:colors.lightBg
-    },
-
-
-    centeredView: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 22,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-      },
-      modalView: {
-        margin: 20,
-        backgroundColor: 'white',
-        borderRadius: 10,
-        width: '85%',
-        height: 150,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-          width: 0,
-          height: 0.8,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 3,
-      },
-      button: {
-        borderRadius: 8,
-        padding: 8,
-      },
-      buttonOpen: {
-        backgroundColor: '#F194FF',
-      },
-      buttonClose: {
-        backgroundColor: '#ccc',
-      },
-      buttonYes: {
-        backgroundColor: colors.primaryColor1,
-      },
-      textStyle: {
-        color: 'white',
-        textAlign: 'center',
-        fontFamily:'_bold', 
-        fontSize:13, 
-      },
-      modalText: {
-        marginBottom: 15,
-        textAlign: 'center',
-        marginTop: -30
-      },
-    
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [recentTranData, setRecentTranData] = useState([]);
+  const [noTransaction, setNoTransaction] = useState(false);
+  const [appMode, setAppMode] = useState(false);
+  const [appModeMessage, setAppModeMessage] = useState('');
+  const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
+  const [billServices, setBillServices] = useState({
+    airtime: 'active',
+    electricity: 'active',
+    mobile_data: 'active',
+    tv_subscription: 'active',
+    exam_cards: 'active',
   });
 
-  export default HomeScreen;
+
+
+const [sliderData] = useState([
+  { id: 1, title: 'Buy & Sell Virtual Funds Instantly', desc: 'PayPal, Payoneer & Bitcoin at best rates', color: ['#4C5FD5', '#6C7FE8'], icon: 'swap-horizontal', BannerIcon: BuySellIcon },
+  { id: 2, title: 'Pay Bills Easily', desc: 'Electricity & data at your fingertips', color: ['#00C896', '#00A87E'], icon: 'flash', BannerIcon: ElectricityIcon },
+  { id: 3, title: 'TV Subscriptions', desc: 'DSTV, GOtv & Startimes — renew instantly', color: ['#8B5CF6', '#6D28D9'], icon: 'tv', BannerIcon: TVIcon },
+  { id: 4, title: 'Exam Scratch Cards', desc: 'WAEC, NECO, JAMB & NABTEB instantly', color: ['#F59E0B', '#D97706'], icon: 'school', BannerIcon: ExamCardIcon },
+  { id: 5, title: 'Earn Rewards', desc: 'Refer friends and earn bonus on every signup', color: ['#EF4444', '#DC2626'], icon: 'gift', BannerIcon: RewardsIcon },
+]);
+
+  const myName = userInfo?.userData?.fullname?.split(' ')[0] || 'User';
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return `Good Morning, ${myName} 👋`;
+    if (hour < 17) return `Good Afternoon, ${myName} 👋`;
+    return `Good Evening, ${myName} 👋`;
+  };
+
+  // ── Fetch Bill Services Status ──────────────────
+  const fetchBillServicesStatus = async () => {
+    try {
+      const res = await client.get('/api/bills_services_status');
+      if (res.data.msg === '200') {
+        setBillServices(res.data.services);
+      }
+    } catch (error) {
+      console.log('Bills services status error:', error.message);
+    }
+  };
+
+  // ── Fetch Recent Transactions ───────────────────
+  const latestTransaction = async () => {
+    try {
+      const res = await client.get('/api/latest_transaction/' + userInfo?.userData?._id, {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      });
+      if (res.data.msg === '200') {
+        setRecentTranData(res.data.data);
+        setNoTransaction(res.data.data.length === 0);
+      } else {
+        setNoTransaction(true);
+      }
+    } catch (error) {
+      console.log('Latest transaction error:', error.message);
+      setNoTransaction(true);
+    }
+  };
+
+  // ── Refresh User Details ────────────────────────
+  const RefreshUserDetails = async () => {
+    try {
+      const res = await client.get('/api/userProfileMobile/' + userInfo?.userData?._id, {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      });
+      if (res.data.msg === '200') {
+        AsyncStorage.setItem('userInfo', JSON.stringify(res.data));
+        setUserInfo(res.data);
+      }
+    } catch (error) {
+      console.log('Refresh user error:', error.message);
+    }
+  };
+
+  // ── Check User Token ────────────────────────────
+  const checkUserToken = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) navigation.replace('Login');
+    } catch (error) {
+      console.log('Token check error:', error.message);
+    }
+  };
+
+  // ── App System Settings ─────────────────────────
+  useEffect(() => {
+    _AppSystemSettings().then((res) => {
+      if (res?.app_operation_status === false) {
+        setAppMode(true);
+        setAppModeMessage(res?.app_mode_message);
+      } else {
+        setAppMode(false);
+      }
+    });
+  }, []);
+
+  // ── On Screen Focus ─────────────────────────────
+  useEffect(() => {
+    if (isFocused) {
+      latestTransaction();
+      fetchBillServicesStatus();
+    }
+  }, [isFocused]);
+
+  // ── Sign Out ────────────────────────────────────
+  const signMeOut = async () => {
+    try {
+      await AsyncStorage.multiRemove(['userToken', 'userInfo', 'AppSettingInfo']);
+      navigation.replace('Login');
+    } catch (error) {
+      console.log('Sign out error:', error.message);
+    }
+  };
+
+  // ── Pull to Refresh ─────────────────────────────
+  const handleHomeRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    RefreshUserDetails();
+    latestTransaction();
+    fetchBillServicesStatus();
+    checkUserToken();
+    setTimeout(() => setIsRefreshing(false), 1500);
+  }, []);
+
+  // ── Close Incomplete Registration Banner ────────
+  const closeIncompleteRegistration = () => setCompleteRegData(false);
+
+  // ── Open Play Store ─────────────────────────────
+  const openPlayStore = () => {
+    Linking.openURL('market://details?id=com.ozaapp.mobile').catch(() =>
+      Linking.openURL('https://play.google.com/store/apps/details?id=com.ozaapp.mobile')
+    );
+  };
+
+  // ── Sell Navigation ─────────────────────────────
+  const sellPaypalBtn = () => {
+    if (appSettingDetails?.app_paypal_sell === false) {
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Unavailable', textBody: 'This service is currently unavailable' });
+      refSellRBSheet.current.close(); return;
+    }
+    refSellRBSheet.current.close();
+    navigation.navigate('SalesPage', { pageName: 'PayPal', categoryType: 'Sell' });
+  };
+
+  const sellPayoonerBtn = () => {
+    if (appSettingDetails?.app_payoneer_sell === false) {
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Unavailable', textBody: 'This service is currently unavailable' });
+      refSellRBSheet.current.close(); return;
+    }
+    refSellRBSheet.current.close();
+    navigation.navigate('SalesPage', { pageName: 'Payoneer', categoryType: 'Sell' });
+  };
+
+  const sellBtcBtn = () => {
+    if (appSettingDetails?.app_bitcoin_sell === false) {
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Unavailable', textBody: 'This service is currently unavailable' });
+      refSellRBSheet.current.close(); return;
+    }
+    refSellRBSheet.current.close();
+    navigation.navigate('SalesPage', { pageName: 'Bitcoin', categoryType: 'Sell' });
+  };
+
+  // ── Buy Navigation ──────────────────────────────
+  const buyPaypalBtn = () => {
+    if (appSettingDetails?.app_paypal_buy === false) {
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Unavailable', textBody: 'This service is currently unavailable' });
+      refBuyRBSheet.current.close(); return;
+    }
+    refBuyRBSheet.current.close();
+    navigation.navigate('BuyPage', { pageName: 'PayPal', categoryType: 'Buy' });
+  };
+
+  const buyPayoneerBtn = () => {
+    if (appSettingDetails?.app_payoneer_buy === false) {
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Unavailable', textBody: 'This service is currently unavailable' });
+      refBuyRBSheet.current.close(); return;
+    }
+    refBuyRBSheet.current.close();
+    navigation.navigate('BuyPage', { pageName: 'Payoneer', categoryType: 'Buy' });
+  };
+
+  const buyBtcBtn = () => {
+    if (appSettingDetails?.app_bitcoin_buy === false) {
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Unavailable', textBody: 'This service is currently unavailable' });
+      refBuyRBSheet.current.close(); return;
+    }
+    refBuyRBSheet.current.close();
+    navigation.navigate('BuyPage', { pageName: 'Bitcoin', categoryType: 'Buy' });
+  };
+
+  // ── More Navigation ─────────────────────────────
+  const addFundBtn = () => {
+    refMoreRBSheet.current.close();
+    navigation.navigate('Add-fund', { pageName: 'FundAccount', categoryType: 'Funding' });
+  };
+
+  const WithdrawBtn = () => {
+    refMoreRBSheet.current.close();
+    navigation.navigate('withdraw-fund', { pageName: 'WithdrawFund', categoryType: 'Withdraw' });
+  };
+
+  const walletBtn = () => {
+    refMoreRBSheet.current.close();
+    navigation.navigate('Wallet', { pageName: 'wallet', categoryType: 'Funding' });
+  };
+
+  // ── Carousel Banner Renderer ────────────────────
+    const renderBanner = ({ item }) => (
+    <LinearGradient
+      colors={item.color}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.bannerSlide}>
+
+      {/* Decorative background circles */}
+      <View style={styles.bannerCircleLarge} />
+      <View style={styles.bannerCircleSmall} />
+
+      {/* Left content */}
+      <View style={styles.bannerContent}>
+        <View style={styles.bannerIconBox}>
+          <Ionicons name={item.icon} size={16} color="#fff" />
+        </View>
+        <Text style={styles.bannerTitle}>{item.title}</Text>
+        <Text style={styles.bannerDesc}>{item.desc}</Text>
+      </View>
+
+      {/* Right overlay image */}
+      <View style={styles.bannerImageContainer}>
+        <item.BannerIcon />
+      </View>
+
+    </LinearGradient>
+    );
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+      {isFocused && (
+        <StatusBar
+          barStyle={isDark ? 'light-content' : 'dark-content'}
+          backgroundColor={colors.bgColor}
+        />
+      )}
+
+      {!appMode && (
+        <>
+                    {/* ── Header ─────────────────────────── */}
+          <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
+            <View>
+              <Text style={[styles.greetingText, { color: colors.textBlack }]}>
+                {getGreeting()}
+              </Text>
+              {appSettingDetails?.app_short_name ? (
+                <HTMLView
+                  value={appSettingDetails.app_short_name}
+                  stylesheet={{
+                    p: [styles.subGreetingText, { color: colors.textSecColor }],
+                  }}
+                />
+              ) : (
+                <Text style={[styles.subGreetingText, { color: colors.textSecColor }]}>
+                  Welcome back
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity
+              style={[styles.profileBtn, { backgroundColor: colors.bgLight }]}
+              onPress={() => navigation.navigate('profile')}
+              activeOpacity={0.8}>
+              <Feather name="user" size={22} color={colors.primaryColor1} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.scrollContent, { backgroundColor: colors.bgColor }]}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleHomeRefresh}
+                tintColor={colors.primaryColor1}
+                colors={[colors.primaryColor1]}
+              />
+            }>
+
+            {/* ── Balance Card ────────────────── */}
+            <LinearGradient
+              colors={[colors.primaryColor1, colors.primaryColor1b]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.balanceCard}>
+              <ImageBackground
+                source={background}
+                resizeMode="cover"
+                imageStyle={{ opacity: 0.08 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.balanceRow}>
+                <View>
+                  <Text style={styles.balanceLabel}>Available Balance</Text>
+                  <Text style={styles.balanceAmount}>
+                    <NumberDollarValueFormat value={userInfo?.userData?.tran_account} />
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.moreBtn}
+                  onPress={() => refMoreRBSheet.current.open()}>
+                  <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.rewardsRow}>
+                <View>
+                  <Text style={styles.rewardsLabel}>Rewards Balance</Text>
+                  <Text style={styles.rewardsAmount}>
+                    <NumberDollarValueFormat value={userInfo?.userData?.signup_account} />
+                  </Text>
+                </View>
+                <View style={styles.balanceBadge}>
+                  <Ionicons name="gift-outline" size={16} color={colors.accentGold} />
+                  <Text style={styles.balanceBadgeText}>Bonus</Text>
+                </View>
+              </View>
+            </LinearGradient>
+
+            {/* ── Quick Actions ───────────────── */}
+                        <View style={[styles.quickActionsRow, { backgroundColor: colors.bgCard }]}>
+              <QuickActionBtn
+                icon="arrow-up-outline"
+                label="Sell"
+                color="#EF4444"
+                bgColor="#FEE2E2"
+                colors={colors}
+                onPress={() => refSellRBSheet.current.open()}
+              />
+              <QuickActionBtn
+                icon="arrow-down-outline"
+                label="Buy"
+                color="#10B981"
+                bgColor="#D1FAE5"
+                colors={colors}
+                onPress={() => refBuyRBSheet.current.open()}
+              />
+              <QuickActionBtn
+                icon="add-circle-outline"
+                label="Fund"
+                color={colors.primaryColor1}
+                bgColor={colors.bgLight}
+                colors={colors}
+                onPress={addFundBtn}
+              />
+              <QuickActionBtn
+                icon="wallet-outline"
+                label="Wallet"
+                color="#F0A500"
+                bgColor="#FFF3CD"
+                colors={colors}
+                onPress={walletBtn}
+              />
+            </View>
+
+            {/* ── Bill Services Section ───────── */}
+            <View style={gs.sectionHeader}>
+              <Text style={[gs.sectionTitle, { color: colors.textBlack }]}>Bill Payments</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('BillsHome')}>
+                <Text style={[gs.sectionLink, { color: colors.primaryColor1 }]}>See all</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.billServicesGrid}>
+                            <BillServiceCard
+                icon="phone-in-talk"
+                label="Airtime"
+                color="#EC4899"
+                bgColor="#FCE7F3"
+                status={billServices.airtime}
+                colors={colors}
+                onPress={() => navigation.navigate('Airtime')}
+              />
+              <BillServiceCard
+                icon="lightning-bolt"
+                label="Electricity"
+                color="#F59E0B"
+                bgColor="#FEF3C7"
+                status={billServices.electricity}
+                colors={colors}
+                onPress={() => navigation.navigate('Electricity')}
+              />
+              <BillServiceCard
+                icon="wifi"
+                label="Mobile Data"
+                color="#3B82F6"
+                bgColor="#DBEAFE"
+                status={billServices.mobile_data}
+                colors={colors}
+                onPress={() => navigation.navigate('MobileData')}
+              />
+              <BillServiceCard
+                icon="television-play"
+                label="TV Sub"
+                color="#8B5CF6"
+                bgColor="#EDE9FE"
+                status={billServices.tv_subscription}
+                colors={colors}
+                onPress={() => navigation.navigate('TVSubscription')}
+              />
+              <BillServiceCard
+                icon="school-outline"
+                label="Exam Cards"
+                color="#10B981"
+                bgColor="#D1FAE5"
+                status={billServices.exam_cards}
+                colors={colors}
+                onPress={() => navigation.navigate('ExamCards')}
+              />
+            </View>
+
+            {/* ── Promo Banner Carousel ───────── */}
+            <View style={styles.carouselContainer}>
+              <Carousel
+                ref={carouselRef}
+                data={sliderData}
+                renderItem={renderBanner}
+                sliderWidth={windowWidth - 40}
+                itemWidth={windowWidth - 80}
+                loop={true}
+                autoplay={true}
+                autoplayInterval={4000}
+              />
+            </View>
+
+            {/* ── Recent Transactions ─────────── */}
+            <View style={gs.sectionHeader}>
+              <Text style={[gs.sectionTitle, { color: colors.textBlack }]}>Recent Transactions</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('History')}>
+                <Text style={[gs.sectionLink, { color: colors.primaryColor1 }]}>View all</Text>
+              </TouchableOpacity>
+            </View>
+
+            {noTransaction ? (
+              <View style={gs.emptyStateContainer}>
+                <Ionicons name="receipt-outline" size={48} color={colors.textSecColor2} />
+                <Text style={[gs.emptyStateText, { color: colors.textSecColor }]}>
+                No transactions yet
+              </Text>
+              <Text style={[gs.emptyStateSubText, { color: colors.textSecColor2 }]}>
+                Your recent transactions will appear here
+              </Text>
+              </View>
+            ) : (
+              <View style={styles.transactionsList}>
+                {recentTranData?.map((item, index) => (
+                 <TransactionItem
+                    key={index}
+                    item={item}
+                    colors={colors}
+                    onPress={() => navigation.navigate('TranDetails', { record_id: item._id })}
+                  />
+                ))}
+              </View>
+            )}
+
+            {/* ── Incomplete Registration Banner ─ */}
+            {completeRegData && (
+              <View style={[styles.incompleteCard, { backgroundColor: colors.bgCard }]}>
+                <View style={styles.incompleteHeader}>
+                  <View style={styles.incompleteIconRow}>
+                    <Ionicons name="information-circle" size={22} color={colors.warningColor} />
+                  <Text style={[styles.incompleteTitle, { color: colors.textBlack }]}>
+                  Incomplete Profile
+                </Text>
+                  </View>
+                  <TouchableOpacity onPress={closeIncompleteRegistration}>
+                    <Ionicons name="close-circle" size={22} color={colors.textSecColor} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={[styles.incompleteDesc, { color: colors.textSecColor }]}>
+                Complete your account registration to remove restrictions.
+              </Text>
+                <TouchableOpacity
+                  style={styles.incompleteBtn}
+                  onPress={() => navigation.navigate('SignupSteps')}>
+                  <Text style={styles.incompleteBtnText}>Complete Now</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            <ShowUpdateModal
+              openModal={isUpdateAvailable}
+              animationType="fade"
+              modalTitle="New Update!"
+              ModalDesc="A new version is available. Please download the latest update."
+              logoutBtn={openPlayStore}
+              modalBgColor="rgba(0,0,0,0.6)"
+              bntYesText="Download Update"
+            />
+
+            <View style={{ height: 30 }} />
+          </ScrollView>
+
+          {/* ── Sell Bottom Sheet ───────────── */}
+          <RBSheet
+            ref={refSellRBSheet}
+            closeOnDragDown={true}
+            closeOnPressMask={true}
+            openDuration={300}
+            closeDuration={250}
+            height={320}
+            closeOnPressBack={true}
+            customStyles={{
+              container: {  borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl },
+              draggableIcon: { backgroundColor: colors.dividerColor },
+            }}>
+            <SellBottomSheet
+              titleText="Sell"
+              titleStyle={styles.bottomSheetTitle}
+              buttonStyle={gs.bottomSheetButton}
+              imageIconPaypal={paypalImage}
+              imageIconPayooner={payoonerImage}
+              imageIconBitcoin={bitcoinImage}
+              imageStyle={gs.bottomSheetImageStyle}
+              buttonTextStyle={gs.bottomSheetButtonText}
+              buttonLabel_paypal="PayPal"
+              buttonLabel_payooner="Payoneer"
+              buttonLabel_bitcoin="Bitcoin"
+              onPress1={sellPaypalBtn}
+              onPress2={sellPayoonerBtn}
+              onPress3={sellBtcBtn}
+            />
+          </RBSheet>
+
+          {/* ── Buy Bottom Sheet ────────────── */}
+          <RBSheet
+            ref={refBuyRBSheet}
+            closeOnDragDown={true}
+            closeOnPressMask={true}
+            openDuration={300}
+            closeDuration={250}
+            height={320}
+            closeOnPressBack={true}
+            customStyles={{
+              container: {  borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl },
+              draggableIcon: { backgroundColor: colors.dividerColor },
+            }}>
+            <BuyBottomSheet
+              titleText="Buy"
+              titleStyle={styles.bottomSheetTitle}
+              buttonStyle={gs.bottomSheetButton}
+              imageIconPaypal={paypalImage}
+              imageIconPayooner={payoonerImage}
+              imageIconBitcoin={bitcoinImage}
+              imageStyle={gs.bottomSheetImageStyle}
+              buttonTextStyle={gs.bottomSheetButtonText}
+              buttonLabel_paypal="PayPal"
+              buttonLabel_payooner="Payoneer"
+              buttonLabel_bitcoin="Bitcoin"
+              onPress1={buyPaypalBtn}
+              onPress2={buyPayoneerBtn}
+              onPress3={buyBtcBtn}
+            />
+          </RBSheet>
+
+          {/* ── More Bottom Sheet ───────────── */}
+          <RBSheet
+            ref={refMoreRBSheet}
+            closeOnDragDown={true}
+            closeOnPressMask={true}
+            openDuration={300}
+            closeDuration={250}
+            height={320}
+            closeOnPressBack={true}
+            customStyles={{
+              container: {  borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl },
+              draggableIcon: { backgroundColor: colors.dividerColor },
+            }}>
+            <MoreBottomSheet
+              titleText="More Options"
+              titleStyle={styles.bottomSheetTitle}
+              buttonStyle={gs.bottomSheetButton}
+              iconType1={<Feather name="plus-circle" size={20} color={colors.primaryColor1} />}
+              iconType2={<Feather name="minus-circle" size={20} color={colors.primaryColor1} />}
+              iconType3={<Ionicons name="wallet-outline" size={20} color={colors.primaryColor1} />}
+              imageStyle={gs.bottomSheetImageStyle}
+              buttonTextStyle={gs.bottomSheetButtonText}
+              buttonLabel_paypal="Fund Account"
+              buttonLabel_payooner="Withdraw Funds"
+              buttonLabel_bitcoin="My Wallet"
+              onPress1={addFundBtn}
+              onPress2={WithdrawBtn}
+              onPress3={walletBtn}
+            />
+          </RBSheet>
+        </>
+      )}
+
+      {/* ── App Maintenance Mode ────────────────── */}
+      {appMode && (
+        <View style={{ flex: 1 }}>
+          <AppModeModal
+            openModal={appMode}
+            animationType="slide"
+            ModalShortDesc="Service Unavailable"
+            ModalDesc={appModeMessage}
+            closeBtn={signMeOut}
+            logoutBtn={signMeOut}
+            modalBgColor="rgba(0,0,0,0.2)"
+            bntYesText="Okay"
+          />
+        </View>
+      )}
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    },
+  scrollContent: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxxl,
+  },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+   greetingText: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+  },
+  subGreetingText: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    marginTop: 2,
+  },
+   profileBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Balance Card
+  balanceCard: {
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xl,
+    overflow: 'hidden',
+    ...shadows.lg,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.lg,
+  },
+  balanceLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    marginBottom: 4,
+  },
+  balanceAmount: {
+    fontFamily: '_bold',
+    fontSize: typography.huge,
+  },
+  moreBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rewardsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  rewardsLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.xs,
+    marginBottom: 2,
+  },
+  rewardsAmount: {
+    fontFamily: '_semiBold',
+    fontSize: typography.xl,
+  },
+  balanceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  balanceBadgeText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.xs,
+    marginLeft: 4,
+  },
+
+  // Quick Actions
+  quickActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    ...shadows.card,
+  },
+  quickActionBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  quickActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  quickActionLabel: {
+    fontFamily: '_semiBold',
+    fontSize: typography.xs,
+    textAlign: 'center',
+  },
+
+  // Bill Services
+  billServicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+
+  // Carousel
+  carouselContainer: {
+    marginVertical: spacing.lg,
+  },
+  bannerSlide: {
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    height: 130,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  bannerTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    marginBottom: 4,
+  },
+  bannerDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    lineHeight: 18,
+  },
+    bannerDot: {
+    position: 'absolute',
+    right: -20,
+    bottom: -20,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  bannerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingRight: spacing.sm,
+    zIndex: 2,
+  },
+  bannerIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  bannerImageContainer: {
+    width: 100,
+    height: '100%',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+    position: 'absolute',
+    right: -10,
+    bottom: -10,
+    zIndex: 1,
+    opacity: 0.92,
+  },
+  bannerImage: {
+    width: 105,
+    height: 105,
+    transform: [{ rotate: '-10deg' }],
+  },
+  bannerCircleLarge: {
+    position: 'absolute',
+    right: -30,
+    top: -30,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    zIndex: 0,
+  },
+  bannerCircleSmall: {
+    position: 'absolute',
+    right: 60,
+    bottom: -20,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    zIndex: 0,
+  },
+
+  // Transactions
+  transactionsList: {
+    marginBottom: spacing.lg,
+  },
+   transactionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    ...shadows.sm,
+  },
+  transactionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+   transactionIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  transactionInfo: {
+    flex: 1,
+  },
+  transactionTitle: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    
+  },
+  transactionDate: {
+    fontFamily: '_regular',
+    fontSize: typography.xs,
+    
+    marginTop: 2,
+  },
+  transactionRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  transactionAmount: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    marginRight: 4,
+  },
+
+  // Incomplete Registration
+    incompleteCard: {
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+  },
+  incompleteHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  incompleteIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  incompleteTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    marginLeft: spacing.xs,
+  },
+  incompleteDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: spacing.md,
+  },
+  incompleteBtn: {
+    
+    borderRadius: radius.full,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    alignSelf: 'flex-start',
+  },
+  incompleteBtnText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.sm,
+  },
+
+  // Bottom Sheet
+  bottomSheetTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xxl,
+    
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+});
+
+export default HomeScreen;

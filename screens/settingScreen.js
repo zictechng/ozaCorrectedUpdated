@@ -1,883 +1,933 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
-import {ToastAndroid, View, Text, TextInput, StyleSheet, TouchableOpacity, Switch, ScrollView, Platform, ImageBackground } from 'react-native';
+﻿import React, { useContext, useEffect, useRef, useState, useCallback } from 'react';
+import {
+  View, Text, TextInput, StyleSheet, TouchableOpacity,
+  ScrollView, Platform, StatusBar, ActivityIndicator,
+  ToastAndroid, Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
-import Modal from "react-native-modal";
-import RBSheet from "react-native-raw-bottom-sheet";
-import { MaterialIcons, Ionicons, Entypo, Feather} from '@expo/vector-icons';
-import { gs,colors } from '../styles';
-import { StatusBar } from 'expo-status-bar';
-//import { Switch } from 'react-native-elements';
+import { Ionicons, Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Modal from 'react-native-modal';
+import RBSheet from 'react-native-raw-bottom-sheet';
 import * as Clipboard from 'expo-clipboard';
-import HeaderMenu from '../components/headerMenu';
-import { AuthContext } from '../contextAPI/authContext';
-import { Pressable } from 'react-native';
-import client from '../contextAPI/client';
-import { Alert } from 'react-native';
-import { ALERT_TYPE, Dialog, Toast } from 'react-native-alert-notification';
-import { noticeData } from '../components/errorNotice';
-import { GetLocalStorage, LogoutModal, ShowLogoutModal, send2FANotification, sendEmailNotification, sendInAppNotification } from '../components/controls';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ActivityIndicator } from 'react-native';
-import bgImage from '../assets/images/app_land2.jpg';
+import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 
+import { spacing, radius, typography, shadows } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
+import { AuthContext } from '../contextAPI/authContext';
+import { noticeData } from '../components/errorNotice';
+import {
+  LogoutModal,
+  send2FANotification,
+  sendEmailNotification,
+  sendInAppNotification,
+} from '../components/controls';
+import MenuItem from '../components/MenuItem';
+import SectionCard from '../components/SectionCard';
+import InfoRow from '../components/InfoRow';
+import SettingToggleRow from '../components/SettingToggleRow';
+import client from '../contextAPI/client';
 
 const SettingScreen = () => {
-    const navigation = useNavigation();
-    const isFocused = useIsFocused();
+  const navigation = useNavigation();
+  const isFocused = useIsFocused();
+  const { S, colors, isDark, toggleTheme } = useThemeStyles();
+  const { logoutAction, userToken, userInfo, setUserInfo, appSettingDetails } =
+    useContext(AuthContext);
 
-    const {logoutAction, userToken, userInfo, setUserInfo, appSettingDetails} = useContext(AuthContext);
-    const [userBankInfo, setUserBankInfo] = useState({});
-    const [noRecord, setNoRecord] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [isEmailEnabled, setIsEmailEnabled] = useState(false);
-    const [isInAppMode, setIsInAppMode] = useState(false);
-    const [f2AMode, setF2Mode] = useState(false);
-    const [acctPin, setAcctPin] = useState(false);
-    const [acctPinLoading, setAcctPinLoading] = useState(false);
-    const [logoutModalShow, setLogoutModalShow] = useState(false);
+  const refBankSheet = useRef();
 
-    let myId = userInfo.userData._id; // get logged in user ID
-    const refSellRBSheet = useRef();
+  const [userBankInfo, setUserBankInfo] = useState({});
+  const [noRecord, setNoRecord] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isEmailEnabled, setIsEmailEnabled] = useState(false);
+  const [isInAppMode, setIsInAppMode] = useState(false);
+  const [f2AMode, setF2Mode] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [acctPinLoading, setAcctPinLoading] = useState(false);
+  const [pinValue, setPinValue] = useState('');
+  const [pinSecure, setPinSecure] = useState(true);
 
-    useEffect(() => {
-        getUserBankDetails();
-        if(isFocused){
-            RefreshUserDetails();
-        }
-      }, [isFocused]);
-      
-      useEffect(() =>{
-        
-        RefreshUserDetails();
-        checkEmailNotificationStatus();
-        check2FANotification();
-        checkInAppNotification();
-             
-      },[])
+  const myId = userInfo?.userData?._id;
 
-      const openAcctPinModal =(value) =>{
-        setAcctPin(value);
+  const RefreshUserDetails = useCallback(async () => {
+    try {
+      const res = await client.get('/api/userProfileMobile/' + myId);
+      if (res.data.msg === '200') {
+        AsyncStorage.setItem('userInfo', JSON.stringify(res.data));
+        setUserInfo(res.data);
+        setIsEmailEnabled(res.data.userData.receive_email_notification);
+        setF2Mode(res.data.userData.activate_2fa_login);
+        setIsInAppMode(res.data.userData.receive_app_message);
       }
-      
-      // refresh user details from db after any operation into the database
-      const RefreshUserDetails = async()=>{
-        try {
-          const res = await client.get('/api/userProfileMobile/'+myId)
-          if(res.data.msg == '200'){
-            const userDetails = res.data; 
-            AsyncStorage.setItem('userInfo', JSON.stringify( userDetails));
-           }
-           let userInfoDetails = await AsyncStorage.getItem('userInfo');
-              userInfoDetails = JSON.parse(userInfoDetails)
-          if(userInfoDetails){
-            setUserInfo(userInfoDetails);
-         //console.log('User Details fetch local storage ', userInfoDetails)
-            setIsEmailEnabled(userInfoDetails.userData.receive_email_notification)
-            setF2Mode(userInfoDetails.userData.activate_2fa_login)
-            setIsInAppMode(userInfoDetails.userData.receive_app_message)
-            
-         }
-          else{
-              console.log("something went wrong while fetching user details")
-          }
-      } catch (error) {
-          console.log( 'fetching user information failed ', error)
-      }   
+    } catch (error) {
+      console.log('Refresh error:', error.message);
     }
+  }, [myId]);
 
-    // run a api request to fetch user bank details
-    const getUserBankDetails = async () =>{
-        setLoading(true);
-        try {
-            const res = await client.get(`api/user_bankDetails/${myId}`,
-                {
-                    headers: {
-                      'Authorization': 'Bearer '+userToken,
-                      }
-                  });
-            if(res.data.msg == '200'){
-                setUserBankInfo(res.data.bankDetail)
-            }
-            else if(res.data.status =='403'){
-                console.log('ACCESS DENIED')
-                Toast.show({
-                    type: ALERT_TYPE.DANGER,
-                    title:'No access',
-                    textBody: 'Access Denied',
-                    titleStyle: noticeData[0].errorTitleStyle,
-                    textBodyStyle: noticeData[0].errorMessageStyle,
-                  })
-            }
-            else if(res.data.status =='404'){
-                setNoRecord(true)
-                //console.log('no bank details found')
-            }
-            else if(res.data.status =='500'){
-                Toast.show({
-                    type: ALERT_TYPE.DANGER,
-                    title:'Error',
-                    textBody: 'Sorry, something went wrong, try again',
-                    titleStyle: noticeData[0].errorTitleStyle,
-                    textBodyStyle: noticeData[0].errorMessageStyle,
-                  })
-            }
-            else{
-                Toast.show({
-                    type: ALERT_TYPE.DANGER,
-                    title:'Network Error',
-                    textBody: 'Technical errored occurred, try again',
-                    titleStyle: noticeData[0].errorTitleStyle,
-                    textBodyStyle: noticeData[0].errorMessageStyle,
-                  })
-            }
-        } catch (error) {
-            console.log("error occurred ",error)
-        }
-        finally {
-            setLoading(false);
-            }
-        }
-         
-    // check 2FA notification current state
-    const check2FANotification = () =>{
-        if(userInfo.userData.activate_2fa_login == true) {
-            setF2Mode(true); 
-        }
-        if(userInfo.userData.activate_2fa_login == false) {
-            setF2Mode(false);  
-        }
+  const getUserBankDetails = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await client.get(`api/user_bankDetails/${myId}`, {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      });
+      if (res.data.msg === '200') {
+        setUserBankInfo(res.data.bankDetail);
+      } else if (res.data.status === '404') {
+        setNoRecord(true);
       }
+    } catch (error) {
+      console.log('Bank details error:', error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [myId, userToken]);
 
-      // check in-app notifications current state
-      const checkInAppNotification = () =>{
-        if(userInfo.userData.receive_app_message == true) {
-            setIsInAppMode(true); 
-        }
-        if(userInfo.userData.receive_app_message == false) {
-            setIsInAppMode(false);  
-        }
-      }
+  useEffect(() => {
+    RefreshUserDetails();
+    getUserBankDetails();
+    setIsEmailEnabled(userInfo?.userData?.receive_email_notification || false);
+    setF2Mode(userInfo?.userData?.activate_2fa_login || false);
+    setIsInAppMode(userInfo?.userData?.receive_app_message || false);
+  }, [isFocused]);
 
-      // check email notification status first
-    const checkEmailNotificationStatus = ()=>{
-    if(userInfo.userData.receive_email_notification == true){
-        setIsEmailEnabled(true);
-        //console.log('active state ', isEmailEnabled)
-    }
-    if(userInfo.userData.receive_email_notification == false){
-        setIsEmailEnabled(false);
-       // console.log('active state ', isEmailEnabled)
-    }
-}
+  const toggleEmail = (value) => {
+    setIsEmailEnabled(value);
+    sendEmailNotification(myId, value, userToken);
+  };
 
-      // run an api request to update email sending notification for user details
-    const toggleEmailSwitch = async(value) => {
-        setIsEmailEnabled(value);
-        // call the custom function to send api request and update db
-        sendEmailNotification(userInfo.userData._id, value, userToken);
-    }
-        
-    const toggle2FASwitch = async(value) =>{
-        //setF2aSelectionMode(value)
-        setF2Mode(value)
-        // call the custom function to send api request and update db
-        send2FANotification(userInfo.userData._id, value, userToken)
-    }
+  const toggle2FA = (value) => {
+    setF2Mode(value);
+    send2FANotification(myId, value, userToken);
+  };
 
-    const toggleInAppSwitch = async(value) =>{
-        //setF2aSelectionMode(value)
-        setIsInAppMode(value)
-        // call the custom function to send api request and update db
-        sendInAppNotification(userInfo.userData._id, value, userToken)
-    }
-    
-    // function to call logout hook from useContext
-    const signMeOut =() =>{
-        logoutAction()
-        setLogoutModalShow(false);
-        //navigation.navigate('Home');
-        //Dialog.hide();
-    }
-    // close logout modal
-    const closeModal = () =>{
-        setLogoutModalShow(false);
-      }
+  const toggleInApp = (value) => {
+    setIsInAppMode(value);
+    sendInAppNotification(myId, value, userToken);
+  };
 
-    const [userDetails, setUserDetails] = React.useState({
-        new_pin: '',
-        confirm_secureTextEntry: true,
-        })
-        
-    const handleInputChange = (name, val) => {
-        setUserDetails({
-          ...userDetails,
-          [name]: val,
-        });
-    }
-// create function for the toggle button
-const updateSecureTextConfirmPassword = (val) => {
-    setUserDetails({
-        ...userDetails,
-        confirm_secureTextEntry: !userDetails.confirm_secureTextEntry
-    })
-}
-
-    const resetPinAction = async() => {
-        const pinData = {
-            pin: userDetails.new_pin,
-            userEmail: userInfo.userData.email,
-            userId: userInfo.userData._id
-        }
-        if(userDetails.new_pin.length == 0){
-            Toast.show({
-                type: ALERT_TYPE.DANGER,
-                title:'Error',
-                textBody: 'Please, enter pin',
-                titleStyle: noticeData[0].errorTitleStyle,
-                textBodyStyle: noticeData[0].errorMessageStyle,
-              })
-            return
-            }
-
-        try {
-            setAcctPinLoading(true)
-            const res = await client.post('/api/updateUser_AccountPinMobile', pinData,{
-                headers: {
-                'Authorization': 'Bearer '+userToken,
-                }
-            })
-            if(res.data.msg == '201'){
-              setUserDetails({
-                new_pin: '',
-                confirm_secureTextEntry: true,
-               })
-               Toast.show({
-                type: ALERT_TYPE.SUCCESS,
-                title: 'Successful',
-                textBody: 'Pin updated successfully!',
-                textBodyStyle: { fontFamily: '_regular', fontSize: 16 },
-                titleStyle: { fontFamily: '_bold', fontSize: 20 },
-               })
-               openAcctPinModal(false)
-                return
-              }
-              else if (res.data.status == '401') {
-                Toast.show({
-                  type: ALERT_TYPE.DANGER,
-                  title: 'Failed',
-                  textBody: 'Authentication required',
-                  textBodyStyle: { fontFamily: '_regular', fontSize: 16 },
-                  titleStyle: { fontFamily: '_bold', fontSize: 20 },
-                })
-               }
-               else if (res.data.status == '404') {
-                Toast.show({
-                  type: ALERT_TYPE.DANGER,
-                  title: 'Error',
-                  textBody: 'No records found',
-                  textBodyStyle: { fontFamily: '_regular', fontSize: 16 },
-                  titleStyle: { fontFamily: '_bold', fontSize: 20 },
-                })
-               }
-              else if (res.data.status == '500') {
-                Toast.show({
-                    type: ALERT_TYPE.DANGER,
-                    title: 'Error',
-                    textBody: 'Error occurred while processing! Please try again later',
-                    textBodyStyle: { fontFamily: '_regular', fontSize: 16 },
-                    titleStyle: { fontFamily: '_bold', fontSize: 20 },
-                })
-              }
-              else {
-                Toast.show({
-                    type: ALERT_TYPE.DANGER,
-                    title: 'Error',
-                    titleStyle: { fontFamily: '_bold', fontSize: 20 },
-                    textBody: 'Sorry, Something went wrong',
-                    textBodyStyle: { fontFamily: '_regular', fontSize: 16 },
-        
-                   })
-                }
-            
-            } catch (error) {
-              //console.log('Server error occurred ', error.message)
-              if(error.message == 'Network Error'){
-                Toast.show({
-                    type: ALERT_TYPE.DANGER,
-                    title: 'Error',
-                    textBody: error.message +' occurred',
-                    titleStyle: noticeData[0].errorTitleStyle,
-                    textBodyStyle: noticeData[0].errorMessageStyle,
-                    })
-                return
-                } 
-              if(error.status == '500'){
-                  Toast.show({
-                  type: ALERT_TYPE.DANGER,
-                  title: 'Error',
-                  textBody: 'Server error ' +error.message,
-                  titleStyle: noticeData[0].errorTitleStyle,
-                  textBodyStyle: noticeData[0].errorMessageStyle,
-                  })
-                  return
-                  } 
-            }
-            finally{
-                setAcctPinLoading(false);
-              }
-    }
-
-    // function to logout user
-    const logoutUser = () =>{
-        setLogoutModalShow(true);
-        // Dialog.show({
-        //     type: ALERT_TYPE.WARNING,
-        //     title: 'Hay!',
-        //     textBody: 'Are you sure you want to logout ?',
-        //     button: 'Yes',
-        //     textBodyStyle: { fontFamily: '_regular', fontSize: 16 },
-        //     titleStyle: { fontFamily: '_bold', fontSize: 20 },
-        //     onPressButton:(() => void signMeOut()),
-        //  })
-    }
-      
-    // block account dialog
- const blockNotice = () =>{
-    Dialog.show({
-        type: ALERT_TYPE.WARNING,
-        title: 'Caution!',
-        textBody: 'Are you sure you want to blocked your account ?',
-        button: 'Yes',
-        textBodyStyle: { fontFamily: '_regular', fontSize: 16 },
-        titleStyle: { fontFamily: '_bold', fontSize: 20 },
-        onPressButton:(() => void blockMyAccount()),
-     })
-    }
-    // block account api route
-    const blockMyAccount = async() =>{
-    const myData ={
-        uid: userInfo.userData._id,
+  const resetPinAction = async () => {
+    if (!pinValue || pinValue.length === 0) {
+      Toast.show({
+        type: ALERT_TYPE.DANGER,
+        title: 'Error',
+        textBody: 'Please enter a PIN to continue.',
+        titleStyle: noticeData[0].errorTitleStyle,
+        textBodyStyle: noticeData[0].errorMessageStyle,
+      });
+      return;
     }
     try {
-        const res = await client.post('/api/block_AccountMobile', myData,{
-        headers: {
-        'Authorization': 'Bearer '+userToken,
-            }
-        })
-        if(res.data.msg == '200'){
-            logoutAction()
-            //console.log(res.data.msg)
-            Dialog.hide();
+      setAcctPinLoading(true);
+      const res = await client.post(
+        '/api/updateUser_AccountPinMobile',
+        { pin: pinValue, userEmail: userInfo?.userData?.email, userId: myId },
+        { headers: { 'Authorization': 'Bearer ' + userToken } }
+      );
+      if (res.data.msg === '201') {
+        setPinValue('');
+        setShowPinModal(false);
         Toast.show({
-            type: ALERT_TYPE.SUCCESS,
-            title: 'Success',
-            textBody: 'Your account has been blocked successfully',
-            titleStyle: noticeData[0].errorTitleStyle,
-            textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-        }
-        else{
-            Toast.show({
-                type: ALERT_TYPE.DANGER,
-                title:'Sorry',
-                textBody: 'Something went wrong, try again later',
-                titleStyle: noticeData[0].errorTitleStyle,
-                textBodyStyle: noticeData[0].errorMessageStyle,
-              })
-            return
-        }
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Success',
+          textBody: 'Transaction PIN updated successfully!',
+        });
+      } else {
+        Toast.show({
+          type: ALERT_TYPE.DANGER,
+          title: 'Failed',
+          textBody: res.data.message || 'Could not update PIN.',
+          titleStyle: noticeData[0].errorTitleStyle,
+          textBodyStyle: noticeData[0].errorMessageStyle,
+        });
+      }
     } catch (error) {
-        if(error.message == 'Network Error'){
-            Toast.show({
-                type: ALERT_TYPE.DANGER,
-                title: 'Error',
-                textBody: error.message +' occurred',
-                titleStyle: noticeData[0].errorTitleStyle,
-                textBodyStyle: noticeData[0].errorMessageStyle,
-                })
-            return
-            } 
-          if(error.status == '500'){
-              Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title: 'Error',
-              textBody: 'Server error ' +error.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-              })
-              return
-              } 
+      Toast.show({
+        type: ALERT_TYPE.DANGER,
+        title: 'Error',
+        textBody: error.message === 'Network Error'
+          ? 'No internet connection.'
+          : 'Something went wrong.',
+        titleStyle: noticeData[0].errorTitleStyle,
+        textBodyStyle: noticeData[0].errorMessageStyle,
+      });
+    } finally {
+      setAcctPinLoading(false);
     }
-    }
+  };
 
-const copyToClipboard = async () => {
-    await Clipboard.setStringAsync(userInfo.userData.tag_id);
-    // Display a success message 
-    if (Platform.OS === 'android') { 
-        ToastAndroid.show('Account ID copied to clipboard!', 
-            ToastAndroid.SHORT); 
-    } else if (Platform.OS === 'ios') { 
-        Alert.alert('Account ID copied to clipboard!'); 
-    } 
-};
+  const blockMyAccount = async () => {
+    try {
+      const res = await client.post(
+        '/api/block_AccountMobile',
+        { uid: myId },
+        { headers: { 'Authorization': 'Bearer ' + userToken } }
+      );
+      if (res.data.msg === '200') {
+        logoutAction();
+      } else {
+        Toast.show({
+          type: ALERT_TYPE.DANGER,
+          title: 'Failed',
+          textBody: 'Could not block account. Please try again.',
+          titleStyle: noticeData[0].errorTitleStyle,
+          textBodyStyle: noticeData[0].errorMessageStyle,
+        });
+      }
+    } catch (error) {
+      console.log('Block account error:', error.message);
+    }
+  };
+
+  const confirmBlockAccount = () => {
+    Alert.alert(
+      'Block Account',
+      'Are you sure you want to block your account?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Block', style: 'destructive', onPress: blockMyAccount },
+      ]
+    );
+  };
+
+  const copyCustomerId = async () => {
+    await Clipboard.setStringAsync(userInfo?.userData?.tag_id || '');
+    if (Platform.OS === 'android') {
+      ToastAndroid.show('Customer ID copied!', ToastAndroid.SHORT);
+    } else {
+      Alert.alert('Copied!', 'Customer ID copied to clipboard');
+    }
+  };
+
+  const signMeOut = () => {
+    logoutAction();
+    setShowLogoutModal(false);
+  };
+
   return (
-    
-        <ImageBackground style={{flex:1,}} source={bgImage} resizeMode='cover'>
-            <SafeAreaView style={{flex:1}}>
-                {
-                isFocused &&
-                    <StatusBar
-                    style='light'/>
-                }
-                {!acctPin &&
-                    <StatusBar
-                    style='light'/>
-                    }
-                <HeaderMenu 
-                    buttonHome={
-                    <TouchableOpacity onPress={() =>{}}>
-                        <View style={gs.homeSideMenu}>
-                        {/* <Ionicons name='arrow-back' size={23} color={colors.textColor}/> */}
-                    </View>
-                    </TouchableOpacity>
-                    }
-                    titleName={'Settings'}
-                    profileTitle={styles.settingTitle}
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.bgColor}
+      />
+
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
+        <TouchableOpacity
+          style={[styles.headerBtn, { backgroundColor: colors.bgLight }]}
+          onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.textBlack }]}>
+          Settings
+        </Text>
+        <View style={[styles.headerBtn, { opacity: 0 }]} />
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
+
+        {/* Account Overview Card */}
+        <LinearGradient
+          colors={[colors.primaryColor1, colors.primaryColor1b]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.overviewCard}>
+          <View style={styles.overviewCircle} />
+          <View style={styles.overviewRow}>
+            <View style={styles.overviewAvatar}>
+              <Text style={styles.overviewInitial}>
+                {userInfo?.userData?.display_name?.charAt(0)?.toUpperCase() || 'U'}
+              </Text>
+            </View>
+            <View style={styles.overviewInfo}>
+              <Text style={styles.overviewName}>
+                {userInfo?.userData?.display_name}
+              </Text>
+              <Text style={styles.overviewEmail}>
+                {userInfo?.userData?.email}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.overviewTagRow}>
+            <View style={styles.overviewTagBox}>
+              <Text style={styles.overviewTagLabel}>Customer ID</Text>
+              <Text style={styles.overviewTagValue}>
+                {userInfo?.userData?.tag_id}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.overviewCopyBtn}
+              onPress={copyCustomerId}>
+              <Ionicons name="copy-outline" size={16} color="#fff" />
+              <Text style={styles.overviewCopyText}>Copy</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+
+        {/* Account */}
+        <SectionCard title="Account">
+          <MenuItem
+            icon="person-circle-outline"
+            label="My Profile"
+            subtitle="View and edit your personal information"
+            iconBg="#EEF2FF"
+            iconColor={colors.primaryColor1}
+            onPress={() => navigation.navigate('profile')}
+          />
+          <MenuItem
+            icon="card-outline"
+            label="Bank Details"
+            subtitle="Manage your linked bank account"
+            iconBg="#F0FDF4"
+            iconColor={colors.successColor}
+            onPress={() => navigation.navigate('BankDetails')}
+          />
+          <MenuItem
+            icon="wallet-outline"
+            label="My Wallet"
+            subtitle="View balances and fund transactions"
+            iconBg="#FFF3CD"
+            iconColor={colors.accentGold}
+            onPress={() => navigation.navigate('Wallet')}
+          />
+          <MenuItem
+            icon="documents-outline"
+            label="KYC Documents"
+            subtitle="Upload identity verification documents"
+            iconBg="#ECFDF5"
+            iconColor={colors.successColor}
+            onPress={() => navigation.navigate('DocumentView')}
+          />
+          <MenuItem
+            icon="eye-outline"
+            label="Account Details"
+            subtitle="View your bank and account information"
+            iconBg={colors.bgLight}
+            iconColor={colors.primaryColor1}
+            onPress={() => refBankSheet.current.open()}
+          />
+        </SectionCard>
+
+        {/* Security */}
+        <SectionCard title="Security">
+          <SettingToggleRow
+            icon="mail-outline"
+            iconBg="#EEF2FF"
+            iconColor={colors.primaryColor1}
+            label="Email Notifications"
+            subtitle="Receive transaction alerts via email"
+            value={isEmailEnabled}
+            onValueChange={toggleEmail}
+          />
+          <SettingToggleRow
+            icon="shield-checkmark-outline"
+            iconBg="#F0FDF4"
+            iconColor={colors.successColor}
+            label="Two-Factor Authentication"
+            subtitle="Add extra security to your login"
+            value={f2AMode}
+            onValueChange={toggle2FA}
+          />
+          <SettingToggleRow
+            icon="notifications-outline"
+            iconBg="#FFF3CD"
+            iconColor={colors.accentGold}
+            label="In-App Notifications"
+            subtitle="Receive notifications within the app"
+            value={isInAppMode}
+            onValueChange={toggleInApp}
+          />
+          <MenuItem
+            icon="lock-closed-outline"
+            label="Reset Password"
+            subtitle="Change your account login password"
+            iconBg="#FEE2E2"
+            iconColor={colors.dangerColor}
+            onPress={() => navigation.navigate('ResetPassword')}
+          />
+          <MenuItem
+            icon="keypad-outline"
+            label="Transaction PIN"
+            subtitle="Set or update your 4-digit transaction PIN"
+            iconBg="#FFEDD5"
+            iconColor={colors.warningColor}
+            onPress={() => setShowPinModal(true)}
+          />
+        </SectionCard>
+
+        {/* Display */}
+        <SectionCard title="Display">
+          <SettingToggleRow
+            icon={isDark ? 'moon' : 'sunny-outline'}
+            iconBg={isDark ? '#1E1B4B' : '#FFF3CD'}
+            iconColor={isDark ? '#818CF8' : '#F59E0B'}
+            label="Dark Mode"
+            subtitle={isDark
+              ? 'Dark theme is currently active'
+              : 'Light theme is currently active'}
+            value={isDark}
+            onValueChange={toggleTheme}
+          />
+        </SectionCard>
+
+        {/* Support */}
+        <SectionCard title="Support & Information">
+          <MenuItem
+            icon="headset-outline"
+            label="Help & Support"
+            subtitle="Contact our support team"
+            iconBg="#ECFDF5"
+            iconColor={colors.successColor}
+            onPress={() => navigation.navigate('contacts')}
+          />
+          <MenuItem
+            icon="people-outline"
+            label="About Us"
+            subtitle="Learn more about OtaMobile"
+            iconBg={colors.bgLight}
+            iconColor={colors.primaryColor1}
+            onPress={() => navigation.navigate('About')}
+          />
+          <MenuItem
+            icon="shield-outline"
+            label="Privacy Policy"
+            subtitle="Read our privacy policy"
+            iconBg={colors.bgLight}
+            iconColor={colors.textSecColor}
+            onPress={() => navigation.navigate('Privacy_Policy')}
+          />
+          <MenuItem
+            icon="document-text-outline"
+            label="Terms & Conditions"
+            subtitle="Read our terms of service"
+            iconBg={colors.bgLight}
+            iconColor={colors.textSecColor}
+            onPress={() => navigation.navigate('Terms_Conditions')}
+          />
+        </SectionCard>
+
+        {/* Danger Zone */}
+        <SectionCard title="Danger Zone">
+          <MenuItem
+            icon="ban-outline"
+            label="Block Account"
+            subtitle="Temporarily disable your account access"
+            iconBg="#FEE2E2"
+            iconColor={colors.dangerColor}
+            onPress={confirmBlockAccount}
+          />
+        </SectionCard>
+
+        {/* Logout */}
+        <TouchableOpacity
+          style={[styles.logoutBtn, {
+            borderColor: colors.dangerColor,
+            backgroundColor: colors.lightRed,
+          }]}
+          onPress={() => setShowLogoutModal(true)}
+          activeOpacity={0.85}>
+          <Ionicons
+            name="log-out-outline"
+            size={22}
+            color={colors.dangerColor}
+            style={{ marginRight: spacing.sm }}
+          />
+          <Text style={[styles.logoutBtnText, { color: colors.dangerColor }]}>
+            Sign Out
+          </Text>
+        </TouchableOpacity>
+
+        {/* App Info */}
+        <View style={styles.appInfo}>
+          <Text style={[styles.appVersion, { color: colors.textSecColor }]}>
+            {appSettingDetails?.app_name} • v{appSettingDetails?.app_version || '2.0.1'}
+          </Text>
+          <Text style={[styles.appCopyright, { color: colors.textSecColor2 }]}>
+            © 2026 OtaMobile. All rights reserved.
+          </Text>
+        </View>
+
+        <View style={{ height: spacing.xxxl }} />
+      </ScrollView>
+
+      {/* PIN Modal */}
+      <Modal
+        isVisible={showPinModal}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        animationInTiming={400}
+        animationOutTiming={400}
+        backdropOpacity={0.6}
+        onBackdropPress={() => setShowPinModal(false)}>
+        <View style={[styles.pinModal, { backgroundColor: colors.bgCard }]}>
+          <LinearGradient
+            colors={[colors.primaryColor1, colors.primaryColor1b]}
+            style={styles.pinModalHeader}>
+            <Text style={styles.pinModalTitle}>Update Transaction PIN</Text>
+            <TouchableOpacity
+              style={styles.pinModalClose}
+              onPress={() => setShowPinModal(false)}>
+              <Ionicons name="close" size={20} color={colors.primaryColor1} />
+            </TouchableOpacity>
+          </LinearGradient>
+
+          <View style={[styles.pinNotice, {
+            backgroundColor: '#EEF2FF',
+            borderColor: '#C7D2FE',
+          }]}>
+            <Ionicons
+              name="shield-checkmark-outline"
+              size={18}
+              color={colors.primaryColor1}
+            />
+            <Text style={[styles.pinNoticeText, { color: colors.primaryColor1 }]}>
+              Your PIN is used to authorize all transactions.
+              Keep it secret and never share it with anyone.
+            </Text>
+          </View>
+
+          <View style={styles.pinInputWrapper}>
+            <Text style={[styles.pinInputLabel, { color: colors.textSecColor }]}>
+              New Transaction PIN
+            </Text>
+            <View style={[styles.pinInputContainer, {
+              borderColor: colors.dividerColor,
+              backgroundColor: colors.bgColor,
+            }]}>
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color="#9CA3AF"
+                style={{ marginRight: spacing.sm }}
+              />
+              <TextInput
+                style={[styles.pinInput, { color: colors.textBlack }]}
+                placeholder="Enter new PIN"
+                placeholderTextColor="#9CA3AF"
+                secureTextEntry={pinSecure}
+                autoCorrect={false}
+                keyboardType="numeric"
+                maxLength={6}
+                value={pinValue}
+                onChangeText={setPinValue}
+              />
+              <TouchableOpacity onPress={() => setPinSecure(!pinSecure)}>
+                <Feather
+                  name={pinSecure ? 'eye-off' : 'eye'}
+                  color="#9CA3AF"
+                  size={18}
                 />
+              </TouchableOpacity>
+            </View>
+          </View>
 
-                <View style={{marginBottom:30}}></View>
-                <View style={{flex:1, backgroundColor:colors.bgColor}}>
-                <ScrollView showsVerticalScrollIndicator={false}>
-                    <View style={{marginHorizontal:10, marginTop:10}}>
-                        <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Settings</Text>
-                    </View>
+          <View style={styles.pinModalActions}>
+            <TouchableOpacity
+              style={[styles.pinCancelBtn, { borderColor: colors.dividerColor }]}
+              onPress={() => { setPinValue(''); setShowPinModal(false); }}>
+              <Text style={[styles.pinCancelBtnText, { color: colors.textSecColor }]}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.pinSaveBtn,
+                { backgroundColor: colors.primaryColor1 },
+                (!pinValue || acctPinLoading) && { opacity: 0.6 },
+              ]}
+              onPress={resetPinAction}
+              disabled={!pinValue || acctPinLoading}>
+              {acctPinLoading ? (
+                <ActivityIndicator color="#fff" size={20} />
+              ) : (
+                <Text style={styles.pinSaveBtnText}>Update PIN</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
-                    <TouchableOpacity style={styles.formPage} onPress={() =>navigation.navigate('contacts')}>
-                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                            <MaterialIcons name='support-agent' size={20} color={colors.primaryColor2} />
-                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Help</Text>
-                        </View>
-                    </TouchableOpacity>
+      {/* Logout Modal */}
+      <LogoutModal
+        openModal={showLogoutModal}
+        modalTitle="Sign Out"
+        ModalDesc="Are you sure you want to sign out?"
+        closeBtn={() => setShowLogoutModal(false)}
+        logoutBtn={signMeOut}
+        bntYesText="Sign Out"
+      />
 
-                    <View style={{borderRadius:10, marginHorizontal:10, backgroundColor:colors.textColor, marginTop:20}}>
-                        <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between', marginHorizontal:10}}>
-                            <Text style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}}>Account details</Text>
-                            <Pressable style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}} onPress={() => refSellRBSheet.current.open()}><Text>View</Text></Pressable>
-                            
-                        </View>
-
-                        <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between', marginHorizontal:10}}>
-                            <Text style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}}>Account type</Text>
-                            <Text style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}}>Virtual</Text>
-                            
-                        </View>
-                        <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between', marginHorizontal:10}}>
-                            <Text style={{fontFamily:'_regular', fontSize:15, color:colors.textColor1}}>Customer ID</Text>
-                            
-                            <View style={{flexDirection:'row'}}>
-                                <TouchableOpacity onPress={() =>copyToClipboard()}>
-                                    <Ionicons name='copy-outline' size={20} color={colors.primaryColor2} />
-                                </TouchableOpacity>
-                                <Text style={{fontFamily:'_regular', fontSize:15, textAlign:'right',color:colors.textColor1}}> {userInfo.userData.tag_id} </Text>
-                            </View>
-                        </View>
-                        
-                    </View>
-
-                    <View style={styles.formPage}>
-                        
-                        <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}>
-                                <View style={{flexDirection:'row'}}>
-                                    <MaterialIcons name='email' size={20} color={colors.primaryColor2} />
-                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Email Notifications</Text>
-                                </View>
-                            <Switch 
-                                trackColor={{true: colors.primaryColor2}}
-                                thumbColor={isEmailEnabled ? colors.primaryColor1 : '#f4f3f4'}
-                                onValueChange={toggleEmailSwitch}
-                                value={isEmailEnabled}
-                                
-                            />
-                        </View>
-
-                        <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}>
-                                <View style={{flexDirection:'row'}}>
-                                    <MaterialIcons name='security' size={20} color={colors.primaryColor2} />
-                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>2FA</Text>
-                                </View>
-                            <Switch 
-                                trackColor={{true: colors.primaryColor2}}
-                                thumbColor={f2AMode ? colors.primaryColor1 : '#f4f3f4'}
-                                onValueChange={toggle2FASwitch}
-                                value={f2AMode}
-                            />
-                            
-                        </View>
-
-                        <View style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}>
-                                <View style={{flexDirection:'row'}}>
-                                    <MaterialIcons name='notifications-active' size={20} color={colors.primaryColor2} />
-                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>In-App Notifications</Text>
-                                </View>
-                            <Switch 
-                                trackColor={{true: colors.primaryColor2}}
-                                thumbColor={isInAppMode ? colors.primaryColor1 : '#f4f3f4'}
-                                onValueChange={toggleInAppSwitch}
-                                value={isInAppMode}
-                            />
-                        </View>
-
-                        <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
-                        onPress={() => navigation.navigate('ResetPassword')}>
-                                <View style={{flexDirection:'row', marginBottom:10}}>
-                                    <MaterialIcons name='lock' size={20} color={colors.primaryColor2} />
-                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Reset Password</Text>
-                                </View>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
-                        onPress={() => openAcctPinModal(true)}>
-                                <View style={{flexDirection:'row', marginBottom:10}}>
-                                    <Entypo name='flickr-with-circle' size={20} color={colors.primaryColor2} />
-                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Account Pin</Text>
-                                </View>
-                        </TouchableOpacity>
-
-                        {/* <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
-                        onPress={() =>navigation.navigate('Profile')}>
-                                <View style={{flexDirection:'row', marginBottom:10}}>
-                                    <Ionicons name='person' size={25} color={colors.primaryColor2} />
-                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Account</Text>
-                                </View>
-                        </TouchableOpacity> */}
-
-                        <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
-                        onPress={() =>blockNotice()}>
-                                <View style={{flexDirection:'row', marginBottom:10}}>
-                                    <Entypo name='block' size={20} color={colors.primaryColor2} />
-                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Block Account</Text>
-                                </View>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
-                        onPress={() =>navigation.navigate('About')}>
-                                <View style={{flexDirection:'row', marginBottom:10}}>
-                                    <Ionicons name='people' size={20} color={colors.primaryColor2} />
-                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>About Us</Text>
-                                </View>
-                        </TouchableOpacity>
-
-                        {/* <TouchableOpacity style={{flexDirection:'row', padding:10, alignItems:'center', justifyContent:'space-between'}}
-                        onPress={() =>navigation.navigate('Privacy_Policy')}>
-                                <View style={{flexDirection:'row', marginBottom:10}}>
-                                    <MaterialIcons name='privacy-tip' size={20} color={colors.primaryColor2} />
-                                    <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Privacy Policy</Text>
-                                </View>
-                        </TouchableOpacity> */}
-
-                    </View>
-
-                    <TouchableOpacity style={[styles.formPage, {marginBottom:30}]}
-                    onPress={() =>logoutUser()}>
-                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                            <MaterialIcons name='logout' size={25} color={colors.red} />
-                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Log Out</Text>
-                        </View>
-                        
-                    </TouchableOpacity>
-                        <View style={{flex:1, justifyContent:'center', alignItems:'center', marginBottom:20}}>
-                        <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>{appSettingDetails?.app_version}</Text>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>{appSettingDetails?.app_name}</Text>
-                        </View>
-                    
-                    <Modal isVisible={acctPin}
-                        animationIn={'zoomIn'}
-                        animationInTiming={900}
-                        animationOut={'slideOutDown'}
-                        animationOutTiming={700}
-                        backdropOpacity={0.60}>
-                    <View style={styles.dialogView1}>
-                    <View style={styles.dialogView2}>
-                    <Text style={styles.dialogText1}>
-                        Reset PIN
-                    </Text>
-                    <Pressable style={styles.dialogCancelBtn}
-                    onPress={() =>openAcctPinModal(false)}>
-                        <Ionicons name='close' size={20} />
-                    </Pressable>
-                </View>
-                    <Text style={styles.dialogText2}>
-                        We recommend that you reset/update your account pin and do not share it with anyone for security reasons.
-                    </Text>
-
-                    <View style={styles.dialogInputText1}>
-                        <Ionicons name='lock-closed-outline' size={20} color='#666' style={{marginRight:5, marginTop:15, opacity:0.4}} />
-                        <TextInput 
-                        placeholder='Enter Pin' style={{flex:1, }} 
-                        secureTextEntry={userDetails.confirm_secureTextEntry ? true : false}
-                        autoCorrect={false}
-                        value={userDetails.new_pin}
-                        onChangeText={(val) => handleInputChange("new_pin", val)}
-                        />
-                        <TouchableOpacity onPress={updateSecureTextConfirmPassword}>
-                                
-                            {userDetails.confirm_secureTextEntry ?
-                                <Feather
-                                    name="eye-off"
-                                    color="#666"
-                                    size={20}
-                                    style={{marginRight:8, marginTop:15, opacity:0.4}}
-                                />
-                                :
-                                <Feather
-                                    name="eye"
-                                    color="#666"
-                                    size={20}
-                                    style={{marginRight:8, marginTop:15, opacity:0.4}}
-                                />
-                            }
-                        </TouchableOpacity>
-                    </View>
-
-                        <View style={{justifyContent:'center', alignItems:'center', marginBottom:10}}>
-                            <TouchableOpacity style={styles.dialogActionBtn}
-                            onPress={() => resetPinAction()}>
-                                <Text style={{fontFamily:'_semiBold', fontSize:17, color:colors.primaryColor1, marginTop:4}}>{acctPinLoading? <ActivityIndicator size={25} color={colors.primaryColor1}/>:'Reset'}</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                    </View>
-                    </Modal>
-
-                </ScrollView>
-                </View>
-                <LogoutModal 
-                    openModal={logoutModalShow}
-                    modalTitle={'Caution'}
-                    ModalDesc={'Are you sure you want to logout?'}
-                    closeBtn={() => closeModal(!logoutModalShow)}
-                    logoutBtn={() => signMeOut()}
-                    bntYesText={'Logout'}
-                    />
-                    {/* create custom component and add it */}
-                    <RBSheet
-                        ref={refSellRBSheet}
-                        closeOnDragDown={true}
-                        closeOnPressMask={true}
-                        openDuration={900}
-                        closeDuration={400}
-                        height={350}
-                        closeOnPressBack={true}
-                        keyboardAvoidingViewEnabled={true}
-                        customStyles={{
-                        container:{
-                            backgroundColor: colors.bgColor,
-                        },
-                        draggableIcon: {
-                            backgroundColor: "#000"
-                        }
-                        }}>
-                        
-                        <View style={{marginHorizontal: 20}}>
-                            <Text style={{fontFamily:'_semiBold', fontSize:25, color:colors.textBlack}}>Account Details: </Text>
-                                
-                            <ScrollView showsVerticalScrollIndicator={false}>
-                                    <View style={{paddingVertical:5, marginBottom:20}}>
-                                        <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textSecColor}}>Easily manage your account details on the go</Text>
-                                    </View>
-                                <View style={styles.accountView}>
-                                    <Text style={styles.accountDetailsTile}>Account Name</Text>
-                                    <Text style={styles.accountDetails}>{userBankInfo?.bank_acct_name}</Text>
-                                </View>
-                            
-                                <View style={styles.accountView}>
-                                    <Text style={styles.accountDetailsTile}>Account Number</Text>
-                                    <Text style={styles.accountDetails}>{userBankInfo?.bank_acct_number}</Text>
-                                </View>
-                            
-                                <View style={styles.accountView}>
-                                    <Text style={styles.accountDetailsTile}>Bank Name</Text>
-                                    <Text style={styles.accountDetails}>{userBankInfo?.bank_name}</Text>
-                                </View>
-                                <View style={styles.accountView}>
-                                    <Text style={styles.accountDetailsTile}>Account PIN</Text>
-                                    <Text style={styles.accountDetails}>{userInfo.userData.acct_cot_pin}</Text>
-                                </View>
-                                <View style={[styles.accountView, {marginBottom:30}]}>
-                                    <Text style={styles.accountDetailsTile}>Tag ID</Text>
-                                    <Text style={styles.accountDetails}>{userInfo.userData.tag_id}</Text>
-                                </View>
-                            </ScrollView>
-                        </View>
-                </RBSheet>
-
-                </SafeAreaView>
-        </ImageBackground>
-        
-        
+      {/* Bank Details Bottom Sheet */}
+      <RBSheet
+        ref={refBankSheet}
+        closeOnDragDown
+        closeOnPressMask
+        openDuration={400}
+        closeDuration={300}
+        height={380}
+        closeOnPressBack
+        customStyles={{
+          container: {
+            backgroundColor: colors.bgColor,
+            borderTopLeftRadius: radius.xl,
+            borderTopRightRadius: radius.xl,
+          },
+          draggableIcon: { backgroundColor: colors.dividerColor },
+        }}>
+        <View style={styles.bankSheet}>
+          <Text style={[styles.bankSheetTitle, { color: colors.textBlack }]}>
+            Account Details
+          </Text>
+          <Text style={[styles.bankSheetSubtitle, { color: colors.textSecColor }]}>
+            Your linked bank and account information
+          </Text>
+          <View style={[styles.bankSheetDivider, {
+            backgroundColor: colors.dividerColor,
+          }]} />
+          {loading ? (
+            <ActivityIndicator
+              size="large"
+              color={colors.primaryColor1}
+              style={{ marginTop: spacing.xl }}
+            />
+          ) : noRecord ? (
+            <View style={styles.bankSheetEmpty}>
+              <Ionicons name="card-outline" size={40} color={colors.textSecColor2} />
+              <Text style={[styles.bankSheetEmptyText, { color: colors.textSecColor }]}>
+                No bank details found.
+              </Text>
+              <TouchableOpacity
+                style={[styles.bankSheetAddBtn, { backgroundColor: colors.primaryColor1 }]}
+                onPress={() => {
+                  refBankSheet.current.close();
+                  navigation.navigate('BankDetails');
+                }}>
+                <Text style={styles.bankSheetAddBtnText}>Add Bank Details</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <InfoRow
+                icon="person-outline"
+                label="Account Name"
+                value={userBankInfo?.bank_acct_name}
+              />
+              <InfoRow
+                icon="card-outline"
+                label="Account Number"
+                value={userBankInfo?.bank_acct_number}
+              />
+              <InfoRow
+                icon="business-outline"
+                label="Bank Name"
+                value={userBankInfo?.bank_name}
+              />
+              <InfoRow
+                icon="keypad-outline"
+                label="Account PIN"
+                value={userInfo?.userData?.acct_cot_pin ? '••••' : 'Not set'}
+              />
+              <InfoRow
+                icon="pricetag-outline"
+                label="Tag ID"
+                value={userInfo?.userData?.tag_id}
+              />
+            </ScrollView>
+          )}
+        </View>
+      </RBSheet>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    accountDetailsTile:{
-    fontFamily:'_semiBold', 
-    fontSize:13, 
-    color:colors.textBlack
-    },
-    accountDetails:{
-    fontFamily:'_semiBold', 
-    fontSize:14, 
-    color:colors.textSecColor
-    },
-    accountView:{
-    flexDirection:'row', 
-    justifyContent:'space-between', 
-    marginBottom:10
-    },
-    dialogView1:{
-    borderRadius:10, 
-    marginHorizontal:10, 
-    backgroundColor:colors.textColor
-    },
-    dialogView2:{
-        width:'100%', 
-        borderTopRightRadius:10, 
-        borderTopLeftRadius:10, 
-        marginBottom:20, 
-        height:40, 
-        backgroundColor:colors.primaryColor1
-    },
-    dialogText1:{
-    fontFamily:'_semiBold', 
-    fontSize:17, 
-    color:colors.bgColor, 
-    textAlign:'center', marginTop:5
-},
-dialogCancelBtn:{
-    marginTop: -45, 
-    borderRadius:50, 
-    backgroundColor:colors.bgColor, 
-    height:30, width:30, 
-    alignItems:'center', 
-    justifyContent:'center' 
-},
-    dialogText2:{
-        fontFamily:'_regular', 
-        fontSize:13, 
-        color:colors.textBlack, 
-        marginHorizontal:10, 
-        marginBottom:10, 
-},
-    dialogInputText1:{
-        flexDirection:'row',
-        marginBottom:35,
-        borderWidth: 1, 
-        borderRadius: 7,
-        borderColor: 'lightgrey',
-        paddingLeft: 10,
-        height: 50,
-        marginHorizontal:10
-},
-    dialogActionBtn:{
-        borderRadius:10, 
-        marginHorizontal:20, 
-        marginTop:5, 
-        marginBottom:10, 
-        width:80, 
-        height:35, 
-        alignItems:'center',
-        borderColor: colors.primaryColor1,
-        borderWidth:1
-    },
-    bottomSheetButton:{
-        flexDirection:'row', 
-        borderRadius:10, 
-        marginHorizontal:10, 
-        backgroundColor:colors.textColor, 
-        marginTop:20, 
-        height:50, 
-        alignItems:'center',
-        shadowColor: '#000',
-        shadowOffset: { 
-        width: 0, 
-        height: 1 
-        },
-        shadowOpacity: 0.5,
-        shadowRadius: 1,
-        elevation: 1, 
-        },
-    bottomSheetButtonText:{
-        fontFamily:'_semiBold', 
-        fontSize:17, 
-        marginLeft:15, 
-        color:colors.primaryColor1
-        },
-    settingTitle:{
-        color:colors.textColor,
-        fontSize:20,
-        marginLeft: -20,
-        fontFamily: '_semiBold',
-      },
-      formPage:{
-        borderRadius:10, 
-        marginHorizontal:10, 
-        backgroundColor:colors.textColor, 
-        marginTop:20,
-        shadowColor: '#000',
-        shadowOffset: { 
-        width: 0, 
-        height: 1 
-        },
-        shadowOpacity: 0.5,
-        shadowRadius: 0.9,
-        elevation: 1, 
-        },
-
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        },
-        modalContent: {
-        width: 300,
-        padding: 20,
-        backgroundColor: 'white',
-        borderRadius: 10,
-        alignItems: 'center',
-        },
-        modalText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 10,
-        },
-        modalSubText: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 20,
-        },
-    
-        retryButtonText: {
-            color: '#aaa',  // Text color matching border color
-            fontSize: 16,
-        },
-        btn:{
-            paddingVertical: 10,
-            paddingHorizontal: 20,
-            borderRadius:20, 
-            borderColor:colors.primaryColor1, 
-            borderWidth:0.8, 
-            justifyContent:'center', 
-            alignItems:'center', 
-            }
-
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: spacing.xxxl,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  headerTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+  },
+  headerBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overviewCard: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    overflow: 'hidden',
+    ...shadows.lg,
+  },
+  overviewCircle: {
+    position: 'absolute',
+    right: -30,
+    top: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  overviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  overviewAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.4)',
+  },
+  overviewInitial: {
+    fontFamily: '_bold',
+    fontSize: typography.xxl,
+    color: '#fff',
+  },
+  overviewInfo: {
+    flex: 1,
+  },
+  overviewName: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    color: '#fff',
+    lineHeight: 22,
+  },
+  overviewEmail: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    color: 'rgba(255,255,255,0.75)',
+    lineHeight: 20,
+    marginTop: 2,
+  },
+  overviewTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: radius.lg,
+    padding: spacing.md,
+  },
+  overviewTagBox: {
+    flex: 1,
+  },
+  overviewTagLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.xs,
+    color: 'rgba(255,255,255,0.7)',
+    lineHeight: 16,
+  },
+  overviewTagValue: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    color: '#fff',
+    lineHeight: 22,
+    letterSpacing: 1,
+  },
+  overviewCopyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    gap: 4,
+  },
+  overviewCopyText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.sm,
+    color: '#fff',
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 52,
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.md,
+    borderWidth: 1.5,
+  },
+  logoutBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+  },
+  appInfo: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  appVersion: {
+    fontFamily: '_semiBold',
+    fontSize: typography.sm,
+    lineHeight: 20,
+  },
+  appCopyright: {
+    fontFamily: '_regular',
+    fontSize: typography.xs,
+    marginTop: 4,
+    lineHeight: 16,
+  },
+  pinModal: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+  },
+  pinModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.lg,
+  },
+  pinModalTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    color: '#fff',
+    flex: 1,
+  },
+  pinModalClose: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pinNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: spacing.md,
+    margin: spacing.lg,
+    borderRadius: radius.lg,
+    gap: spacing.sm,
+    borderWidth: 1,
+  },
+  pinNoticeText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    flex: 1,
+    lineHeight: 22,
+  },
+  pinInputWrapper: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  pinInputLabel: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    marginBottom: spacing.sm,
+    lineHeight: 22,
+  },
+  pinInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    height: 56,
+  },
+  pinInput: {
+    flex: 1,
+    fontFamily: '_semiBold',
+    fontSize: typography.xl,
+    paddingVertical: 0,
+    letterSpacing: 4,
+  },
+  pinModalActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    padding: spacing.lg,
+    paddingTop: 0,
+  },
+  pinCancelBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+  },
+  pinCancelBtnText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+  },
+  pinSaveBtn: {
+    flex: 2,
+    height: 48,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.sm,
+  },
+  pinSaveBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    color: '#fff',
+  },
+  bankSheet: {
+    flex: 1,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+  },
+  bankSheetTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+    marginBottom: 4,
+  },
+  bankSheetSubtitle: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: spacing.md,
+  },
+  bankSheetDivider: {
+    height: 1,
+    marginBottom: spacing.md,
+  },
+  bankSheetEmpty: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+    gap: spacing.md,
+  },
+  bankSheetEmptyText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  bankSheetAddBtn: {
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  bankSheetAddBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    color: '#fff',
+  },
 });
 
 export default SettingScreen;

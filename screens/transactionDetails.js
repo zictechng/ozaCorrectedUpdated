@@ -1,442 +1,678 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { useIsFocused } from '@react-navigation/native';
-import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, ScrollView, Alert, ActivityIndicator } from 'react-native';
+﻿import React, { useContext, useState, useEffect, useCallback } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  StatusBar, ActivityIndicator, Share, Platform,
+  ToastAndroid, Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { gs,colors } from '../styles';
-import { StatusBar } from 'expo-status-bar';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons} from '@expo/vector-icons';
-import bgImage from '../assets/images/bg7.png';
-import CustomButton from '../components/customButton';
-import HeaderMenu from '../components/headerMenu';
-import { AuthContext } from '../contextAPI/authContext';
-import {  NumberValueFormat } from '../components/controls';
-import FirstWord from '../components/firstWord';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import client from '../contextAPI/client';
-import { NumberDollarValueFormat } from '../components/formatDollarValue';
+import { useIsFocused } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Clipboard from 'expo-clipboard';
 import moment from 'moment';
 
-const TransactionsDetails = ({route}) =>{
+import { gs, spacing, radius, typography, shadows } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
 
-    const navigation = useNavigation();
-    const isFocused = useIsFocused();
-    let tPayId = route.params?.record_id;
+import { AuthContext } from '../contextAPI/authContext';
+import client from '../contextAPI/client';
+import { NumberValueFormat } from '../components/formatValue';
+import { NumberDollarValueFormat } from '../components/formatDollarValue';
+import InfoRow from '../components/InfoRow';
+import SectionCard from '../components/SectionCard';
+import TransactionStatusBadge from '../components/TransactionStatusBadge';
 
-    const bgImageLocal = require("../assets/images/bg6.png");
-    const proImage = require("../assets/images/default_profile.png");
+// ── Get transaction icon config ───────────────────
+const getTransactionIcon = (nature = '', type = '') => {
+  const n = nature.toLowerCase();
+  if (n.includes('paypal'))      return { icon: 'logo-paypal',          color: '#003087', bg: '#DBEAFE' };
+  if (n.includes('payoneer'))    return { icon: 'card-outline',          color: '#FF4800', bg: '#FEE2E2' };
+  if (n.includes('bitcoin'))     return { icon: 'logo-bitcoin',          color: '#F7931A', bg: '#FEF3C7' };
+    if (n.includes('electric'))    return { icon: 'flash',                 color: '#F59E0B', bg: '#FEF3C7' };
+  if (n.includes('data') || n.includes('airtime')) return { icon: 'wifi', color: '#3B82F6', bg: '#DBEAFE' };
+  if (n.includes('tv') || n.includes('cable'))     return { icon: 'tv',  color: '#8B5CF6', bg: '#EDE9FE' };
+  if (n.includes('waec') || n.includes('neco') || n.includes('jamb') || n.includes('nabteb'))
+    return { icon: 'school', color: '#10B981', bg: '#D1FAE5' };
+  if (n.includes('fund') || n.includes('deposit'))
+    return { icon: 'arrow-down-circle', color: '#10B981', bg: '#D1FAE5' };
+    if (n.includes('withdraw'))    return { icon: 'arrow-up-circle',       color: '#EF4444', bg: '#FEE2E2' };
+    return { icon: 'gift', color: '#F0A500', bg: '#FFF3CD' };
+  return type === 'Debit'
+    ? { icon: 'arrow-up-outline',   color: '#EF4444', bg: '#FEE2E2' }
+    : { icon: 'arrow-down-outline', color: '#10B981', bg: '#D1FAE5' };
+};
 
-    const {userToken, userInfo} = useContext(AuthContext)
-   
-    const [appDetails, setAppDetails] = useState();
-    const [dataDetails, setDataDetails] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    
-    // function that show only first name // First words in a sentence
-    const myName = FirstWord(userInfo.userData.display_name);
-    //console.log('Image ', userInfo.userData.profile_photo)
-       
-    // get app information from local storage here
-    const getDataLocal = async () => {
+// ── Main Screen ───────────────────────────────────
+const TransactionsDetails = ({ route, navigation }) => {
+  const isFocused = useIsFocused();
+  const { S, colors, isDark } = useThemeStyles();
+  const { userToken } = useContext(AuthContext);
+  const tPayId = route.params?.record_id;
+
+  const [dataDetails, setDataDetails] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // ── Fetch Transaction Details ─────────────────
+  const loadTransactionDetails = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const value = await AsyncStorage.getItem('AppSettingInfo')
-      let dataLocal = JSON.parse(value)
-      if(dataLocal != null) {
-        // value previously stored
-        setAppDetails(dataLocal)
-      }
-      
-    } catch(e) {
-      // error reading value
-      console.log( 'app setting empty ', e)
-    }
-  }
-
-  // fetching all history with pagination
-  const loadTransactionDetails = async() =>{
-    //console.log("current Page ", currentPage)
-      setIsLoading(true);
-      try {
-        const res = await client.get(`api/getTransactionInfo/${tPayId}`,{
-          headers: {
-            'Authorization': 'Bearer '+userToken,
-            }
-        }
+      const res = await client.get(
+        `api/getTransactionInfo/${tPayId}`,
+        { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
-     // console.log("response: " + res);
-      if(res.data.msg == '200'){
-        //console.log("response: " + res);
-        setDataDetails(res.data.dataInfo)
-        setIsLoading(false)
+      if (res.data.msg === '200') {
+        setDataDetails(res.data.dataInfo);
+      } else {
+        setError('Transaction not found. Please try again.');
       }
-      else if(res.data.status == '404')
-        {
-            Alert.alert('Sorry, there was an error! Try again later')
-        }
-      else{
-        setIsListEndAll(true)
-        setIsLoading(false)
-      }
+    } catch (error) {
+      setError('Could not load transaction details. Please check your connection.');
+      console.log('Transaction details error:', error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [tPayId, userToken]);
 
-      } catch (error) {
-        console.log(error.message);
-      } finally {
-        setIsLoading(false);
-       }
+  useEffect(() => {
+    loadTransactionDetails();
+  }, []);
+
+  // ── Share Receipt ─────────────────────────────
+  const handleShareReceipt = async () => {
+    if (!dataDetails) return;
+    try {
+      const receipt = [
+        '📄 Transaction Receipt',
+        '─────────────────────────',
+        `Amount: ${dataDetails.currency_level === '2' ? '$' : '₦'}${dataDetails.amount}`,
+        `Type: ${dataDetails.transac_nature}`,
+        `Status: ${dataDetails.transaction_status}`,
+        `Date: ${moment(dataDetails.creditOn).format('DD MMM YYYY hh:mm A')}`,
+        `Transaction ID: ${dataDetails.tid}`,
+        dataDetails.pay_tran ? `Payment ID: ${dataDetails.pay_tran}` : '',
+      ].filter(Boolean).join('\n');
+
+      await Share.share({ message: receipt });
+    } catch (error) {
+      console.log('Share error:', error.message);
+    }
+  };
+
+  // ── Copy Transaction ID ───────────────────────
+  const handleCopyTxId = async () => {
+    if (!dataDetails?.tid) return;
+    await Clipboard.setStringAsync(dataDetails.tid);
+    if (Platform.OS === 'android') {
+      ToastAndroid.show('Transaction ID copied!', ToastAndroid.SHORT);
+    } else {
+      Alert.alert('Copied!', 'Transaction ID copied to clipboard');
+    }
+  };
+
+  // ── Derived Values ────────────────────────────
+  const isDebit = dataDetails?.tran_type === 'Debit';
+  const isDollar = dataDetails?.currency_level === '2';
+  const iconInfo = getTransactionIcon(
+    dataDetails?.transac_nature || '',
+    dataDetails?.tran_type || ''
+  );
+  const canUploadProof =
+    dataDetails?.transac_category !== 'Withdraw' &&
+    (!dataDetails?.payment_proof_url || dataDetails?.payment_proof_url === '');
+
+  // ── Loading State ─────────────────────────────
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.bgColor}
+      />
+        <View style={styles.header}>
+          <TouchableOpacity style={gs.homeSideMenu} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Transaction Details</Text>
+          <View style={[gs.homeSideMenu, { opacity: 0 }]} />
+        </View>
+        <View style={styles.loadingState}>
+          <ActivityIndicator size="large" color={colors.primaryColor1} />
+          <Text style={styles.loadingText}>Loading transaction details...</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
-    useEffect(() =>{
-        loadTransactionDetails()
-    
-      }, [])
-      
+  // ── Error State ───────────────────────────────
+  if (error || !dataDetails) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor={colors.bgColor} />
+        <View style={styles.header}>
+          <TouchableOpacity style={gs.homeSideMenu} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Transaction Details</Text>
+          <View style={[gs.homeSideMenu, { opacity: 0 }]} />
+        </View>
+        <View style={styles.errorState}>
+          <View style={styles.errorIconBox}>
+            <Ionicons name="alert-circle-outline" size={48} color={colors.dangerColor} />
+          </View>
+          <Text style={styles.errorTitle}>Could Not Load</Text>
+          <Text style={styles.errorDesc}>{error}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={loadTransactionDetails}>
+            <Text style={styles.retryBtnText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <ImageBackground style={{flex:1}} source={bgImage} resizeMode='cover'>
-        
-        <SafeAreaView style={{flex:1}}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.bgColor} />
 
-                <StatusBar style='light' />
-                {/* <View style={gs.homeHeaderRow}>
-                    <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                        <TouchableOpacity style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                            <Entypo name='sweden' size={23} color={colors.textColor}/>
-                        </TouchableOpacity>
+      {/* ── Header ───────────────────────────── */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={gs.homeSideMenu}
+          onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Transaction Details</Text>
+        <TouchableOpacity
+          style={gs.homeSideMenu}
+          onPress={handleShareReceipt}>
+          <Ionicons name="share-outline" size={22} color={colors.primaryColor1} />
+        </TouchableOpacity>
+      </View>
 
-                        <Text style={styles.profileTitle}>Profile</Text>
-                        <Text></Text>
-                        
-                    </View>
-                        
-                </View> */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
 
-                <HeaderMenu 
-                    buttonHome={<TouchableOpacity onPress={() =>navigation.goBack()}>
-                    <View  style={[gs.homeSideMenu, {backgroundColor:'transparent', borderWidth: 0}]}>
-                    <Ionicons name='arrow-back' size={25} color={colors.textColor}/>
-                    </View>
-                        </TouchableOpacity>}
-                    titleName={'Transactions Details'}
-                    profileTitle={styles.profileTitle}
-                />
-                <View style={{marginBottom:90}}></View>
+        {/* ── Transaction Hero Banner ───────────── */}
+        <LinearGradient
+          colors={isDebit
+            ? ['#EF4444', '#B91C1C']
+            : [colors.primaryColor1, colors.primaryColor1b]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroBanner}>
+          <View style={styles.heroCircle1} />
+          <View style={styles.heroCircle2} />
 
-                 <ImageBackground style={{flex:1}} backgroundColor={colors.bgColor} resizeMode='stretch'>
-                        
-                            <ScrollView showsVerticalScrollIndicator={false}>
-                                { isLoading ? (
-                                <View style={{justifyContent:'center', alignItems:'center'}}>
-                                    <ActivityIndicator size={25} color={colors.primaryColor1} style={{margin:15}} />
-                                </View>
-                                ): 
-                            
-                            <View>
-                                <View style={{marginHorizontal:20, marginTop:20}}>
-                                <Text style={[styles.rowLabel, {color:colors.darkHl, fontSize:20}]}>Transaction Overview</Text>
-                                </View>
+          {/* Transaction Icon */}
+          <View style={styles.heroIconBox}>
+            <Ionicons name={iconInfo.icon} size={32} color={isDebit ? '#EF4444' : colors.primaryColor1} />
+          </View>
 
-                            <View style={[styles.rowWrapperProfile, {borderTopWidth:0, marginTop: 10} ]}>
-                                 <View>
-                                    <View style={[styles.row, {marginTop: 10}]}>
-                                        <Text style={[styles.rowLabel, {color:'#cccac6'}]}>Amount</Text>
-                                        <Text style={[styles.rowLabel, {color:'#777', fontSize:20}]}>{dataDetails.currency_level == '2' ? <NumberDollarValueFormat value={dataDetails.amount} /> : <NumberValueFormat value={dataDetails.amount} />}</Text>
-                                    
-                                    </View>       
-                                </View>
-                            </View>
+          {/* Amount */}
+          <Text style={styles.heroLabel}>
+            {dataDetails.transac_nature}
+          </Text>
+          <Text style={styles.heroAmount}>
+            {isDebit ? '−' : '+'}
+            {isDollar
+              ? <NumberDollarValueFormat value={dataDetails.amount} />
+              : <NumberValueFormat value={dataDetails.amount} />}
+          </Text>
 
-                            <View style={[styles.rowWrapperProfile, {borderTopWidth:1, marginTop: 10} ]}>
-                                 <View>
-                                    <View style={[styles.row, {marginTop: 10}]}>
-                                        <Text style={[styles.rowLabel, {color:'#cccac6'}]}>Tag ID</Text>
-                                        <Text style={[styles.rowLabel, {color:'#777', fontSize:15}]}>{dataDetails.acct_number}</Text>
-                                    
-                                    </View>       
-                                </View>
-                            </View>
+          {/* Status Badge */}
+          <TransactionStatusBadge
+            status={dataDetails.transaction_status}
+            size="lg"
+          />
 
-                            <View style={[styles.rowWrapperProfile, {borderTopWidth:1, marginTop: 10} ]}>
-                                 <View>
-                                    <View style={[styles.row, {marginTop: 10}]}>
-                                        <Text style={[styles.rowLabel, {color:'#cccac6'}]}>Service Type</Text>
-                                        <Text style={[styles.rowLabel, {color:'#777', fontSize:15}]}>{dataDetails.tran_service_type}</Text>
-                                    
-                                    </View>       
-                                </View>
-                            </View>
+          {/* Date */}
+          <Text style={styles.heroDate}>
+            {moment(dataDetails.creditOn).format('DD MMM YYYY • hh:mm A')}
+          </Text>
+        </LinearGradient>
 
-                            <View style={[styles.rowWrapperProfile, {borderTopWidth:1, marginTop: 10} ]}>
-                                 <View>
-                                    <View style={[styles.row, {marginTop: 10}]}>
-                                        <Text style={[styles.rowLabel, {color:'#cccac6'}]}>Transaction Type</Text>
-                                        <Text style={[styles.rowLabel, {color:'#777', fontSize:15}]}>{dataDetails.tran_type}</Text>
-                                    
-                                    </View>       
-                                </View>
-                            </View>
+        {/* ── Quick Actions ─────────────────────── */}
+        <View style={styles.quickActionsRow}>
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={handleShareReceipt}
+            activeOpacity={0.8}>
+            <View style={[styles.quickActionIcon, { backgroundColor: colors.bgLight }]}>
+              <Ionicons name="share-outline" size={20} color={colors.primaryColor1} />
+            </View>
+            <Text style={styles.quickActionLabel}>Share</Text>
+          </TouchableOpacity>
 
-                            <View style={[styles.rowWrapperProfile, {borderTopWidth:1, marginTop: 10} ]}>
-                                 <View>
-                                    <View style={[styles.row, {marginTop: 10}]}>
-                                        <Text style={[styles.rowLabel, {color:'#cccac6'}]}>Transaction Category</Text>
-                                        <Text style={[styles.rowLabel, {color:'#777', fontSize:15}]}>{dataDetails.transac_category}</Text>
-                                    
-                                    </View>       
-                                </View>
-                            </View>
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={handleCopyTxId}
+            activeOpacity={0.8}>
+            <View style={[styles.quickActionIcon, { backgroundColor: colors.bgLight }]}>
+              <Ionicons name="copy-outline" size={20} color={colors.primaryColor1} />
+            </View>
+            <Text style={styles.quickActionLabel}>Copy ID</Text>
+          </TouchableOpacity>
 
-                            <View style={[styles.rowWrapperProfile, {borderTopWidth:1, marginTop: 10} ]}>
-                                 <View>
-                                    <View style={[styles.row, {marginTop: 10}]}>
-                                        <Text style={[styles.rowLabel, {color:'#cccac6'}]}>Transaction Nature</Text>
-                                        <Text style={[styles.rowLabel, {color:'#777', fontSize:15}]}>{dataDetails.transac_nature}</Text>
-                                    </View>       
-                                </View>
-                            </View>                           
- 
-                            <View style={[styles.rowWrapperProfile, {borderTopWidth:1, marginTop: 10} ]}>
-                                 <View>
-                                    <View style={[styles.row, {marginTop: 10}]}>
-                                        <Text style={[styles.rowLabel, {color:'#cccac6'}]}>Transaction Note</Text>
-                                        <Text style={[styles.rowLabel, {color:'#777' , marginBottom: 10, fontSize:15}]}>{dataDetails.tran_desc}</Text>
-                                    </View>       
-                                </View>
-                            </View>
-                            {dataDetails.trans_method && 
-                            <View style={[styles.rowWrapperProfile, {borderTopWidth:1, marginTop: 10} ]}>
-                                 <View>
-                                    <View style={[styles.row, {marginTop: 10}]}>
-                                        <Text style={[styles.rowLabel, {color:'#cccac6'}]}>Payment Method</Text>
-                                        <Text style={[styles.rowLabel, {color:'#777', fontSize:15}]}>{dataDetails.trans_method}</Text>
-                                    
-                                    </View>       
-                                </View>
-                            </View>}
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={() => navigation.navigate('History')}
+            activeOpacity={0.8}>
+            <View style={[styles.quickActionIcon, { backgroundColor: colors.bgLight }]}>
+              <Ionicons name="list-outline" size={20} color={colors.primaryColor1} />
+            </View>
+            <Text style={styles.quickActionLabel}>History</Text>
+          </TouchableOpacity>
 
-                            <View style={[styles.rowWrapperProfile, {borderTopWidth:1, marginTop: 10} ]}>
-                                 <View>
-                                    <View style={[styles.row, {marginTop: 10}]}>
-                                        <Text style={[styles.rowLabel, {color:'#cccac6'}]}>Status</Text>
-                                        <Text style={[styles.rowLabel, {color:'#777', fontSize:15}]}>{dataDetails.transaction_status}</Text>
-                                    
-                                    </View>       
-                                </View>
-                            </View>
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={() => navigation.navigate('Home')}
+            activeOpacity={0.8}>
+            <View style={[styles.quickActionIcon, { backgroundColor: colors.bgLight }]}>
+              <Ionicons name="home-outline" size={20} color={colors.primaryColor1} />
+            </View>
+            <Text style={styles.quickActionLabel}>Home</Text>
+          </TouchableOpacity>
+        </View>
 
-                            <View style={[styles.rowWrapperProfile, {borderTopWidth:1, marginTop: 10} ]}>
-                                 <View>
-                                    <View style={[styles.row, {marginTop: 10}]}>
-                                        <Text style={[styles.rowLabel, {color:'#cccac6'}]}>Transaction ID</Text>
-                                        <Text style={[styles.rowLabel, {color:'#777' , marginBottom: 10, fontSize:15}]}>{dataDetails.tid}</Text>
-                                    
-                                    </View>       
-                                </View>
-                            </View>
-                                {dataDetails.pay_tran != null && dataDetails.pay_tran !=='' &&
-                            <View style={[styles.rowWrapperProfile, {borderTopWidth:1, marginTop: 10} ]}>
-                                 <View>
-                                    <View style={[styles.row, {marginTop: 10}]}>
-                                        <Text style={[styles.rowLabel, {color:'#cccac6'}]}>Payment ID</Text>
-                                        <Text style={[styles.rowLabel, {color:'#777' , marginBottom: 10, fontSize:15}]}>{dataDetails.pay_tran}</Text>
-                                    
-                                    </View>       
-                                </View>
-                            </View>}
+        {/* ── Transaction Overview ──────────────── */}
+        {/* Uses InfoRow component from components/InfoRow.js */}
+        <SectionCard title="Transaction Overview">
+          <InfoRow
+            icon="cash-outline"
+            label="Amount"
+            value={isDollar
+              ? `$${dataDetails.amount}`
+              : `₦${Number(dataDetails.amount).toLocaleString()}`}
+            valueColor={isDebit ? colors.dangerColor : colors.successColor}
+          />
+          <InfoRow
+            icon="pricetag-outline"
+            label="Transaction Nature"
+            value={dataDetails.transac_nature}
+          />
+          <InfoRow
+            icon="layers-outline"
+            label="Transaction Category"
+            value={dataDetails.transac_category}
+          />
+          <InfoRow
+            icon="swap-horizontal-outline"
+            label="Transaction Type"
+            value={dataDetails.tran_type}
+            valueColor={isDebit ? colors.dangerColor : colors.successColor}
+          />
+          <InfoRow
+            icon="construct-outline"
+            label="Service Type"
+            value={dataDetails.tran_service_type}
+          />
+          {dataDetails.trans_method && (
+            <InfoRow
+              icon="card-outline"
+              label="Payment Method"
+              value={dataDetails.trans_method}
+            />
+          )}
+          <InfoRow
+            icon="document-text-outline"
+            label="Description"
+            value={dataDetails.tran_desc}
+          />
+        </SectionCard>
 
-                            <View style={[styles.rowWrapperProfile, {borderTopWidth:1, marginTop: 10} ]}>
-                                 <View>
-                                    <View style={[styles.row, {marginTop: 10}]}>
-                                        <Text style={[styles.rowLabel, {color:'#cccac6'}]}>Transaction Date</Text>
-                                        <Text style={[styles.rowLabel, {color:'#777' , marginBottom: 10, fontSize:15}]}>{moment(dataDetails.creditOn).format("DD/MMM/YYYY hh:mm:ss")}</Text>
-                                    </View>       
-                                </View>
-                            </View>
+        {/* ── Status & Dates ───────────────────── */}
+        <SectionCard title="Status & Timeline">
+          <View style={styles.statusRow}>
+            <Text style={styles.statusLabel}>Current Status</Text>
+            <TransactionStatusBadge
+              status={dataDetails.transaction_status}
+              size="md"
+            />
+          </View>
+          <View style={styles.sectionDivider} />
+          <InfoRow
+            icon="calendar-outline"
+            label="Transaction Date"
+            value={moment(dataDetails.creditOn).format('DD MMM YYYY • hh:mm:ss A')}
+          />
+          <InfoRow
+            icon="checkmark-circle-outline"
+            label="Approved Date"
+            value={dataDetails.approved_date
+              ? moment(dataDetails.approved_date).format('DD MMM YYYY • hh:mm:ss A')
+              : 'Pending approval'}
+          />
+        </SectionCard>
 
-                            <View style={[styles.rowWrapperProfile, {borderTopWidth:1, borderBottomWidth:1, marginTop: 10} ]}>
-                                 <View>
-                                    <View style={[styles.row, {marginTop: 10}]}>
-                                        <Text style={[styles.rowLabel, {color:'#cccac6'}]}>Approved Date</Text>
-                                        <Text style={[styles.rowLabel, {color:'#777' , marginBottom: 10, fontSize:15}]}>{moment(dataDetails.approved_date).format("DD/MMM/YYYY hh:mm:ss")}</Text>
-                                    
-                                    </View>       
-                                </View>
-                            </View>
-      
-                            {/* custom button here */}
-                            {/* <CustomButton 
-                                buttonStyle={[styles.formPage, {marginTop:40, marginBottom:15}]}
-                                icon={<FontAwesome name='bank' size={17} style={{color:colors.primaryColor1}} />}
-                                viewStyle={{padding:10, flexDirection:'row', alignItems:'center'}}
-                                textStyle={{fontFamily:'_regular', fontSize:17, marginLeft:15, color:'#777'}}
-                                textLabel={'Bank Details'}
-                                buttonAction={() => navigation.navigate('BankDetails')}
-                            /> */}
-                                {dataDetails.transac_category !=='Withdraw' && dataDetails.payment_proof_url == null || dataDetails.payment_proof_url == '' ?
-                                <CustomButton 
-                                    buttonStyle={[styles.formPage, {  marginTop:20, marginBottom:30, backgroundColor:colors.primaryColor1}]}
-                                    icon={<Ionicons name='documents' size={20} style={{color:colors.colorWhite}}/>}
-                                    viewStyle={{padding:10, flexDirection:'row',alignItems:'center'}}
-                                    textStyle={{fontFamily:'_regular', fontSize:17, marginLeft:15, color:colors.colorWhite}}
-                                    textLabel={'Upload Proof of payment'}
-                                    buttonAction={() => navigation.navigate('UploadPaymentProof', {
-                                        track_id:dataDetails.tid
-                                    })}
-                                />:
-                                <Text style={{marginTop:30}}></Text>
-                                }
-                            </View>
-                            }
-                            </ScrollView>
+        {/* ── Reference Numbers ─────────────────── */}
+        <SectionCard title="Reference Numbers">
+          <InfoRow
+            icon="finger-print-outline"
+            label="Account Tag ID"
+            value={dataDetails.acct_number}
+          />
+          <View style={styles.txIdRow}>
+            <InfoRow
+              icon="barcode-outline"
+              label="Transaction ID"
+              value={dataDetails.tid}
+            />
+            <TouchableOpacity
+              style={styles.copyTxBtn}
+              onPress={handleCopyTxId}>
+              <Ionicons name="copy-outline" size={16} color={colors.primaryColor1} />
+              <Text style={styles.copyTxBtnText}>Copy</Text>
+            </TouchableOpacity>
+          </View>
+          {dataDetails.pay_tran && dataDetails.pay_tran !== '' && (
+            <InfoRow
+              icon="receipt-outline"
+              label="Payment Reference ID"
+              value={dataDetails.pay_tran}
+            />
+          )}
+        </SectionCard>
 
-                            {!isLoading && dataDetails == null || dataDetails == undefined && 
-                                <View style={{justifyContent:'center', alignItems:'center', marginBottom:10}}>
-                                    <Text style={{fontFamily:"_regular", fontSize:13, color:colors.textSecColor}}>Something went wrong! Try again later</Text>
-                                </View>
-                            }
-                      </ImageBackground>
-          </SafeAreaView>
-        
-     </ImageBackground>
+        {/* ── Upload Proof of Payment ───────────── */}
+        {canUploadProof && (
+          <SectionCard>
+            <View style={styles.uploadNotice}>
+              <Ionicons
+                name="information-circle-outline"
+                size={20}
+                color={colors.warningColor}
+              />
+              <Text style={styles.uploadNoticeText}>
+                Payment proof has not been uploaded for this transaction.
+                Upload it to speed up processing.
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.uploadBtn}
+              onPress={() => navigation.navigate('UploadPaymentProof', {
+                track_id: dataDetails.tid,
+              })}
+              activeOpacity={0.85}>
+              <Ionicons
+                name="cloud-upload-outline"
+                size={20}
+                color="#fff"
+                style={{ marginRight: spacing.sm }}
+              />
+              <Text style={styles.uploadBtnText}>Upload Proof of Payment</Text>
+            </TouchableOpacity>
+          </SectionCard>
+        )}
+
+        {/* ── Support Notice ───────────────────── */}
+        <View style={styles.supportCard}>
+          <Ionicons
+            name="help-circle-outline"
+            size={18}
+            color={colors.primaryColor1}
+          />
+          <Text style={styles.supportText}>
+            If you have any issues with this transaction, contact our
+            support team with your Transaction ID for quick resolution.
+          </Text>
+        </View>
+
+        <View style={{ height: spacing.xxxl }} />
+      </ScrollView>
+    </SafeAreaView>
   );
-}
-
-
+};
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
+  container: {
+    flex: 1,
     },
-    formPage:{
-        borderRadius:10, 
-        marginHorizontal:20, 
-        backgroundColor:colors.textColor, 
-        marginTop:20,
-        height:50,
-        shadowColor: '#000',
-        shadowOffset: { 
-        width: 0, 
-        height: 0.9 
-        },
-        shadowOpacity: 0.5,
-        shadowRadius: 0,
-        elevation: 0.9, 
-        },
-    accountView:{
-        justifyContent:'center', 
-        alignItems:'center', 
-        borderRadius:50, 
-        backgroundColor:colors.bgColor, 
-        height:70, 
-        width:70, 
-        marginHorizontal:'40%', 
-        marginTop:-40
-    },
-    accountVerify:{
-        position: "absolute", 
-        top: 30, 
-        right: -20, 
-        marginRight: 10, 
-        color:colors.greenColor,
-    },
-    actionSignupView:{
-        borderRadius:10, 
-        backgroundColor:colors.lightGreenColor1, 
-        marginHorizontal:10, 
-        alignItems:'center', 
-        marginTop:10
-    },
-        actionSignupRow:{
-        flexDirection:'row', 
-        alignItems:'center', 
-        marginTop:5, 
-        marginHorizontal:5
-    },
+  scrollContent: {
+    paddingBottom: spacing.xxxl,
+  },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
     
-        actionSignupText:{
-        fontFamily:'_regular', 
-        fontSize:14, 
-        marginHorizontal:5, 
-        flexShrink:1, 
-        flexWrap: 'wrap',
-    },
+  },
+  headerTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+    
+  },
 
-    actionSignupButton:{
-        fontFamily:'_bold', 
-        fontSize:14, 
-        color:colors.primaryColor2, 
-        marginBottom:5
-    },
-    buttonSellText:{
-        color:colors.textColor, 
-        fontFamily:'_semiBold', 
-        fontSize:15
-    },
-    profileTitle:{
-      color:colors.textColor,
-      fontSize:20,
-      marginLeft: -20,
-      fontFamily: '_semiBold',
-    },
-    rowSpacer: {
-        flexGrow: 1,
-        flexShrink: 1,
-        flexBasis: 0,
-      },
-      rowLabel: {
-        fontSize: 14,
-        fontFamily: '_semiBold',
-        color: '#777',
-        textAlign: 'justify'
-      },
-      rowWrapperProfile: {
-        paddingLeft: 24,
-        //backgroundColor: '#fff',
-        borderTopWidth: 1,
-        borderColor: '#dededc'
-      },
-      row: {
-        flexDirection: 'column',
-        paddingRight: 24,
-        height: "auto",
-      },
-      bgImage:{
-        position: 'absolute',
-        resizeMode:'cover',
-        opacity: 0.7,
-        transform: [{skewX: '45deg'}],
-        bottom: 0,
-        right: 10,
-       },
+  // Loading & Error States
+  loadingState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  loadingText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    
+    lineHeight: 22,
+  },
+  errorState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  errorIconBox: {
+    width: 80,
+    height: 80,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  errorTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+    
+    marginBottom: spacing.sm,
+  },
+  errorDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: spacing.xl,
+  },
+  retryBtn: {
+    
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  retryBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+  },
 
-       
-    shareRow:{
-        flexDirection:'row', 
-        justifyContent:'space-between', 
-        alignItems:'center', 
-        marginHorizontal:5, 
-        marginTop:5,
-    },
-    shareText:{
-    fontFamily:'_regular', 
-    fontSize:14, 
-    marginHorizontal:5, 
-    flexShrink:1, 
-    flexWrap: 'wrap'},
-    bgReferral:{
-        position: 'absolute',
-        resizeMode:'cover',
-        opacity: 0.7,
-        transform: [{skewX: '45deg'}],
-        bottom: 0,
-        right: 10,
-        borderRadius:8, 
-        opacity:0.6,
-        width:90, 
-        height:85, 
-       },
+  // Hero Banner
+  heroBanner: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+    overflow: 'hidden',
+    ...shadows.lg,
+  },
+  heroCircle1: {
+    position: 'absolute',
+    right: -30,
+    top: -30,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+  },
+  heroCircle2: {
+    position: 'absolute',
+    left: -20,
+    bottom: -20,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  heroIconBox: {
+    width: 68,
+    height: 68,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    ...shadows.md,
+  },
+  heroLabel: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    marginBottom: spacing.xs,
+    lineHeight: 22,
+  },
+  heroAmount: {
+    fontFamily: '_bold',
+    fontSize: typography.giant,
+    lineHeight: 48,
+    marginBottom: spacing.md,
+  },
+  heroDate: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    marginTop: spacing.sm,
+    lineHeight: 20,
+  },
 
-       
-})
+  // Quick Actions
+  quickActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+  quickActionBtn: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  quickActionIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  quickActionLabel: {
+    fontFamily: '_semiBold',
+    fontSize: typography.xs,
+    
+    textAlign: 'center',
+  },
+
+  // Status Row
+  statusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  statusLabel: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    
+    lineHeight: 22,
+  },
+  sectionDivider: {
+    height: 1,
+    marginBottom: spacing.md,
+  },
+
+  // Transaction ID Row
+  txIdRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  copyTxBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    gap: 4,
+  },
+  copyTxBtnText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.xs,
+    
+  },
+
+  // Upload Section
+  uploadNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+    borderWidth: 1,
+  },
+  uploadNoticeText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    
+    flex: 1,
+    lineHeight: 22,
+  },
+  uploadBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    
+    borderRadius: radius.lg,
+    height: 52,
+    ...shadows.md,
+  },
+  uploadBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+  },
+
+  // Support Card
+  supportCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+    borderWidth: 1,
+  },
+  supportText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    
+    flex: 1,
+    lineHeight: 22,
+  },
+});
 
 export default TransactionsDetails;

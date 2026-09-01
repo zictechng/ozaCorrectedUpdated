@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { windowWidth } from '../utils/Dimensions';
 import { gs, colors } from '../styles';

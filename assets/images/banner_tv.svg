@@ -1,0 +1,30 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background glow -->
+  <circle cx="60" cy="55" r="48" fill="rgba(255,255,255,0.08)" />
+  
+  <!-- TV body -->
+  <rect x="18" y="25" width="84" height="58" rx="8" fill="rgba(255,255,255,0.85)" />
+  
+  <!-- TV screen -->
+  <rect x="24" y="31" width="72" height="46" rx="5" fill="rgba(109,40,217,0.8)" />
+  
+  <!-- Screen content — play button -->
+  <circle cx="60" cy="54" r="14" fill="rgba(255,255,255,0.25)" />
+  <polygon points="55,47 55,61 70,54" fill="rgba(255,255,255,0.95)" />
+  
+  <!-- Screen shine -->
+  <path d="M26 33 L58 33 L52 38 L26 38Z" fill="rgba(255,255,255,0.15)" rx="2" />
+  
+  <!-- TV stand -->
+  <rect x="52" y="83" width="16" height="10" rx="2" fill="rgba(255,255,255,0.7)" />
+  <rect x="40" y="93" width="40" height="6" rx="3" fill="rgba(255,255,255,0.6)" />
+  
+  <!-- Signal waves -->
+  <path d="M88 20 C92 24 92 30 88 34" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round" fill="none" />
+  <path d="M93 16 C99 22 99 32 93 38" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" fill="none" />
+  <path d="M98 12 C106 20 106 34 98 42" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none" />
+  
+  <!-- Sparkles -->
+  <circle cx="15" cy="30" r="2.5" fill="rgba(255,255,255,0.5)" />
+  <circle cx="12" cy="70" r="2" fill="rgba(255,255,255,0.4)" />
+</svg>

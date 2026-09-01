@@ -11,8 +11,8 @@ module.exports = function(api) {
           path: '.env',
         },
       ],
-      'react-native-reanimated/plugin',
-      //'react-native-worklets/plugin',
+      'react-native-worklets/plugin',
+      // 'react-native-reanimated/plugin', // old - moved to worklets
     ],
   };
 };

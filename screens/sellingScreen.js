@@ -1,4 +1,4 @@
-import React, { useContext, useState, useRef, useEffect } from 'react';
+﻿import React, { useContext, useState, useRef, useEffect } from 'react';
 import { 
     View, 
     Text, 
@@ -837,7 +837,6 @@ formPage:{
     elevation: 0.8, 
     },
 textAreaContainer: {
-    borderColor: '#aaa',
     borderWidth: 0.5,
     borderRadius:10,
     marginHorizontal:10,
@@ -851,7 +850,6 @@ textAreaContainer: {
     flex: 1,
     marginTop: Platform.OS === 'ios' ? 0 : -12,
     paddingLeft: 10,
-    color: '#05375a',
     fontFamily: '_regular',
 },
 
