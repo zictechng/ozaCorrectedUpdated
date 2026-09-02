@@ -14,7 +14,8 @@ import PasswordStrengthMeterBar from 'react-native-password-strength-meter-bar';
 import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 
 import { gs, spacing, radius, typography, shadows } from '../styles';
-import useTheme from '../hooks/useTheme';
+import useThemeStyles from '../hooks/useThemeStyles';
+
 import { AuthContext } from '../contextAPI/authContext';
 import { noticeData } from '../components/errorNotice';
 import IsValidEmail from '../components/checkEmailFormat';
@@ -34,15 +35,19 @@ const StepIndicator = ({ currentStep, totalSteps, colors, accentColor }) => (
       return (
         <React.Fragment key={i}>
           <View style={styles.stepItem}>
-            <View style={[
+              <View style={[
               styles.stepCircle,
               {
                 backgroundColor: isCompleted
                   ? accentColor
                   : isActive
                     ? accentColor
-                    : colors.dividerColor,
-                borderColor: isActive ? accentColor : 'transparent',
+                    : 'rgba(255,255,255,0.2)',                          
+                borderColor: isActive
+                  ? '#fff'
+                  : isCompleted
+                    ? accentColor
+                    : 'rgba(255,255,255,0.3)',                          
               },
             ]}>
               {isCompleted ? (
@@ -66,7 +71,7 @@ const StepIndicator = ({ currentStep, totalSteps, colors, accentColor }) => (
                     : colors.textSecColor,
               },
             ]}>
-              {stepNum === 1 ? 'Account' : stepNum === 2 ? 'Personal' : 'Confirm'}
+              {stepNum === 1 ? 'Account' : stepNum === 2 ? 'Security' : 'Confirm'}
             </Text>
           </View>
           {i < totalSteps - 1 && (
@@ -75,7 +80,7 @@ const StepIndicator = ({ currentStep, totalSteps, colors, accentColor }) => (
               {
                 backgroundColor: isCompleted
                   ? accentColor
-                  : colors.dividerColor,
+                  : 'rgba(255,255,255,0.25)',                            
               },
             ]} />
           )}
@@ -90,7 +95,7 @@ const StepIndicator = ({ currentStep, totalSteps, colors, accentColor }) => (
 // ─────────────────────────────────────────────────
 const SignupScreen = ({ navigation }) => {
   const isFocused = useIsFocused();
-  const { colors, isDark } = useTheme();
+  const { colors, isDark } = useThemeStyles();
   const { registerAction, isBtnLoading, isButtonDisable } = useContext(AuthContext);
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -177,13 +182,21 @@ const SignupScreen = ({ navigation }) => {
     );
   };
 
+
   // ── Country select ────────────────────────────
-  const onSelectCountry = (c) => {
-    setCountry(c.name);
-    setCountryCode(c.cca2);
-    setCountryFlag(c.flag);
-    setShowCountryPicker(false);
-  };
+const onSelectCountry = (c) => {
+  setCountry(c.name);
+  setCountryCode(c.cca2);
+  // ✅ Don't use c.flag — it's a base64 image, not an emoji
+  // Use cca2 to derive the emoji flag instead
+  const emojiFlag = c.cca2
+    .toUpperCase()
+    .split('')
+    .map(char => String.fromCodePoint(127397 + char.charCodeAt(0)))
+    .join('');
+  setCountryFlag(emojiFlag);
+  setShowCountryPicker(false);
+};
 
   // ── Review row ────────────────────────────────
   const ReviewRow = ({ label, value, onEdit, step }) => (
@@ -219,71 +232,86 @@ const SignupScreen = ({ navigation }) => {
             keyboardShouldPersistTaps="handled">
 
             {/* ── Header ──────────────────────── */}
-            <View style={styles.header}>
-              <TouchableOpacity
-                style={[gs.homeSideMenu, { backgroundColor: colors.bgLight }]}
-                onPress={handleBack}>
-                <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
-              </TouchableOpacity>
-              <Text style={[styles.headerTitle, { color: colors.textBlack }]}>
-                Create Account
-              </Text>
-              <TouchableOpacity
-                style={[gs.homeSideMenu, { backgroundColor: colors.bgLight }]}
-                onPress={() => navigation.navigate('Login')}>
-                <Text style={[styles.signInText, { color: colors.primaryColor1 }]}>
-                  Sign In
+            {/* ── Header ──────────────────────── */}
+              <View style={styles.header}>
+                <TouchableOpacity
+                  style={[styles.headerIconBtn, { backgroundColor: colors.bgLight }]}
+                  onPress={handleBack}>
+                  <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
+                </TouchableOpacity>
+
+                <Text style={[styles.headerTitle, { color: colors.textBlack }]}>
+                  Create Account
                 </Text>
-              </TouchableOpacity>
-            </View>
+
+                <TouchableOpacity
+                  style={[styles.headerTextBtn, { backgroundColor: colors.bgLight }]}
+                  onPress={() => navigation.navigate('Login')}>
+                  <Text style={[styles.signInText, { color: colors.primaryColor1 }]}>
+                    Sign In
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
             {/* ── Hero Banner ──────────────────── */}
             <LinearGradient
-              colors={[colors.primaryColor1, colors.primaryColor1b]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.heroBanner}>
-              <View style={styles.heroCircle1} />
-              <View style={styles.heroCircle2} />
-              <View style={styles.heroContent}>
-                <View style={styles.heroIconBox}>
-                  <Ionicons name="person-add" size={28} color={colors.primaryColor1} />
-                </View>
-                <View style={styles.heroText}>
-                  <Text style={styles.heroTitle}>
-                    {currentStep === 1
-                      ? 'Account Details'
-                      : currentStep === 2
-                        ? 'Set Password'
-                        : 'Review & Confirm'}
-                  </Text>
-                  <Text style={styles.heroDesc}>
-                    {currentStep === 1
-                      ? 'Enter your basic information to get started'
-                      : currentStep === 2
-                        ? 'Create a strong password for your account'
-                        : 'Review your information before submitting'}
-                  </Text>
-                </View>
-              </View>
+                colors={[colors.primaryColor1, colors.primaryColor1b]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.heroBanner}>
+                <View style={[
+                  styles.heroCircle1,
+                  { backgroundColor: 'rgba(255,255,255,0.08)' },           
+                ]} />
+                <View style={[
+                  styles.heroCircle2,
+                  { backgroundColor: 'rgba(255,255,255,0.06)' },           
+                ]} />
 
-              {/* Step Indicator */}
-              <View style={[styles.stepIndicatorWrapper, {
-                backgroundColor: 'rgba(255,255,255,0.15)',
-              }]}>
-                <StepIndicator
-                  currentStep={currentStep}
-                  totalSteps={3}
-                  colors={colors}
-                  accentColor="#fff"
-                />
-              </View>
-            </LinearGradient>
+                <View style={styles.heroContent}>
+                  <View style={[
+                    styles.heroIconBox,
+                    { backgroundColor: 'rgba(255,255,255,0.95)' },         
+                  ]}>
+                    <Ionicons name="person-add" size={28} color={colors.primaryColor1} />
+                  </View>
+                  <View style={styles.heroText}>
+                    <Text style={[styles.heroTitle, { color: '#fff' }]}>   
+                      {currentStep === 1
+                        ? 'Account Details'
+                        : currentStep === 2
+                          ? 'Set Password'
+                          : 'Review & Confirm'}
+                    </Text>
+                    <Text style={[styles.heroDesc, { color: 'rgba(255,255,255,0.85)' }]}> 
+                      {currentStep === 1
+                        ? 'Enter your basic information to get started'
+                        : currentStep === 2
+                          ? 'Create a strong password for your account'
+                          : 'Review your information before submitting'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[
+                  styles.stepIndicatorWrapper,
+                  { backgroundColor: 'rgba(255,255,255,0.15)' },
+                ]}>
+                  <StepIndicator
+                    currentStep={currentStep}
+                    totalSteps={3}
+                    colors={colors}
+                    accentColor="#fff"
+                  />
+                </View>
+              </LinearGradient>
 
             {/* ── Step 1 — Account Info ─────────── */}
             {currentStep === 1 && (
               <View style={[styles.formCard, {
                 backgroundColor: colors.bgCard,
+                borderWidth: isDark ? 1 : 0,                             
+                borderColor: isDark ? colors.dividerColor : 'transparent',
                 ...shadows.card,
               }]}>
                 <FormInput
@@ -294,6 +322,7 @@ const SignupScreen = ({ navigation }) => {
                   onChangeText={setFullName}
                   autoCapitalize="words"
                   error={errors.fullName}
+                  colors={colors}
                 />
                 <FormInput
                   label="Email Address"
@@ -303,6 +332,7 @@ const SignupScreen = ({ navigation }) => {
                   onChangeText={(t) => setEmail(t.toLowerCase())}
                   keyboardType="email-address"
                   error={errors.email}
+                  colors={colors}
                 />
                 <FormInput
                   label="Phone Number"
@@ -314,6 +344,7 @@ const SignupScreen = ({ navigation }) => {
                   maxLength={11}
                   error={errors.phone}
                   hint="Enter your 11-digit Nigerian mobile number"
+                  colors={colors}
                 />
                 <FormInput
                   label="Referral Code (Optional)"
@@ -323,15 +354,22 @@ const SignupScreen = ({ navigation }) => {
                   onChangeText={setReferralCode}
                   autoCapitalize="characters"
                   hint="Got a referral code? Enter it here to earn a signup bonus"
+                  colors={colors}
                 />
 
-                <TouchableOpacity
-                  style={[styles.nextBtn, { backgroundColor: accentColor }]}
-                  onPress={handleNext}
-                  activeOpacity={0.85}>
-                  <Text style={styles.nextBtnText}>Continue</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#fff" />
-                </TouchableOpacity>
+                <LinearGradient
+                  colors={[colors.primaryColor1, colors.primaryColor1b]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.nextBtn, { padding: 0 }]}>
+                  <TouchableOpacity
+                    style={styles.nextBtnInner}
+                    onPress={handleNext}
+                    activeOpacity={0.85}>
+                    <Text style={styles.nextBtnText}>Continue</Text>
+                    <Ionicons name="arrow-forward" size={20} color="#fff" />
+                  </TouchableOpacity>
+                </LinearGradient>
               </View>
             )}
 
@@ -339,6 +377,8 @@ const SignupScreen = ({ navigation }) => {
             {currentStep === 2 && (
               <View style={[styles.formCard, {
                 backgroundColor: colors.bgCard,
+                borderWidth: isDark ? 1 : 0,                             
+                borderColor: isDark ? colors.dividerColor : 'transparent',
                 ...shadows.card,
               }]}>
                 <FormInput
@@ -349,6 +389,7 @@ const SignupScreen = ({ navigation }) => {
                   onChangeText={setPassword}
                   secureTextEntry
                   error={errors.password}
+                  colors={colors}
                 />
 
                 {/* Password Strength Bar */}
@@ -369,6 +410,7 @@ const SignupScreen = ({ navigation }) => {
                   onChangeText={setConfirmPassword}
                   secureTextEntry
                   error={errors.confirmPassword}
+                  colors={colors}
                 />
 
                 {/* Country Picker */}
@@ -376,23 +418,22 @@ const SignupScreen = ({ navigation }) => {
                   <Text style={[styles.countryLabel, { color: colors.textSecColor }]}>
                     Country
                   </Text>
-                  <TouchableOpacity
-                    style={[styles.countryBtn, {
-                      borderColor: colors.dividerColor,
-                      backgroundColor: colors.bgCard,
-                    }]}
-                    onPress={() => setShowCountryPicker(true)}
-                    activeOpacity={0.8}>
-                    <Text style={styles.countryFlag}>{countryFlag}</Text>
-                    <Text style={[styles.countryName, { color: colors.textBlack }]}>
-                      {country}
-                    </Text>
-                    <Ionicons
-                      name="chevron-down"
-                      size={18}
-                      color={colors.textSecColor}
-                    />
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.countryBtn,
+                        {
+                          borderColor: colors.dividerColor,
+                          backgroundColor: colors.bgLight,
+                        },
+                      ]}
+                      onPress={() => setShowCountryPicker(true)}
+                      activeOpacity={0.8}>
+                      <Text style={styles.countryFlag}>{countryFlag}</Text>
+                      <Text style={[styles.countryName, { color: colors.textBlack }]}>
+                        {country}
+                      </Text>
+                      <Ionicons name="chevron-down" size={18} color={colors.textSecColor} />
+                    </TouchableOpacity>
                 </View>
 
                 <CountryPicker
@@ -444,13 +485,19 @@ const SignupScreen = ({ navigation }) => {
                   </View>
                 )}
 
-                <TouchableOpacity
-                  style={[styles.nextBtn, { backgroundColor: accentColor }]}
-                  onPress={handleNext}
-                  activeOpacity={0.85}>
-                  <Text style={styles.nextBtnText}>Review Details</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#fff" />
-                </TouchableOpacity>
+                <LinearGradient
+                  colors={[colors.primaryColor1, colors.primaryColor1b]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.nextBtn, { padding: 0 }]}>
+                  <TouchableOpacity
+                    style={styles.nextBtnInner}
+                    onPress={handleNext}
+                    activeOpacity={0.85}>
+                    <Text style={styles.nextBtnText}>Review Details</Text>
+                    <Ionicons name="arrow-forward" size={20} color="#fff" />
+                  </TouchableOpacity>
+                </LinearGradient>
               </View>
             )}
 
@@ -458,6 +505,8 @@ const SignupScreen = ({ navigation }) => {
             {currentStep === 3 && (
               <View style={[styles.formCard, {
                 backgroundColor: colors.bgCard,
+                borderWidth: isDark ? 1 : 0,                             
+                borderColor: isDark ? colors.dividerColor : 'transparent',
                 ...shadows.card,
               }]}>
                 {/* Review Header */}
@@ -490,7 +539,7 @@ const SignupScreen = ({ navigation }) => {
                 />
                 <ReviewRow
                   label="Country"
-                  value={`${countryFlag} ${country}`}
+                  value={`${countryFlag} ${country}`}   
                   step={2}
                 />
                 <ReviewRow
@@ -507,7 +556,7 @@ const SignupScreen = ({ navigation }) => {
                 {/* Security Notice */}
                 <View style={[styles.securityNotice, {
                   backgroundColor: colors.bgLight,
-                  borderColor: '#E0E7FF',
+                  borderColor: isDark ? colors.dividerColor : '#E0E7FF',
                 }]}>
                   <Ionicons
                     name="shield-checkmark-outline"
@@ -520,29 +569,29 @@ const SignupScreen = ({ navigation }) => {
                 </View>
 
                 {/* Submit Button */}
-                <TouchableOpacity
+                <LinearGradient
+                  colors={[colors.primaryColor1, colors.primaryColor1b]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
                   style={[
                     styles.submitBtn,
-                    { backgroundColor: accentColor },
                     (isBtnLoading || isButtonDisable) && { opacity: 0.7 },
-                  ]}
-                  onPress={handleRegister}
-                  disabled={isBtnLoading || isButtonDisable}
-                  activeOpacity={0.85}>
-                  {isBtnLoading ? (
-                    <ActivityIndicator color="#fff" size={22} />
-                  ) : (
-                    <>
-                      <Ionicons
-                        name="checkmark-circle-outline"
-                        size={22}
-                        color="#fff"
-                        style={{ marginRight: spacing.sm }}
-                      />
-                      <Text style={styles.submitBtnText}>Create My Account</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                  ]}>
+                  <TouchableOpacity
+                    style={styles.nextBtnInner}
+                    onPress={handleRegister}
+                    disabled={isBtnLoading || isButtonDisable}
+                    activeOpacity={0.85}>
+                    {isBtnLoading ? (
+                      <ActivityIndicator color="#fff" size={22} />
+                    ) : (
+                      <>
+                        <Ionicons name="checkmark-circle-outline" size={22} color="#fff" />
+                        <Text style={styles.nextBtnText}>Create My Account</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </LinearGradient>
 
                 {/* Already have account */}
                 <View style={styles.signinRow}>
@@ -645,6 +694,32 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
+  headerIconBtn: {
+  width: 42,
+  height: 42,
+  borderRadius: radius.full,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+headerTextBtn: {
+  borderRadius: radius.full,
+  paddingHorizontal: spacing.md,   
+  paddingVertical: spacing.xs,
+  height: 42,
+  justifyContent: 'center',
+  alignItems: 'center',
+  minWidth: 42,                    
+},
+
+  nextBtnInner: {
+  flexDirection: 'row',
+  justifyContent: 'center',
+  alignItems: 'center',
+  height: 54,
+  gap: spacing.sm,
+  width: '100%',
+},
+
   // Step Indicator
   stepIndicatorWrapper: {
     borderRadius: radius.lg,
@@ -674,7 +749,7 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     fontFamily: '_semiBold',
-    fontSize: typography.xs,
+    fontSize: typography.sm,
     lineHeight: 16,
   },
   stepLine: {
@@ -784,6 +859,7 @@ const styles = StyleSheet.create({
   nextBtnText: {
     fontFamily: '_bold',
     fontSize: typography.lg,
+    color: '#fff', 
   },
 
   // Review
@@ -864,6 +940,7 @@ const styles = StyleSheet.create({
   submitBtnText: {
     fontFamily: '_bold',
     fontSize: typography.lg,
+    color: '#fff', 
   },
 
   // Sign In Row

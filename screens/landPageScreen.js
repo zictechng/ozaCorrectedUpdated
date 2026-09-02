@@ -2,7 +2,7 @@
   useContext, useEffect, useState, useRef, useCallback,
 } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, StatusBar,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar,
   Dimensions, Animated, FlatList, Image, PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -100,20 +100,26 @@ const SLIDES = [
 // Shows a realistic app UI preview per slide
 // ─────────────────────────────────────────────────
 const FloatingCard = ({ data, accentColor }) => (
-  <View style={styles.floatingCard}>
-    {/* Card shimmer top bar */}
+  <View style={[
+    styles.floatingCard,
+    { backgroundColor: '#fff' },                        // ✅ always white — card on gradient
+  ]}>
     <View style={styles.cardTopBar}>
       <View style={[styles.cardDot, { backgroundColor: accentColor }]} />
       <View style={[styles.cardDot, { backgroundColor: accentColor, opacity: 0.5 }]} />
       <View style={[styles.cardDot, { backgroundColor: accentColor, opacity: 0.3 }]} />
     </View>
 
-    {/* Card content */}
-    <Text style={styles.cardLabel}>{data.label}</Text>
-    <Text style={[styles.cardAmount, { color: accentColor }]}>{data.amount}</Text>
-    <Text style={styles.cardSub}>{data.sub}</Text>
+    <Text style={[styles.cardLabel, { color: '#6B7280' }]}>         
+      {data.label}
+    </Text>
+    <Text style={[styles.cardAmount, { color: accentColor }]}>
+      {data.amount}
+    </Text>
+    <Text style={[styles.cardSub, { color: '#9CA3AF' }]}>       
+      {data.sub}
+    </Text>
 
-    {/* Badge */}
     <View style={[styles.cardBadge, { backgroundColor: data.badgeColor + '20' }]}>
       <View style={[styles.cardBadgeDot, { backgroundColor: data.badgeColor }]} />
       <Text style={[styles.cardBadgeText, { color: data.badgeColor }]}>
@@ -154,7 +160,10 @@ const SocialProof = ({ colors }) => (
           key={i}
           style={[
             styles.stackAvatar,
-            { backgroundColor: color, marginLeft: i === 0 ? 0 : -10 },
+            { backgroundColor: color, marginLeft: i === 0 ? 0 : -10,
+              borderColor: colors.bgColor,
+             },
+            
           ]}>
           <Ionicons name="person" size={12} color="#fff" />
         </View>
@@ -162,7 +171,7 @@ const SocialProof = ({ colors }) => (
     </View>
     <View style={styles.socialProofInfo}>
       <Text style={[styles.socialProofTitle, { color: colors.textBlack }]}>
-        50,000+ users trust us
+        10,000+ users trust us
       </Text>
       <View style={styles.starsRow}>
         {[1, 2, 3, 4, 5].map((s) => (
@@ -326,6 +335,7 @@ const LandPageScreen = () => {
             <Text style={styles.skipBtnText}>Sign In</Text>
             <Ionicons name="arrow-forward" size={14} color="#fff" />
           </TouchableOpacity>
+          
         </View>
       </SafeAreaView>
 
@@ -358,7 +368,11 @@ const LandPageScreen = () => {
       />
 
       {/* ── Content Section ───────────────────── */}
-      <View style={[styles.contentSection, { backgroundColor: colors.bgColor }]}>
+      <ScrollView
+        style={[styles.contentSection, { backgroundColor: colors.bgColor }]}
+        contentContainerStyle={styles.contentInner}
+        showsVerticalScrollIndicator={false}
+        bounces={false}>
 
         {/* Animated slide text */}
         <Animated.View style={{ opacity: fadeAnim }}>
@@ -370,7 +384,7 @@ const LandPageScreen = () => {
           </Text>
         </Animated.View>
 
-        {/* Dot indicators — tappable */}
+        {/* Dot indicators */}
         <View style={styles.dotsRow}>
           {SLIDES.map((slide, i) => (
             <TouchableOpacity
@@ -387,18 +401,14 @@ const LandPageScreen = () => {
           ))}
         </View>
 
-        {/* Feature pills — change per slide */}
+        {/* Feature pills */}
         <View style={styles.pillsRow}>
           {currentSlide.pills.map((pill) => (
             <View key={pill} style={[
               styles.pill,
               { backgroundColor: currentSlide.accentColor + '15' },
             ]}>
-              <Ionicons
-                name="checkmark-circle"
-                size={14}
-                color={currentSlide.accentColor}
-              />
+              <Ionicons name="checkmark-circle" size={14} color={currentSlide.accentColor} />
               <Text style={[styles.pillText, { color: currentSlide.accentColor }]}>
                 {pill}
               </Text>
@@ -419,14 +429,10 @@ const LandPageScreen = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.secondaryBtn, {
-            borderColor: currentSlide.accentColor,
-          }]}
+          style={[styles.secondaryBtn, { borderColor: currentSlide.accentColor }]}
           onPress={() => navigation.navigate('Login')}
           activeOpacity={0.85}>
-          <Text style={[styles.secondaryBtnText, {
-            color: currentSlide.accentColor,
-          }]}>
+          <Text style={[styles.secondaryBtnText, { color: currentSlide.accentColor }]}>
             Sign In to Account
           </Text>
         </TouchableOpacity>
@@ -446,7 +452,9 @@ const LandPageScreen = () => {
             Privacy Policy
           </Text>
         </Text>
-      </View>
+
+        <View style={{ height: spacing.xl }} />
+      </ScrollView>
     </View>
   );
 };
@@ -475,6 +483,7 @@ const styles = StyleSheet.create({
     fontFamily: '_bold',
     fontSize: typography.xl,
     letterSpacing: 0.5,
+    color: '#fff',   
   },
   skipBtn: {
     flexDirection: 'row',
@@ -488,17 +497,20 @@ const styles = StyleSheet.create({
     fontFamily: '_semiBold',
     fontSize: typography.sm,
     lineHeight: 20,
+    color: '#fff', 
   },
 
   // Hero Pager
   heroPager: {
     height: heroHeight,
+    flexShrink: 0, 
   },
   heroGradient: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    minHeight: heroHeight,
   },
 
   // Decorative
@@ -518,6 +530,7 @@ const styles = StyleSheet.create({
     borderRadius: 90,
     bottom: -40,
     left: -40,
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   bgIconBox: {
     position: 'absolute',
@@ -587,8 +600,12 @@ const styles = StyleSheet.create({
   // Content Section
   contentSection: {
     flex: 1,
+    backgroundColor: 'transparent',
+  },
+  contentInner: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.lg,
+    paddingBottom: spacing.xxxl,
   },
   slideTitle: {
     fontFamily: '_bold',
@@ -667,7 +684,7 @@ const styles = StyleSheet.create({
   socialProofTitle: {
     fontFamily: '_semiBold',
     fontSize: typography.sm,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   starsRow: {
     flexDirection: 'row',
@@ -677,9 +694,9 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontFamily: '_regular',
-    fontSize: typography.xs,
+    fontSize: typography.sm,
     marginLeft: 4,
-    lineHeight: 16,
+    lineHeight: 18,
   },
 
   // Buttons
@@ -696,6 +713,7 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     fontFamily: '_bold',
     fontSize: typography.lg,
+    color: '#fff', 
   },
   secondaryBtn: {
     height: 50,

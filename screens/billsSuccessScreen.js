@@ -116,7 +116,7 @@ const BillsSuccessScreen = ({ navigation, route }) => {
           colors={gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.heroSection}>
+          style={[styles.heroSection, { backgroundColor: colors.bgColor }]}>
           <View style={styles.heroCircle1} />
           <View style={styles.heroCircle2} />
 
@@ -173,14 +173,14 @@ const BillsSuccessScreen = ({ navigation, route }) => {
 
           {/* ── Delivery Info ─────────────────────── */}
           {deliveryInfo && (
-            <View style={styles.deliveryCard}>
+            <View style={[styles.deliveryCard, { backgroundColor: colors.bgLight, borderColor: colors.dividerColor }]}>
               <Ionicons name="send-outline" size={18} color={colors.primaryColor1} />
-              <Text style={styles.deliveryText}>{deliveryInfo}</Text>
+              <Text style={[styles.deliveryText, { color: colors.textSecColor }]}>{deliveryInfo}</Text>
             </View>
           )}
 
           {/* ── Transaction Receipt ───────────────── */}
-          <View style={styles.receiptCard}>
+          <View style={[styles.receiptCard, { backgroundColor: colors.bgCard }]}>
             <View style={styles.receiptHeader}>
               <Text style={styles.receiptTitle}>Transaction Receipt</Text>
               <TouchableOpacity
@@ -213,11 +213,11 @@ const BillsSuccessScreen = ({ navigation, route }) => {
           </View>
 
           {/* ── Coins Earned Notice ───────────────── */}
-          <View style={styles.coinsCard}>
+          <View style={[styles.coinsCard, { backgroundColor: colors.bgCard }]}>
             <Text style={styles.coinsEmoji}>🪙</Text>
             <View style={styles.coinsInfo}>
-              <Text style={styles.coinsTitle}>Coins Earned!</Text>
-              <Text style={styles.coinsDesc}>
+              <Text style={[styles.coinsTitle, { color: colors.textBlack }]}>Coins Earned!</Text>
+              <Text style={[styles.coinsDesc, { color: colors.textSecColor }]}>
                 You have earned coins for this transaction.
                 Check your rewards wallet to see your balance.
               </Text>

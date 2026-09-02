@@ -7,16 +7,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import moment from 'moment';
 
-import { gs, colors, spacing, radius, typography, shadows } from '../styles';
+import { gs, spacing, radius, typography, shadows } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
 import { AuthContext } from '../contextAPI/authContext';
 import {
   CheckRegistrationStage,
-  ProfileImage,
   ShowLogoutModal,
 } from '../components/controls';
 import FirstWord from '../components/firstWord';
@@ -25,16 +25,11 @@ import StatCard from '../components/StatCard';
 import MenuItem from '../components/MenuItem';
 import InfoRow from '../components/InfoRow';
 import CoinDisplay from '../components/CoinDisplay';
-import { getUserTier, getNextTier, getTierProgress, getCoinsToNextTier } from '../constants/tierSystem';
+import { getUserTier } from '../constants/tierSystem';
 
-// ─────────────────────────────────────────────────
-// TIER SYSTEM
-// ─────────────────────────────────────────────────
-
-
-// ── Main Profile Screen ───────────────────────────
 const ProfileScreen = ({ navigation }) => {
   const isFocused = useIsFocused();
+  const { colors, isDark } = useThemeStyles();
   const {
     userInfo, setUserInfo,
     userToken,
@@ -53,7 +48,6 @@ const ProfileScreen = ({ navigation }) => {
   const checkRegStage = CheckRegistrationStage();
   const userTier = getUserTier(userCoins);
 
-  // ── Refresh User Details ──────────────────────
   const RefreshUserDetails = async () => {
     try {
       const res = await client.get(
@@ -69,7 +63,6 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  // ── Fetch Business Rate ───────────────────────
   const fetchBusinessRate = async () => {
     try {
       const res = await client.get('/api/bonus_rate');
@@ -82,20 +75,15 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  // ── Fetch Coin Settings & User Coins ──────────
   const fetchCoinData = async () => {
     try {
       const res = await client.get('/api/rewards_settings');
-      if (res.data.msg === '200') {
-        setCoinSettings(res.data.settings);
-      }
+      if (res.data.msg === '200') setCoinSettings(res.data.settings);
       const coinsRes = await client.get(
         '/api/user_coins/' + userInfo?.userData?._id,
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
-      if (coinsRes.data.msg === '200') {
-        setUserCoins(coinsRes.data.coins || 0);
-      }
+      if (coinsRes.data.msg === '200') setUserCoins(coinsRes.data.coins || 0);
     } catch (error) {
       console.log('Coin data error:', error.message);
     }
@@ -106,9 +94,7 @@ const ProfileScreen = ({ navigation }) => {
       RefreshUserDetails();
       fetchBusinessRate();
       fetchCoinData();
-      if (checkRegStage === false) {
-        setCompleteRegData(true);
-      }
+      if (checkRegStage === false) setCompleteRegData(true);
     }
   }, [isFocused]);
 
@@ -118,16 +104,12 @@ const ProfileScreen = ({ navigation }) => {
       .finally(() => setIsRefreshing(false));
   }, []);
 
-  // ── Copy Referral Code ────────────────────────
   const copyReferralCode = async () => {
     try {
       const appName = 'OtaMobile';
-      const bonus = businessRate?.signup_bonus_rate
-        ? `$${businessRate.signup_bonus_rate}`
-        : 'a bonus';
+      const bonus = businessRate?.signup_bonus_rate ? `$${businessRate.signup_bonus_rate}` : 'a bonus';
       const message = `${appName} — earn ${bonus} instantly!\nUse my referral code: ${userInfo?.userData?.tag_id}\nDownload: https://ozaapp.com`;
       await Clipboard.setStringAsync(message);
-
       if (Platform.OS === 'android') {
         ToastAndroid.show('Referral code copied! Share it to earn rewards 🎉', ToastAndroid.SHORT);
       } else {
@@ -138,7 +120,6 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  // ── Handle Logout ─────────────────────────────
   const handleLogout = async () => {
     setIsLoggingOut(true);
     setShowLogoutModal(false);
@@ -151,30 +132,28 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  // ── Coin Value Calculation ────────────────────
   const coinNgnValue = coinSettings?.coin_ngn_value || 1;
   const coinUsdValue = coinSettings?.coin_usd_value || 0.001;
-  const totalNgn = (userCoins * coinNgnValue).toLocaleString();
-  const totalUsd = (userCoins * coinUsdValue).toFixed(4);
-
-  // ── KYC Status ───────────────────────────────
   const isVerified = userInfo?.userData?.acct_approved_status === 'Approved';
   const isComplete = checkRegStage === 'true';
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgColor} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.bgColor}
+      />
 
       {/* ── Header ─────────────────────────────── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
         <TouchableOpacity
-          style={gs.homeSideMenu}
+          style={[styles.headerBtn, { backgroundColor: colors.bgLight }]}
           onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Profile</Text>
+        <Text style={[styles.headerTitle, { color: colors.textBlack }]}>My Profile</Text>
         <TouchableOpacity
-          style={gs.homeSideMenu}
+          style={[styles.headerBtn, { backgroundColor: colors.bgLight }]}
           onPress={() => navigation.navigate('settingScreen')}>
           <Ionicons name="settings-outline" size={22} color={colors.primaryColor1} />
         </TouchableOpacity>
@@ -201,7 +180,6 @@ const ProfileScreen = ({ navigation }) => {
           <View style={styles.heroCircle1} />
           <View style={styles.heroCircle2} />
 
-          {/* Avatar */}
           <View style={styles.avatarSection}>
             <View style={styles.avatarWrapper}>
               {userInfo?.userData?.profile_photo ? (
@@ -210,19 +188,15 @@ const ProfileScreen = ({ navigation }) => {
                   style={styles.avatarImage}
                 />
               ) : (
-                <View style={styles.avatarPlaceholder}>
+                <View style={[styles.avatarPlaceholder, { backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.4)' }]}>
                   <Text style={styles.avatarInitials}>
                     {myName?.charAt(0)?.toUpperCase() || 'U'}
                   </Text>
                 </View>
               )}
               {isVerified && (
-                <View style={styles.verifiedBadge}>
-                  <MaterialCommunityIcons
-                    name="check-decagram"
-                    size={20}
-                    color={colors.successColor}
-                  />
+                <View style={[styles.verifiedBadge, { backgroundColor: colors.bgCard }]}>
+                  <MaterialCommunityIcons name="check-decagram" size={20} color={colors.successColor} />
                 </View>
               )}
             </View>
@@ -236,35 +210,31 @@ const ProfileScreen = ({ navigation }) => {
               </Text>
               <View style={styles.heroStatusRow}>
                 {isVerified ? (
-                  <View style={styles.verifiedPill}>
-                    <Ionicons name="shield-checkmark" size={12} color={colors.successColor} />
-                    <Text style={styles.verifiedPillText}>Verified Account</Text>
+                  <View style={[styles.verifiedPill, { backgroundColor: 'rgba(16,185,129,0.2)' }]}>
+                    <Ionicons name="shield-checkmark" size={12} color="#10B981" />
+                    <Text style={[styles.verifiedPillText, { color: '#10B981' }]}>Verified Account</Text>
                   </View>
                 ) : (
-                  <View style={styles.unverifiedPill}>
-                    <Ionicons name="alert-circle" size={12} color={colors.warningColor} />
-                    <Text style={styles.unverifiedPillText}>Unverified</Text>
+                  <View style={[styles.unverifiedPill, { backgroundColor: 'rgba(245,158,11,0.2)' }]}>
+                    <Ionicons name="alert-circle" size={12} color="#F59E0B" />
+                    <Text style={[styles.unverifiedPillText, { color: '#e9c382' }]}>Unverified</Text>
                   </View>
                 )}
               </View>
             </View>
           </View>
 
-          {/* Tier Badge */}
           <View style={[styles.tierBadge, { backgroundColor: userTier.color + '30' }]}>
             <Text style={styles.tierEmoji}>{userTier.icon}</Text>
-            <Text style={[styles.tierName, { color: '#fff' }]}>
-              {userTier.name} Tier
-            </Text>
+            <Text style={styles.tierName}>{userTier.name} Tier</Text>
           </View>
         </LinearGradient>
-        
 
         {/* ── Stats Row ────────────────────────── */}
         <View style={styles.statsRow}>
           <StatCard
             label="Member Since"
-            value={moment(userInfo?.userData?.createdAt).format('MMM YYYY')}
+            value={moment(userInfo?.userData?.createdOn).format('MMM YYYY')}
             icon="calendar-outline"
             color={colors.primaryColor1}
           />
@@ -283,8 +253,10 @@ const ProfileScreen = ({ navigation }) => {
         </View>
 
         {/* ── Personal Information ──────────────── */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.bgCard }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textBlack, borderBottomColor: colors.dividerColor }]}>
+            Personal Information
+          </Text>
           <InfoRow icon="person-outline" label="Full Name" value={userInfo?.userData?.display_name} />
           <InfoRow icon="phone-portrait-outline" label="Phone Number" value={userInfo?.userData?.phone} />
           <InfoRow icon="mail-outline" label="Email Address" value={userInfo?.userData?.email} />
@@ -297,38 +269,43 @@ const ProfileScreen = ({ navigation }) => {
         </View>
 
         {/* ── Coins & Rewards Card ──────────────── */}
-          <View style={styles.coinsCard}>
-            <View style={styles.coinsHeader}>
-              <View style={styles.coinsHeaderLeft}>
-                <Text style={styles.coinsSectionTitle}>🪙 My Coins & Rewards</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.coinsHistoryBtn}
-                onPress={() => navigation.navigate('referrals')}>
-                <Text style={styles.coinsHistoryBtnText}>History</Text>
-                <Ionicons name="chevron-forward" size={14} color={colors.primaryColor1} />
-              </TouchableOpacity>
+        <View style={[styles.coinsCard, { backgroundColor: colors.bgCard }]}>
+          <View style={styles.coinsHeader}>
+            <View style={styles.coinsHeaderLeft}>
+              <Text style={[styles.coinsSectionTitle, { color: colors.textBlack }]}>
+                🪙 My Coins & Rewards
+              </Text>
             </View>
-            <View style={styles.coinsDivider} />
-            <CoinDisplay
-              coins={userCoins}
-              coinNgnValue={coinNgnValue}
-              coinUsdValue={coinUsdValue}
-            />
+            <TouchableOpacity
+              style={styles.coinsHistoryBtn}
+              onPress={() => navigation.navigate('referrals')}>
+              <Text style={[styles.coinsHistoryBtnText, { color: colors.primaryColor1 }]}>History</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.primaryColor1} />
+            </TouchableOpacity>
           </View>
+          <View style={[styles.coinsDivider, { backgroundColor: colors.dividerColor }]} />
+          <CoinDisplay
+            coins={userCoins}
+            coinNgnValue={coinNgnValue}
+            coinUsdValue={coinUsdValue}
+          />
+        </View>
 
         {/* ── Referral Card ─────────────────────── */}
-        <View style={styles.referralCard}>
+        <View style={[styles.referralCard, {
+          backgroundColor: colors.bgCard,
+          borderColor: colors.dividerColor,
+        }]}>
           <View style={styles.referralHeader}>
             <Ionicons name="people-outline" size={20} color={colors.primaryColor1} />
-            <Text style={styles.referralTitle}>My Referral Code</Text>
+            <Text style={[styles.referralTitle, { color: colors.textBlack }]}>My Referral Code</Text>
           </View>
-          <View style={styles.referralCodeRow}>
-            <Text style={styles.referralCode}>
+          <View style={[styles.referralCodeRow, { backgroundColor: colors.bgLight }]}>
+            <Text style={[styles.referralCode, { color: colors.primaryColor1 }]}>
               {userInfo?.userData?.tag_id || '—'}
             </Text>
             <TouchableOpacity
-              style={styles.copyBtn}
+              style={[styles.copyBtn, { backgroundColor: colors.primaryColor1 }]}
               onPress={copyReferralCode}
               activeOpacity={0.8}>
               <Ionicons name="copy-outline" size={16} color="#fff" />
@@ -336,7 +313,7 @@ const ProfileScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
           {businessRate?.signup_bonus_rate && (
-            <Text style={styles.referralHint}>
+            <Text style={[styles.referralHint, { color: colors.textSecColor }]}>
               🎁 You and your friends earn ${businessRate.signup_bonus_rate} when they sign up with your code
             </Text>
           )}
@@ -345,16 +322,19 @@ const ProfileScreen = ({ navigation }) => {
         {/* ── Incomplete Registration Banner ─────── */}
         {!isComplete && (
           <TouchableOpacity
-            style={styles.incompleteBanner}
+            style={[styles.incompleteBanner, {
+              backgroundColor: colors.warningLight,
+              borderColor: '#FDE68A',
+            }]}
             onPress={() => navigation.navigate('SignupSteps')}
             activeOpacity={0.85}>
             <View style={styles.incompleteBannerLeft}>
               <Ionicons name="alert-circle" size={22} color={colors.warningColor} />
               <View style={styles.incompleteBannerInfo}>
-                <Text style={styles.incompleteBannerTitle}>
+                <Text style={[styles.incompleteBannerTitle, { color: colors.textBlack }]}>
                   Complete Your Profile
                 </Text>
-                <Text style={styles.incompleteBannerDesc}>
+                <Text style={[styles.incompleteBannerDesc, { color: colors.textSecColor }]}>
                   Verify your account to remove restrictions and unlock all features
                 </Text>
               </View>
@@ -364,8 +344,10 @@ const ProfileScreen = ({ navigation }) => {
         )}
 
         {/* ── Account Actions ───────────────────── */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Account</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.bgCard }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textBlack, borderBottomColor: colors.dividerColor }]}>
+            Account
+          </Text>
           <MenuItem
             icon="card-outline"
             label="Bank Details"
@@ -410,8 +392,10 @@ const ProfileScreen = ({ navigation }) => {
         </View>
 
         {/* ── Settings & Support ────────────────── */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Settings & Support</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.bgCard }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textBlack, borderBottomColor: colors.dividerColor }]}>
+            Settings & Support
+          </Text>
           <MenuItem
             icon="lock-closed-outline"
             label="Security & Privacy"
@@ -426,7 +410,7 @@ const ProfileScreen = ({ navigation }) => {
             subtitle="Manage your notification preferences"
             iconBg="#FFEDD5"
             iconColor={colors.warningColor}
-            onPress={() => navigation.navigate('settingScreen')}
+            onPress={() => navigation.navigate('messages')}
           />
           <MenuItem
             icon="chatbox-outline"
@@ -464,7 +448,10 @@ const ProfileScreen = ({ navigation }) => {
 
         {/* ── Logout Button ─────────────────────── */}
         <TouchableOpacity
-          style={styles.logoutBtn}
+          style={[styles.logoutBtn, {
+            borderColor: colors.dangerColor,
+            backgroundColor: colors.lightRed,
+          }]}
           onPress={() => setShowLogoutModal(true)}
           activeOpacity={0.85}
           disabled={isLoggingOut}>
@@ -472,24 +459,16 @@ const ProfileScreen = ({ navigation }) => {
             <ActivityIndicator color={colors.dangerColor} size={22} />
           ) : (
             <>
-              <Ionicons
-                name="log-out-outline"
-                size={22}
-                color={colors.dangerColor}
-                style={{ marginRight: spacing.sm }}
-              />
-              <Text style={styles.logoutBtnText}>Sign Out</Text>
+              <Ionicons name="log-out-outline" size={22} color={colors.dangerColor} style={{ marginRight: spacing.sm }} />
+              <Text style={[styles.logoutBtnText, { color: colors.dangerColor }]}>Sign Out</Text>
             </>
           )}
         </TouchableOpacity>
 
-        {/* ── App Version ───────────────────────── */}
-        <Text style={styles.appVersion}>OtaMobile v2.0.1</Text>
-
+        <Text style={[styles.appVersion, { color: colors.textSecColor }]}>OtaMobile v2.0.1</Text>
         <View style={{ height: spacing.xxxl }} />
       </ScrollView>
 
-      {/* ── Logout Confirmation Modal ─────────── */}
       <ShowLogoutModal
         openModal={showLogoutModal}
         modalTitle="Sign Out"
@@ -505,12 +484,8 @@ const ProfileScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: spacing.xxxl,
-  },
+  container: { flex: 1 },
+  scrollContent: { paddingBottom: spacing.xxxl },
 
   // Header
   header: {
@@ -523,6 +498,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: '_bold',
     fontSize: typography.xl,
+  },
+  headerBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   // Hero Card
@@ -541,6 +523,7 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 80,
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   heroCircle2: {
     position: 'absolute',
@@ -549,6 +532,7 @@ const styles = StyleSheet.create({
     width: 110,
     height: 110,
     borderRadius: 55,
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   avatarSection: {
     flexDirection: 'row',
@@ -564,6 +548,7 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: radius.full,
     borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.4)',
   },
   avatarPlaceholder: {
     width: 72,
@@ -576,6 +561,7 @@ const styles = StyleSheet.create({
   avatarInitials: {
     fontFamily: '_bold',
     fontSize: typography.xxxl,
+    color: '#fff',
   },
   verifiedBadge: {
     position: 'absolute',
@@ -584,23 +570,21 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     padding: 1,
   },
-  heroInfo: {
-    flex: 1,
-  },
+  heroInfo: { flex: 1 },
   heroName: {
     fontFamily: '_bold',
     fontSize: typography.xl,
+    color: '#fff',
     marginBottom: 2,
   },
   heroEmail: {
     fontFamily: '_regular',
-    fontSize: typography.sm,
+    fontSize: typography.base,
+    color: 'rgba(255,255,255,0.8)',
     marginBottom: spacing.sm,
     lineHeight: 20,
   },
-  heroStatusRow: {
-    flexDirection: 'row',
-  },
+  heroStatusRow: { flexDirection: 'row' },
   verifiedPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -611,7 +595,7 @@ const styles = StyleSheet.create({
   },
   verifiedPillText: {
     fontFamily: '_semiBold',
-    fontSize: typography.xs,
+    fontSize: typography.sm,
   },
   unverifiedPill: {
     flexDirection: 'row',
@@ -623,7 +607,7 @@ const styles = StyleSheet.create({
   },
   unverifiedPillText: {
     fontFamily: '_semiBold',
-    fontSize: typography.xs,
+    fontSize: typography.sm,
   },
   tierBadge: {
     flexDirection: 'row',
@@ -634,15 +618,53 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     gap: spacing.xs,
   },
-  tierEmoji: {
-    fontSize: 16,
-  },
+  tierEmoji: { fontSize: 16 },
   tierName: {
     fontFamily: '_bold',
     fontSize: typography.sm,
+    color: '#fff',
+  },
+
+  // Stats Row
+  statsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+
+  // Section Card
+  sectionCard: {
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+    marginTop: spacing.xs,
+    ...shadows.card,
+  },
+  sectionTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
 
   // Coins Card
+  coinsCard: {
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+  coinsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  coinsHeaderLeft: { flex: 1 },
   coinsSectionTitle: {
     fontFamily: '_bold',
     fontSize: typography.lg,
@@ -661,23 +683,7 @@ const styles = StyleSheet.create({
     height: 1,
     marginBottom: spacing.lg,
   },
-  coinsCard: {
-    borderRadius: radius.xl,
-    padding: spacing.xl,
-    marginHorizontal: spacing.xl,
-    marginTop: 15,
-    marginBottom: spacing.lg,
-    ...shadows.card,
-  },
-  coinsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.md,
-  },
-  coinsHeaderLeft: {
-    flex: 1,
-  },
+
   // Referral Card
   referralCard: {
     borderRadius: radius.xl,
@@ -723,6 +729,7 @@ const styles = StyleSheet.create({
   copyBtnText: {
     fontFamily: '_semiBold',
     fontSize: typography.sm,
+    color: '#fff',
   },
   referralHint: {
     fontFamily: '_regular',
@@ -747,9 +754,7 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.sm,
   },
-  incompleteBannerInfo: {
-    flex: 1,
-  },
+  incompleteBannerInfo: { flex: 1 },
   incompleteBannerTitle: {
     fontFamily: '_bold',
     fontSize: typography.base,
@@ -761,25 +766,6 @@ const styles = StyleSheet.create({
     fontSize: typography.base,
     lineHeight: 22,
   },
-
-  // Section Card
-  sectionCard: {
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    marginHorizontal: spacing.xl,
-    marginBottom: spacing.lg,
-    ...shadows.card,
-    marginTop: 15,
-  },
-  sectionTitle: {
-    fontFamily: '_bold',
-    fontSize: typography.lg,
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-
-  // Info Row
 
   // Logout
   logoutBtn: {

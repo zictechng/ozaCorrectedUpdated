@@ -25,19 +25,22 @@ import TransactionStatusBadge from '../components/TransactionStatusBadge';
 // ── Get transaction icon config ───────────────────
 const getTransactionIcon = (nature = '', type = '') => {
   const n = nature.toLowerCase();
-  if (n.includes('paypal'))      return { icon: 'logo-paypal',          color: '#003087', bg: '#DBEAFE' };
-  if (n.includes('payoneer'))    return { icon: 'card-outline',          color: '#FF4800', bg: '#FEE2E2' };
-  if (n.includes('bitcoin'))     return { icon: 'logo-bitcoin',          color: '#F7931A', bg: '#FEF3C7' };
-    if (n.includes('electric'))    return { icon: 'flash',                 color: '#F59E0B', bg: '#FEF3C7' };
-  if (n.includes('data') || n.includes('airtime')) return { icon: 'wifi', color: '#3B82F6', bg: '#DBEAFE' };
-  if (n.includes('tv') || n.includes('cable'))     return { icon: 'tv',  color: '#8B5CF6', bg: '#EDE9FE' };
+  if (n.includes('paypal'))      return { icon: 'logo-paypal',        color: '#003087', bg: '#DBEAFE' };
+  if (n.includes('payoneer'))    return { icon: 'card-outline',        color: '#FF4800', bg: '#FEE2E2' };
+  if (n.includes('bitcoin'))     return { icon: 'logo-bitcoin',        color: '#F7931A', bg: '#FEF3C7' };
+  if (n.includes('electric'))    return { icon: 'flash',               color: '#F59E0B', bg: '#FEF3C7' };
+  if (n.includes('data') || n.includes('airtime'))
+                                 return { icon: 'wifi',                color: '#3B82F6', bg: '#DBEAFE' };
+  if (n.includes('tv') || n.includes('cable'))
+                                 return { icon: 'tv',                  color: '#8B5CF6', bg: '#EDE9FE' };
   if (n.includes('waec') || n.includes('neco') || n.includes('jamb') || n.includes('nabteb'))
-    return { icon: 'school', color: '#10B981', bg: '#D1FAE5' };
+                                 return { icon: 'school',              color: '#10B981', bg: '#D1FAE5' };
   if (n.includes('fund') || n.includes('deposit'))
-    return { icon: 'arrow-down-circle', color: '#10B981', bg: '#D1FAE5' };
-    if (n.includes('withdraw'))    return { icon: 'arrow-up-circle',       color: '#EF4444', bg: '#FEE2E2' };
-    return { icon: 'gift', color: '#F0A500', bg: '#FFF3CD' };
-  return type === 'Debit'
+                                 return { icon: 'arrow-down-circle',   color: '#10B981', bg: '#D1FAE5' };
+  if (n.includes('withdraw'))    return { icon: 'arrow-up-circle',     color: '#EF4444', bg: '#FEE2E2' };
+  if (n.includes('bonus') || n.includes('reward'))
+                                 return { icon: 'gift',                color: '#F0A500', bg: '#FFF3CD' };
+  return type === 'Debit'                                      
     ? { icon: 'arrow-up-outline',   color: '#EF4444', bg: '#FEE2E2' }
     : { icon: 'arrow-down-outline', color: '#10B981', bg: '#D1FAE5' };
 };
@@ -134,12 +137,12 @@ const TransactionsDetails = ({ route, navigation }) => {
           <TouchableOpacity style={gs.homeSideMenu} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Transaction Details</Text>
+          <Text style={[styles.headerTitle, { color: colors.textBlack }]}>Transaction Details</Text>
           <View style={[gs.homeSideMenu, { opacity: 0 }]} />
         </View>
         <View style={styles.loadingState}>
           <ActivityIndicator size="large" color={colors.primaryColor1} />
-          <Text style={styles.loadingText}>Loading transaction details...</Text>
+          <Text style={[styles.loadingText, { color: colors.textSecColor }]}>Loading transaction details...</Text>
         </View>
       </SafeAreaView>
     );
@@ -148,23 +151,26 @@ const TransactionsDetails = ({ route, navigation }) => {
   // ── Error State ───────────────────────────────
   if (error || !dataDetails) {
     return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.bgColor} />
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.bgColor}
+      />
         <View style={styles.header}>
           <TouchableOpacity style={gs.homeSideMenu} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Transaction Details</Text>
+          <Text style={[styles.headerTitle, { color: colors.textBlack }]}>Transaction Details</Text>
           <View style={[gs.homeSideMenu, { opacity: 0 }]} />
         </View>
         <View style={styles.errorState}>
-          <View style={styles.errorIconBox}>
+          <View style={[styles.errorIconBox, { backgroundColor: colors.lightRed }]}>
             <Ionicons name="alert-circle-outline" size={48} color={colors.dangerColor} />
           </View>
-          <Text style={styles.errorTitle}>Could Not Load</Text>
-          <Text style={styles.errorDesc}>{error}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={loadTransactionDetails}>
-            <Text style={styles.retryBtnText}>Try Again</Text>
+          <Text style={[styles.errorTitle, { color: colors.textBlack }]}>Could Not Load</Text>
+          <Text style={[styles.errorDesc, { color: colors.textSecColor }]}>{error}</Text>
+          <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.primaryColor1 }]} onPress={loadTransactionDetails}>
+            <Text style={[styles.retryBtnText, { color: '#fff' }]}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -172,8 +178,11 @@ const TransactionsDetails = ({ route, navigation }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgColor} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+    <StatusBar
+      barStyle={isDark ? 'light-content' : 'dark-content'}
+      backgroundColor={colors.bgColor}
+    />
 
       {/* ── Header ───────────────────────────── */}
       <View style={styles.header}>
@@ -182,7 +191,7 @@ const TransactionsDetails = ({ route, navigation }) => {
           onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Transaction Details</Text>
+        <Text style={[styles.headerTitle, { color: colors.textBlack }]}>Transaction Details</Text>
         <TouchableOpacity
           style={gs.homeSideMenu}
           onPress={handleShareReceipt}>
@@ -206,35 +215,46 @@ const TransactionsDetails = ({ route, navigation }) => {
           <View style={styles.heroCircle2} />
 
           {/* Transaction Icon */}
-          <View style={styles.heroIconBox}>
-            <Ionicons name={iconInfo.icon} size={32} color={isDebit ? '#EF4444' : colors.primaryColor1} />
+          <View style={[
+            styles.heroIconBox,
+            { backgroundColor: 'rgba(255,255,255,0.95)' },
+          ]}>
+            <Ionicons
+              name={iconInfo.icon}
+              size={32}
+              color={isDebit ? '#EF4444' : colors.primaryColor1}
+            />
           </View>
 
-          {/* Amount */}
-          <Text style={styles.heroLabel}>
+          {/* Nature */}
+          <Text style={[styles.heroLabel, { color: 'rgba(255,255,255,0.85)' }]}>
             {dataDetails.transac_nature}
           </Text>
-          <Text style={styles.heroAmount}>
+
+          {/* Amount — fixed JSX-in-Text crash */}
+          <Text style={[styles.heroAmount, { color: '#fff' }]}>           
             {isDebit ? '−' : '+'}
             {isDollar
-              ? <NumberDollarValueFormat value={dataDetails.amount} />
-              : <NumberValueFormat value={dataDetails.amount} />}
+              ? `$${Number(dataDetails.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : `₦${Number(dataDetails.amount || 0).toLocaleString('en-NG')}`}
           </Text>
 
-          {/* Status Badge */}
           <TransactionStatusBadge
             status={dataDetails.transaction_status}
             size="lg"
+            variant="onGradient"
           />
 
-          {/* Date */}
-          <Text style={styles.heroDate}>
+          <Text style={[styles.heroDate, { color: 'rgba(255,255,255,0.75)' }]}>
             {moment(dataDetails.creditOn).format('DD MMM YYYY • hh:mm A')}
           </Text>
         </LinearGradient>
 
         {/* ── Quick Actions ─────────────────────── */}
-        <View style={styles.quickActionsRow}>
+        <View style={[
+              styles.quickActionsRow,
+              { backgroundColor: colors.bgCard },                        
+            ]}>
           <TouchableOpacity
             style={styles.quickActionBtn}
             onPress={handleShareReceipt}
@@ -242,7 +262,7 @@ const TransactionsDetails = ({ route, navigation }) => {
             <View style={[styles.quickActionIcon, { backgroundColor: colors.bgLight }]}>
               <Ionicons name="share-outline" size={20} color={colors.primaryColor1} />
             </View>
-            <Text style={styles.quickActionLabel}>Share</Text>
+            <Text style={[styles.quickActionLabel, { color: colors.textSecColor }]}>Share</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -252,7 +272,7 @@ const TransactionsDetails = ({ route, navigation }) => {
             <View style={[styles.quickActionIcon, { backgroundColor: colors.bgLight }]}>
               <Ionicons name="copy-outline" size={20} color={colors.primaryColor1} />
             </View>
-            <Text style={styles.quickActionLabel}>Copy ID</Text>
+            <Text style={[styles.quickActionLabel, { color: colors.textSecColor }]}>Copy ID</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -262,7 +282,7 @@ const TransactionsDetails = ({ route, navigation }) => {
             <View style={[styles.quickActionIcon, { backgroundColor: colors.bgLight }]}>
               <Ionicons name="list-outline" size={20} color={colors.primaryColor1} />
             </View>
-            <Text style={styles.quickActionLabel}>History</Text>
+            <Text style={[styles.quickActionLabel, { color: colors.textSecColor }]}>History</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -272,7 +292,7 @@ const TransactionsDetails = ({ route, navigation }) => {
             <View style={[styles.quickActionIcon, { backgroundColor: colors.bgLight }]}>
               <Ionicons name="home-outline" size={20} color={colors.primaryColor1} />
             </View>
-            <Text style={styles.quickActionLabel}>Home</Text>
+            <Text style={[styles.quickActionLabel, { color: colors.textSecColor }]}>Home</Text>
           </TouchableOpacity>
         </View>
 
@@ -325,13 +345,14 @@ const TransactionsDetails = ({ route, navigation }) => {
         {/* ── Status & Dates ───────────────────── */}
         <SectionCard title="Status & Timeline">
           <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>Current Status</Text>
+            <Text style={[styles.statusLabel, { color: colors.textBlack }]}>Current Status</Text>
             <TransactionStatusBadge
               status={dataDetails.transaction_status}
               size="md"
+              variant="default" 
             />
           </View>
-          <View style={styles.sectionDivider} />
+          <View style={[styles.sectionDivider, { backgroundColor: colors.dividerColor }]} />
           <InfoRow
             icon="calendar-outline"
             label="Transaction Date"
@@ -353,19 +374,31 @@ const TransactionsDetails = ({ route, navigation }) => {
             label="Account Tag ID"
             value={dataDetails.acct_number}
           />
-          <View style={styles.txIdRow}>
-            <InfoRow
-              icon="barcode-outline"
-              label="Transaction ID"
-              value={dataDetails.tid}
-            />
-            <TouchableOpacity
-              style={styles.copyTxBtn}
-              onPress={handleCopyTxId}>
-              <Ionicons name="copy-outline" size={16} color={colors.primaryColor1} />
-              <Text style={styles.copyTxBtnText}>Copy</Text>
-            </TouchableOpacity>
-          </View>
+            <View>
+              <InfoRow
+                icon="barcode-outline"
+                label="Transaction ID"
+                value={dataDetails.tid}
+              />
+              <TouchableOpacity
+                style={[
+                    styles.copyTxBtn,
+                    {
+                      backgroundColor: colors.bgLight,
+                      alignSelf: 'flex-start',
+                      marginLeft: spacing.xl + spacing.sm,
+                      marginTop: spacing.sm,        
+                      marginBottom: spacing.lg,
+                    },
+                  ]}
+                onPress={handleCopyTxId}
+                activeOpacity={0.8}>
+                <Ionicons name="copy-outline" size={14} color={colors.primaryColor1} />
+                <Text style={[styles.copyTxBtnText, { color: colors.primaryColor1 }]}>
+                  Copy Transaction ID
+                </Text>
+              </TouchableOpacity>
+            </View>
           {dataDetails.pay_tran && dataDetails.pay_tran !== '' && (
             <InfoRow
               icon="receipt-outline"
@@ -378,19 +411,25 @@ const TransactionsDetails = ({ route, navigation }) => {
         {/* ── Upload Proof of Payment ───────────── */}
         {canUploadProof && (
           <SectionCard>
-            <View style={styles.uploadNotice}>
+            <View style={[
+                  styles.uploadNotice,
+                  {
+                    backgroundColor: colors.bgLight,                         
+                    borderColor: colors.warningColor,                       
+                  },
+                ]}>
               <Ionicons
                 name="information-circle-outline"
                 size={20}
                 color={colors.warningColor}
               />
-              <Text style={styles.uploadNoticeText}>
+              <Text style={[styles.uploadNoticeText, { color: colors.textSecColor }]}>
                 Payment proof has not been uploaded for this transaction.
                 Upload it to speed up processing.
               </Text>
             </View>
             <TouchableOpacity
-              style={styles.uploadBtn}
+              style={[styles.uploadBtn, { backgroundColor: colors.primaryColor1 }]}
               onPress={() => navigation.navigate('UploadPaymentProof', {
                 track_id: dataDetails.tid,
               })}
@@ -407,13 +446,13 @@ const TransactionsDetails = ({ route, navigation }) => {
         )}
 
         {/* ── Support Notice ───────────────────── */}
-        <View style={styles.supportCard}>
+        <View style={[styles.supportCard, { backgroundColor: colors.bgLight, borderColor: colors.dividerColor }]}>
           <Ionicons
             name="help-circle-outline"
             size={18}
             color={colors.primaryColor1}
           />
-          <Text style={styles.supportText}>
+          <Text style={[styles.supportText, { color: colors.textSecColor }]}>
             If you have any issues with this transaction, contact our
             support team with your Transaction ID for quick resolution.
           </Text>
@@ -611,17 +650,18 @@ const styles = StyleSheet.create({
   copyTxBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    gap: 4,
-  },
-  copyTxBtnText: {
-    fontFamily: '_semiBold',
-    fontSize: typography.xs,
-    
-  },
+    gap: 9,
+    marginTop: spacing.sm,
+  // remove any width/flex constraints
+},
+copyTxBtnText: {
+  fontFamily: '_semiBold',
+  fontSize: typography.sm,
+  lineHeight: 18,
+},
 
   // Upload Section
   uploadNotice: {

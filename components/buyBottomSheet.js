@@ -1,71 +1,108 @@
 ﻿import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { gs,colors } from '../styles';
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { spacing, radius, typography } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
+
 export default function BuyBottomSheet({
-    buttonStyle, 
-    titleStyle,
-    titleText,
-    buttonLabel_paypal,
-    buttonLabel_payooner,
-    buttonLabel_bitcoin, 
-    desText, 
-    iconType, 
-    onPress1, 
-    onPress2,
-    onPress3, 
-    imageSource, 
-    buttonTextStyle, 
-    imageStyle,
-    imageIconPaypal,
-    imageIconPayooner,
-    imageIconBitcoin
+  titleText,
+  titleStyle,
+  imageIconPaypal,
+  imageIconPayooner,
+  imageIconBitcoin,
+  buttonLabel_paypal,
+  buttonLabel_payooner,
+  buttonLabel_bitcoin,
+  onPress1,
+  onPress2,
+  onPress3,
+}) {
+  const { colors } = useThemeStyles();
 
-    }) 
-    {
   return (
-            <View>
-                <View style={{marginHorizontal:20, marginBottom:2}}>
-                    <Text style={titleStyle}>{titleText}</Text>
-                </View>
-                <ScrollView>
-                    <View style={{paddingVertical:5, marginHorizontal:20}}>
-                        <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textSecColor}}>What do you want to exchange today? Select option to get started</Text>
-                    </View>
+    <View style={styles.container}>
+      {/* Title */}
+      <Text style={[styles.title, { color: colors.textBlack }]}>{titleText}</Text>
+      <Text style={[styles.subtitle, { color: colors.textSecColor }]}>
+        What do you want to exchange today? Select an option to get started.
+      </Text>
 
-                        <View style={{marginHorizontal:10, marginBottom:20}}>
-                            <TouchableOpacity style={buttonStyle} onPress={onPress1}>
-                            <View style={{marginHorizontal:8, flexDirection:'row'}}>
-                                <Image source={imageIconPaypal} style={imageStyle} />
-                                <Text style={buttonTextStyle}>{buttonLabel_paypal}</Text>
-                            </View>
-                        </TouchableOpacity>
+      {/* Buttons */}
+      <View style={styles.buttonList}>
+        <TouchableOpacity
+          style={[styles.optionBtn, { backgroundColor: colors.bgLight, borderColor: colors.dividerColor }]}
+          onPress={onPress1}
+          activeOpacity={0.8}>
+          <Image source={imageIconPaypal} style={styles.optionImage} />
+          <Text style={[styles.optionLabel, { color: colors.textBlack }]}>{buttonLabel_paypal}</Text>
+          <Text style={[styles.optionArrow, { color: colors.textSecColor }]}>›</Text>
+        </TouchableOpacity>
 
-                        <TouchableOpacity style={buttonStyle} onPress={onPress2}>
-                            <View style={{marginHorizontal:8, flexDirection:'row'}}>
-                                <Image source={imageIconPayooner} style={imageStyle} />
-                                <Text style={buttonTextStyle}>{buttonLabel_payooner}</Text>
-                            </View>
-                        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.optionBtn, { backgroundColor: colors.bgLight, borderColor: colors.dividerColor }]}
+          onPress={onPress2}
+          activeOpacity={0.8}>
+          <Image source={imageIconPayooner} style={styles.optionImage} />
+          <Text style={[styles.optionLabel, { color: colors.textBlack }]}>{buttonLabel_payooner}</Text>
+          <Text style={[styles.optionArrow, { color: colors.textSecColor }]}>›</Text>
+        </TouchableOpacity>
 
-                        <TouchableOpacity style={buttonStyle} onPress={onPress3}>
-                            <View style={{marginHorizontal:8, flexDirection:'row'}}>
-                                <Image source={imageIconBitcoin} style={imageStyle} />
-                                <Text style={buttonTextStyle}>{buttonLabel_bitcoin}</Text>
-                            </View>
-                        </TouchableOpacity>
-                        </View>
-                        
-                </ScrollView>
-            </View>
+        <TouchableOpacity
+          style={[styles.optionBtn, { backgroundColor: colors.bgLight, borderColor: colors.dividerColor }]}
+          onPress={onPress3}
+          activeOpacity={0.8}>
+          <Image source={imageIconBitcoin} style={styles.optionImage} />
+          <Text style={[styles.optionLabel, { color: colors.textBlack }]}>{buttonLabel_bitcoin}</Text>
+          <Text style={[styles.optionArrow, { color: colors.textSecColor }]}>›</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
-
 const styles = StyleSheet.create({
-    action: {
-        marginTop: 20,
-        borderBottomColor: '#aaa',
-        paddingBottom: 5,
-        
-    },
-})
+  container: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xxxl,
+  },
+  title: {
+    fontFamily: '_bold',
+    fontSize: typography.xxl,
+    marginBottom: spacing.xs,
+  },
+  subtitle: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    lineHeight: 20,
+    marginBottom: spacing.lg,
+  },
+  buttonList: {
+    gap: spacing.md,
+  },
+  optionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
+  optionImage: {
+    width: 32,
+    height: 32,
+    resizeMode: 'contain',
+    borderRadius: radius.sm,
+  },
+  optionLabel: {
+    flex: 1,
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  optionArrow: {
+    fontFamily: '_bold',
+    fontSize: 22,
+    lineHeight: 26,
+  },
+});

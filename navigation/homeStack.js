@@ -1,146 +1,130 @@
-import React, { useContext } from 'react';
-import { StyleSheet, Platform } from 'react-native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React from 'react';
+import { Platform, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons, MaterialIcons} from '@expo/vector-icons';
-import { createDrawerNavigator } from '@react-navigation/drawer';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 import HomeScreen from '../screens/homeScreen';
 import HistoryScreen from '../screens/historyScreen';
 import SettingScreen from '../screens/settingScreen';
-import { AuthContext } from '../contextAPI/authContext';
+import ProfileScreen from '../screens/profileScreen';
 import TransactionMenus from '../screens/transactionMenus';
-import AccountMenus from '../screens/accountMenus';
-import { colors } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
 
-const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
 
-const Stack = createNativeStackNavigator();
-
-const HomeStack = ({navigation}) => {
-
-    const {logoutAction, userInfo, setUserInfo,} = useContext(AuthContext)
-    const horizontalAnimation = {
-        gestureDirection: 'horizontal',
-        cardStyleInterpolator: ({ current, layouts }) => {
-          return {
-            cardStyle: {
-              transform: [
-                {
-                  translateX: current.progress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [layouts.screen.width, 1],
-                  }),
-                },
-              ],
-            },
-          };
-        },
-      };
+const HomeStack = () => {
+  const { colors, isDark } = useThemeStyles();
 
   return (
     <Tab.Navigator
-            screenOptions={({ route }) => ({
-            headerShown: false,
-            tabBarStyle: {
+      screenOptions={{
+        headerShown: false,
+        tabBarHideOnKeyboard: true,
+        tabBarActiveTintColor: colors.primaryColor1,
+        tabBarInactiveTintColor: colors.textSecColor,
+        tabBarStyle: {
+          backgroundColor: colors.bgCard,
+          borderTopColor: colors.dividerColor,
+          borderTopWidth: 1,
+          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+          height: Platform.OS === 'ios' ? 90 : 65,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontFamily: '_semiBold',
+          marginBottom: Platform.OS === 'ios' ? 0 : 4,
+        },
+      }}>
 
-                paddingBottom: Platform.OS === 'ios' ? 20 : 8, // adjust bottom padding
-                height: Platform.OS === 'ios' ? 100 : 70,       // extra height for iOS
-               // backgroundColor: 'red',
-              },
-            tabBarActiveTintColor: colors.secondaryColor,
-            tabBarInactiveTintColor: 'gray',
-            tabBarLabelStyle: { fontSize: 14, fontWeight: 'bold' },
-            tabBarHideOnKeyboard: true,
-      })}>
-        <Tab.Screen name="Dashboard" component={HomeScreen}
-            options={{
-               //tabBarBadge: 3,
-                headerShown: false,
-                tabBarIcon: ({ focused, color, size }) => {
-                let iconColor = focused ? colors.secondaryColor : 'gray';
-                return <MaterialIcons name={focused ? 'dashboard' : 'dashboard'} 
-                size={25} 
-                color={iconColor} 
-                style={{ marginTop: 8 }}
-                />;
-                },
-                  tabBarLabel: '',
-                }}
-        />
-        <Tab.Screen name="Transaction" component={TransactionMenus} 
-            options={{
-                //tabBarBadge: 3,
-                headerShown: false,
-                tabBarIcon: ({ focused, color, size }) => {
-                 let iconColor = focused ? colors.secondaryColor : 'gray';
-                return <Ionicons name={focused ? 'stats-chart' : 'stats-chart'} 
-                size={23} 
-                color={iconColor}
-                style={{ marginTop: 8 }} />;
-                },
-                tabBarLabel: '',
-                }}
-        />
+      {/* Dashboard */}
+      <Tab.Screen
+        name="Dashboard"
+        component={HomeScreen}
+        options={{
+          tabBarLabel: '',
+          tabBarIcon: ({ focused, color }) => (
+            <MaterialIcons
+              name={focused ? 'dashboard' : 'dashboard'}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
 
-        <Tab.Screen name="History" component={HistoryScreen} 
-            options={{
-                //tabBarBadge: 3,
-                headerShown: false,
-                tabBarIcon: ({ focused, color, size }) => {
-                 let iconColor = focused ? colors.secondaryColor : 'gray';
-                return <Ionicons name={focused ? 'timer' : 'timer'} 
-                size={27} 
-                color={iconColor}
-                style={{ marginTop: 8 }} />;
-                },
-                tabBarLabel: '',
-                }}
-        />
+      {/* Transactions */}
+      <Tab.Screen
+        name="Transaction"
+        component={TransactionMenus}
+        options={{
+          tabBarLabel: '',
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? 'swap-horizontal' : 'swap-horizontal-outline'}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
 
-        <Tab.Screen name="Account" component={AccountMenus} 
-            options={{
-                //tabBarBadge: 3,
-                headerShown: false,
-                tabBarIcon: ({ focused, color, size }) => {
-                let iconColor = focused ? colors.secondaryColor : 'gray';
-                return <Ionicons name={focused ? 'person' : 'person'} 
-                size={25} 
-                color={iconColor}
-                style={{ marginTop: 8 }} />;
-                },
-                tabBarLabel: '',
-                }}
-        />
+      {/* History */}
+      <Tab.Screen
+        name="History"
+        component={HistoryScreen}
+        options={{
+          tabBarLabel: '',
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? 'time' : 'time-outline'}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
 
-        <Tab.Screen name="Setting" component={SettingScreen} 
-            options={{
-                //tabBarBadge: 3,
-                headerShown: false,
-                tabBarIcon: ({ focused, color, size }) => {
-                 let iconColor = focused ? colors.secondaryColor : 'gray';
-                return <Ionicons name={focused ? 'settings' : 'settings'} 
-                size={25} 
-                color={iconColor}
-                style={{ marginTop: 8 }} />;
-                },
-                tabBarLabel: '',
-                }}        
-        />
+      {/* Profile */}
+      <Tab.Screen
+        name="Account"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: '',
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? 'person' : 'person-outline'}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
 
-        
-      </Tab.Navigator>
+      {/* Settings */}
+      <Tab.Screen
+        name="Setting"
+        component={SettingScreen}
+        options={{
+          tabBarLabel: '',
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? 'settings' : 'settings-outline'}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+    </Tab.Navigator>
   );
-}
+};
 
 export default HomeStack;
 
-const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-  });
+const styles = StyleSheet.create({});

@@ -1,5 +1,4 @@
-﻿
-import React, { useState, useEffect, useContext } from 'react';
+﻿import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   StatusBar, TextInput, ActivityIndicator,
@@ -14,121 +13,130 @@ import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 
 import { gs, spacing, radius, typography, shadows } from '../styles';
 import useThemeStyles from '../hooks/useThemeStyles';
-
 import { AuthContext } from '../contextAPI/authContext';
 import { noticeData } from '../components/errorNotice';
 import BillScreenHeader from '../components/BillScreenHeader';
 import useBillService from '../hooks/useBillService';
 import client from '../contextAPI/client';
-import {
-  TV_PROVIDERS,
-  getBouquets,
-  getProviderById,
-} from '../constants/tvProviders';
+import { TV_PROVIDERS, getBouquets } from '../constants/tvProviders';
 
 // ── TV Provider Selector ──────────────────────────
-const TVProviderSelector = ({ selectedProvider, onSelect, colors }) => (
-  <View style={styles.sectionContainer}>
-    <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>Select TV Provider</Text>
-    <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
-      Choose your television subscription provider
-    </Text>
-    <View style={styles.providerGrid}>
-      {TV_PROVIDERS.map((provider) => {
-        const isSelected = selectedProvider?.id === provider.id;
-        return (
-          <TouchableOpacity
-            key={provider.id}
-            style={[
-              styles.providerCard,
-              isSelected && {
-                borderColor: provider.color,
-                borderWidth: 2.5,
-                backgroundColor: provider.bgColor,
-              },
-            ]}
-            onPress={() => onSelect(provider)}
-            activeOpacity={0.8}>
-            <Text style={styles.providerLogo}>{provider.logo}</Text>
-            <Text style={[
-              styles.providerLabel,
-              isSelected && { color: provider.color, fontFamily: '_bold' },
-            ]}>
-              {provider.label}
-            </Text>
-            {isSelected && (
-              <View style={[styles.providerCheck, { backgroundColor: provider.color }]}>
-                <Text style={styles.providerCheckText}>✓</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        );
-      })}
+const TVProviderSelector = ({ selectedProvider, onSelect }) => {
+  const { colors } = useThemeStyles();
+  return (
+    <View style={styles.sectionContainer}>
+      <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>
+        Select TV Provider
+      </Text>
+      <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
+        Choose your television subscription provider
+      </Text>
+      <View style={styles.providerGrid}>
+        {TV_PROVIDERS.map((provider) => {
+          const isSelected = selectedProvider?.id === provider.id;
+          return (
+            <TouchableOpacity
+              key={provider.id}
+              style={[
+                styles.providerCard,
+                { backgroundColor: colors.bgCard, borderColor: colors.dividerColor },
+                isSelected && {
+                  borderColor: provider.color,
+                  borderWidth: 2.5,
+                  backgroundColor: provider.bgColor,
+                },
+              ]}
+              onPress={() => onSelect(provider)}
+              activeOpacity={0.8}>
+              <Text style={styles.providerLogo}>{provider.logo}</Text>
+              <Text style={[
+                styles.providerLabel,
+                { color: colors.textBlack },
+                isSelected && { color: provider.color, fontFamily: '_bold' },
+              ]}>
+                {provider.label}
+              </Text>
+              {isSelected && (
+                <View style={[styles.providerCheck, { backgroundColor: provider.color }]}>
+                  <Text style={styles.providerCheckText}>✓</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 // ── Bouquet Plan Card ─────────────────────────────
-const BouquetCard = ({ bouquet, isSelected, onSelect, providerColor }) => (
-  <TouchableOpacity
-    style={[
-      styles.bouquetCard,
-      isSelected && {
-        borderColor: providerColor,
-        borderWidth: 2,
-        backgroundColor: `${providerColor}10`,
-      },
-    ]}
-    onPress={() => onSelect(bouquet)}
-    activeOpacity={0.8}>
-    {isSelected && (
-      <View style={[styles.bouquetCheck, { backgroundColor: providerColor }]}>
-        <Text style={styles.bouquetCheckText}>✓</Text>
-      </View>
-    )}
-    <Text style={[
-      styles.bouquetLabel,
-      isSelected && { color: providerColor },
-    ]}>
-      {bouquet.label}
-    </Text>
-    <Text style={styles.bouquetValidity}>{bouquet.validity}</Text>
-    <Text style={[
-      styles.bouquetPrice,
-      isSelected && { color: providerColor },
-    ]}>
-      ₦{Number(bouquet.price).toLocaleString()}
-    </Text>
-  </TouchableOpacity>
-);
+const BouquetCard = ({ bouquet, isSelected, onSelect, providerColor }) => {
+  const { colors } = useThemeStyles();
+  return (
+    <TouchableOpacity
+      style={[
+        styles.bouquetCard,
+        { backgroundColor: colors.bgColor, borderColor: colors.dividerColor },
+        isSelected && {
+          borderColor: providerColor,
+          borderWidth: 2,
+          backgroundColor: `${providerColor}10`,
+        },
+      ]}
+      onPress={() => onSelect(bouquet)}
+      activeOpacity={0.8}>
+      {isSelected && (
+        <View style={[styles.bouquetCheck, { backgroundColor: providerColor }]}>
+          <Text style={styles.bouquetCheckText}>✓</Text>
+        </View>
+      )}
+      <Text style={[
+        styles.bouquetLabel,
+        { color: colors.textBlack },
+        isSelected && { color: providerColor },
+      ]}>
+        {bouquet.label}
+      </Text>
+      <Text style={[styles.bouquetValidity, { color: colors.textSecColor }]}>
+        {bouquet.validity}
+      </Text>
+      <Text style={[
+        styles.bouquetPrice,
+        { color: colors.textBlack },
+        isSelected && { color: providerColor },
+      ]}>
+        ₦{Number(bouquet.price).toLocaleString()}
+      </Text>
+    </TouchableOpacity>
+  );
+};
 
 // ── Smart Card Input ──────────────────────────────
 const SmartCardInput = ({
-  
-  provider,
-  value,
-  onChangeText,
-  onVerify,
-  isVerifying,
-  verifiedName,
+  provider, value, onChangeText, onVerify, isVerifying, verifiedName,
 }) => {
   const { colors } = useThemeStyles();
   const [isFocused, setIsFocused] = useState(false);
   return (
     <View style={styles.inputGroup}>
-      <Text style={styles.inputLabel}>{provider?.verifyLabel}</Text>
+      <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>
+        {provider?.verifyLabel}
+      </Text>
       <View style={[
         styles.inputContainer,
-        isFocused && styles.inputContainerFocused,
+        {
+          borderColor: isFocused ? colors.primaryColor1 : colors.dividerColor,
+          backgroundColor: isFocused ? colors.primaryColor1 + '10' : colors.bgCard,
+        },
       ]}>
         <MaterialCommunityIcons
           name="card-account-details-outline"
           size={20}
-          color={isFocused ? colors.primaryColor1 : '#9CA3AF'}
+          color={isFocused ? colors.primaryColor1 : colors.textSecColor}
           style={styles.inputIcon}
         />
         <TextInput
-          style={styles.inputField}
+          style={[styles.inputField, { color: colors.textBlack }]}
           value={value}
           onChangeText={(text) => {
             const cleaned = provider?.id === 'SHOWMAX'
@@ -137,7 +145,7 @@ const SmartCardInput = ({
             onChangeText(cleaned);
           }}
           placeholder={provider?.verifyPlaceholder}
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.textSecColor2}
           keyboardType={provider?.id === 'SHOWMAX' ? 'email-address' : 'numeric'}
           maxLength={provider?.verifyLength || 50}
           autoCapitalize="none"
@@ -146,13 +154,15 @@ const SmartCardInput = ({
         />
         {value.length >= 8 && (
           <TouchableOpacity
-            style={styles.verifyBtn}
+            style={[styles.verifyBtn, { backgroundColor: colors.bgLight }]}
             onPress={onVerify}
             disabled={isVerifying}>
             {isVerifying ? (
               <ActivityIndicator size={14} color={colors.primaryColor1} />
             ) : (
-              <Text style={styles.verifyBtnText}>Verify</Text>
+              <Text style={[styles.verifyBtnText, { color: colors.primaryColor1 }]}>
+                Verify
+              </Text>
             )}
           </TouchableOpacity>
         )}
@@ -160,30 +170,41 @@ const SmartCardInput = ({
       {verifiedName ? (
         <View style={styles.verifiedRow}>
           <Ionicons name="checkmark-circle" size={16} color={colors.successColor} />
-          <Text style={styles.verifiedText}>{verifiedName}</Text>
+          <Text style={[styles.verifiedText, { color: colors.successColor }]}>
+            {verifiedName}
+          </Text>
         </View>
       ) : (
-        <Text style={styles.inputHint}>{provider?.verifyHint}</Text>
+        <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
+          {provider?.verifyHint}
+        </Text>
       )}
     </View>
   );
 };
 
 // ── Summary Row ───────────────────────────────────
-const SummaryRow = ({ label, value, isTotal, valueColor }) => (
-  <View style={[styles.summaryRow, isTotal && styles.summaryRowTotal]}>
-    <Text style={[styles.summaryLabel, isTotal && styles.summaryLabelTotal]}>
-      {label}
-    </Text>
-    <Text style={[
-      styles.summaryValue,
-      isTotal && styles.summaryValueTotal,
-      valueColor && { color: valueColor },
-    ]}>
-      {value}
-    </Text>
-  </View>
-);
+const SummaryRow = ({ label, value, isTotal, valueColor }) => {
+  const { colors } = useThemeStyles();
+  return (
+    <View style={[styles.summaryRow, isTotal && styles.summaryRowTotal]}>
+      <Text style={[
+        styles.summaryLabel,
+        isTotal && styles.summaryLabelTotal,
+        { color: isTotal ? colors.textBlack : colors.textSecColor },
+      ]}>
+        {label}
+      </Text>
+      <Text style={[
+        styles.summaryValue,
+        isTotal && styles.summaryValueTotal,
+        { color: valueColor || (isTotal ? colors.primaryColor1 : colors.textBlack) },
+      ]}>
+        {value}
+      </Text>
+    </View>
+  );
+};
 
 // ── Rewards Tips Card ─────────────────────────────
 const RewardsTipsCard = () => {
@@ -207,35 +228,42 @@ const RewardsTipsCard = () => {
   }, []);
 
   return (
-    <View style={styles.tipsCard}>
+    <View style={[styles.tipsCard, {
+      backgroundColor: colors.bgLight,
+      borderColor: colors.dividerColor,
+    }]}>
       <View style={styles.tipsTitleRow}>
         <Ionicons name="information-circle-outline" size={18} color={colors.primaryColor1} />
-        <Text style={styles.tipsTitle}>Quick Tips</Text>
+        <Text style={[styles.tipsTitle, { color: colors.primaryColor1 }]}>Quick Tips</Text>
       </View>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Subscription is activated on your decoder instantly after payment
       </Text>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Always verify your smartcard or IUC number before proceeding
       </Text>
       {rewardRate && (
-        <Text style={styles.tipText}>
+        <Text style={[styles.tipText, { color: colors.textSecColor }]}>
           • You earn{' '}
-          <Text style={styles.tipHighlight}>{rewardRate}% in coins</Text>
+          <Text style={[styles.tipHighlight, { color: colors.primaryColor1 }]}>
+            {rewardRate}% in coins
+          </Text>
           {' '}on every TV subscription
         </Text>
       )}
       {coinValue && (
-        <Text style={styles.tipText}>
+        <Text style={[styles.tipText, { color: colors.textSecColor }]}>
           • 🪙 1 coin ={' '}
-          <Text style={styles.tipHighlight}>₦{coinValue} NGN</Text>
+          <Text style={[styles.tipHighlight, { color: colors.primaryColor1 }]}>
+            ₦{coinValue} NGN
+          </Text>
           {' '}— redeemable as bonus
         </Text>
       )}
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Ensure your decoder is powered on for instant activation
       </Text>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Top users earn quarterly & annual gift rewards 🎁
       </Text>
     </View>
@@ -245,7 +273,7 @@ const RewardsTipsCard = () => {
 // ── Main TV Subscription Screen ───────────────────
 const TVSubscriptionScreen = ({ navigation }) => {
   const isFocused = useIsFocused();
-  const { S, colors, isDark } = useThemeStyles();
+  const { colors, isDark } = useThemeStyles();
   const { userToken, userInfo } = useContext(AuthContext);
 
   const [selectedProvider, setSelectedProvider] = useState(null);
@@ -267,7 +295,6 @@ const TVSubscriptionScreen = ({ navigation }) => {
     if (isFocused) fetchServiceStatus();
   }, [isFocused]);
 
-  // ── Load Bouquets when provider changes ────────
   useEffect(() => {
     if (!selectedProvider) {
       setBouquets([]);
@@ -283,7 +310,6 @@ const TVSubscriptionScreen = ({ navigation }) => {
     setIsLoadingBouquets(true);
     setSelectedBouquet(null);
     try {
-      // Try live API first
       const res = await client.get(
         `/api/bills/tv_bouquets/${providerId}`,
         { headers: { 'Authorization': 'Bearer ' + userToken } }
@@ -291,114 +317,47 @@ const TVSubscriptionScreen = ({ navigation }) => {
       if (res.data.msg === '200' && res.data.bouquets?.length > 0) {
         setBouquets(res.data.bouquets);
       } else {
-        setBouquets(getBouquets(providerId)); // fallback
+        setBouquets(getBouquets(providerId));
       }
     } catch (error) {
-      setBouquets(getBouquets(providerId)); // fallback
+      setBouquets(getBouquets(providerId));
     } finally {
       setIsLoadingBouquets(false);
     }
   };
 
-  // ── Verify Smart Card ─────────────────────────
   const handleVerifySmartCard = async () => {
     if (!selectedProvider) return;
     setIsVerifying(true);
     try {
       const res = await client.post(
         '/api/bills/verify_tv_smartcard',
-        {
-          provider: selectedProvider.apiCode,
-          smartcard_number: smartCardNumber,
-        },
+        { provider: selectedProvider.apiCode, smartcard_number: smartCardNumber },
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (res.data.msg === '200') {
         setVerifiedName(res.data.customer_name);
-        Toast.show({
-          type: ALERT_TYPE.SUCCESS,
-          title: 'Verified',
-          textBody: `Customer: ${res.data.customer_name}`,
-        });
+        Toast.show({ type: ALERT_TYPE.SUCCESS, title: 'Verified', textBody: `Customer: ${res.data.customer_name}` });
       } else {
-        Toast.show({
-          type: ALERT_TYPE.DANGER,
-          title: 'Verification Failed',
-          textBody: 'Could not verify your smartcard number. Please check and try again.',
-          titleStyle: noticeData[0].errorTitleStyle,
-          textBodyStyle: noticeData[0].errorMessageStyle,
-        });
+        Toast.show({ type: ALERT_TYPE.DANGER, title: 'Verification Failed', textBody: 'Could not verify your smartcard number.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
         setVerifiedName('');
       }
     } catch (error) {
-      Toast.show({
-        type: ALERT_TYPE.DANGER,
-        title: 'Error',
-        textBody: 'Verification failed. Please try again.',
-        titleStyle: noticeData[0].errorTitleStyle,
-        textBodyStyle: noticeData[0].errorMessageStyle,
-      });
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Verification failed. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
     } finally {
       setIsVerifying(false);
     }
   };
 
-  // ── Validation ─────────────────────────────────
   const validateInputs = () => {
-    if (!selectedProvider) {
-      Toast.show({
-        type: ALERT_TYPE.WARNING,
-        title: 'Select Provider',
-        textBody: 'Please select a TV subscription provider.',
-        titleStyle: noticeData[0].errorTitleStyle,
-        textBodyStyle: noticeData[0].errorMessageStyle,
-      });
-      return false;
-    }
-    if (!selectedBouquet) {
-      Toast.show({
-        type: ALERT_TYPE.WARNING,
-        title: 'Select Bouquet',
-        textBody: 'Please select a subscription bouquet/plan.',
-        titleStyle: noticeData[0].errorTitleStyle,
-        textBodyStyle: noticeData[0].errorMessageStyle,
-      });
-      return false;
-    }
-    if (!smartCardNumber || smartCardNumber.length < 8) {
-      Toast.show({
-        type: ALERT_TYPE.WARNING,
-        title: 'Invalid Smartcard Number',
-        textBody: `Please enter a valid ${selectedProvider?.verifyLabel}.`,
-        titleStyle: noticeData[0].errorTitleStyle,
-        textBodyStyle: noticeData[0].errorMessageStyle,
-      });
-      return false;
-    }
-    if (!verifiedName) {
-      Toast.show({
-        type: ALERT_TYPE.WARNING,
-        title: 'Verify Smartcard',
-        textBody: 'Please verify your smartcard number before proceeding.',
-        titleStyle: noticeData[0].errorTitleStyle,
-        textBodyStyle: noticeData[0].errorMessageStyle,
-      });
-      return false;
-    }
-    if (Number(selectedBouquet.price) > Number(walletBalance)) {
-      Toast.show({
-        type: ALERT_TYPE.DANGER,
-        title: 'Insufficient Balance',
-        textBody: 'Your wallet balance is not enough. Please fund your account.',
-        titleStyle: noticeData[0].errorTitleStyle,
-        textBodyStyle: noticeData[0].errorMessageStyle,
-      });
-      return false;
-    }
+    if (!selectedProvider) { Toast.show({ type: ALERT_TYPE.WARNING, title: 'Select Provider', textBody: 'Please select a TV subscription provider.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle }); return false; }
+    if (!selectedBouquet) { Toast.show({ type: ALERT_TYPE.WARNING, title: 'Select Bouquet', textBody: 'Please select a subscription bouquet/plan.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle }); return false; }
+    if (!smartCardNumber || smartCardNumber.length < 8) { Toast.show({ type: ALERT_TYPE.WARNING, title: 'Invalid Smartcard', textBody: `Please enter a valid ${selectedProvider?.verifyLabel}.`, titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle }); return false; }
+    if (!verifiedName) { Toast.show({ type: ALERT_TYPE.WARNING, title: 'Verify Smartcard', textBody: 'Please verify your smartcard number before proceeding.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle }); return false; }
+    if (Number(selectedBouquet.price) > Number(walletBalance)) { Toast.show({ type: ALERT_TYPE.DANGER, title: 'Insufficient Balance', textBody: 'Your wallet balance is not enough. Please fund your account.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle }); return false; }
     return true;
   };
 
-  // ── Handle Proceed ────────────────────────────
   const handleProceed = async () => {
     Keyboard.dismiss();
     if (!validateInputs()) return;
@@ -407,7 +366,6 @@ const TVSubscriptionScreen = ({ navigation }) => {
     setShowSummary(true);
   };
 
-  // ── Handle Confirm & Pay ──────────────────────
   const handleConfirmPay = async () => {
     const isActive = await preFlightCheck();
     if (!isActive) return;
@@ -417,8 +375,6 @@ const TVSubscriptionScreen = ({ navigation }) => {
         serviceType: 'tv_subscription',
         serviceTitle: 'TV Subscription',
         provider: selectedProvider.id,
-        providerName: selectedProvider.label,
-        bouquet: selectedBouquet.label,
         bouquetApiCode: selectedBouquet.apiCode,
         smartCardNumber,
         customerName: verifiedName,
@@ -438,13 +394,7 @@ const TVSubscriptionScreen = ({ navigation }) => {
         ],
       });
     } catch (error) {
-      Toast.show({
-        type: ALERT_TYPE.DANGER,
-        title: 'Error',
-        textBody: 'Something went wrong. Please try again.',
-        titleStyle: noticeData[0].errorTitleStyle,
-        textBodyStyle: noticeData[0].errorMessageStyle,
-      });
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Something went wrong. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
     } finally {
       setIsProcessing(false);
     }
@@ -456,15 +406,10 @@ const TVSubscriptionScreen = ({ navigation }) => {
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={colors.bgColor}
       />
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-            {/* ── Reusable Header ─────────────── */}
             <BillScreenHeader
               navigation={navigation}
               title="TV Subscription"
@@ -477,12 +422,10 @@ const TVSubscriptionScreen = ({ navigation }) => {
             />
 
             {serviceStatus !== 'paused' && (
-              <View style={styles.formCard}>
+              <View style={[styles.formCard, { backgroundColor: colors.bgCard }]}>
 
-                {/* Provider Selector */}
                 <TVProviderSelector
                   selectedProvider={selectedProvider}
-                  colors={colors}
                   onSelect={(provider) => {
                     setSelectedProvider(provider);
                     setShowSummary(false);
@@ -491,16 +434,14 @@ const TVSubscriptionScreen = ({ navigation }) => {
                   }}
                 />
 
-                {/* Bouquet Plans */}
                 {selectedProvider && (
                   <View style={styles.sectionContainer}>
-                    <Text style={styles.inputLabel}>
+                    <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>
                       Select {selectedProvider.label} Bouquet
                     </Text>
-                    <Text style={styles.inputHint}>
+                    <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
                       Choose a subscription plan that suits you
                     </Text>
-
                     {isLoadingBouquets ? (
                       <ActivityIndicator
                         size="large"
@@ -514,10 +455,7 @@ const TVSubscriptionScreen = ({ navigation }) => {
                             key={bouquet.id}
                             bouquet={bouquet}
                             isSelected={selectedBouquet?.id === bouquet.id}
-                            onSelect={(b) => {
-                              setSelectedBouquet(b);
-                              setShowSummary(false);
-                            }}
+                            onSelect={(b) => { setSelectedBouquet(b); setShowSummary(false); }}
                             providerColor={selectedProvider.color}
                           />
                         ))}
@@ -526,48 +464,37 @@ const TVSubscriptionScreen = ({ navigation }) => {
                   </View>
                 )}
 
-                {/* Smart Card Input */}
                 {selectedProvider && selectedBouquet && (
                   <SmartCardInput
                     provider={selectedProvider}
                     value={smartCardNumber}
-                    onChangeText={(text) => {
-                      setSmartCardNumber(text);
-                      setVerifiedName('');
-                    }}
+                    onChangeText={(text) => { setSmartCardNumber(text); setVerifiedName(''); }}
                     onVerify={handleVerifySmartCard}
                     isVerifying={isVerifying}
                     verifiedName={verifiedName}
                   />
                 )}
 
-                {/* Selected Plan Strip */}
                 {selectedProvider && selectedBouquet && (
-                  <View style={[
-                    styles.selectedStrip,
-                    { borderLeftColor: selectedProvider.color },
-                  ]}>
-                    <Text style={styles.selectedStripLogo}>
-                      {selectedProvider.logo}
-                    </Text>
+                  <View style={[styles.selectedStrip, {
+                    backgroundColor: colors.bgLight,
+                    borderLeftColor: selectedProvider.color,
+                  }]}>
+                    <Text style={styles.selectedStripLogo}>{selectedProvider.logo}</Text>
                     <View style={styles.selectedStripInfo}>
-                      <Text style={styles.selectedStripLabel}>
+                      <Text style={[styles.selectedStripLabel, { color: colors.textBlack }]}>
                         {selectedProvider.label} — {selectedBouquet.label}
                       </Text>
-                      <Text style={styles.selectedStripSub}>
+                      <Text style={[styles.selectedStripSub, { color: colors.textSecColor }]}>
                         {selectedBouquet.validity} subscription
                       </Text>
                     </View>
-                    <Text style={[
-                      styles.selectedStripPrice,
-                      { color: selectedProvider.color },
-                    ]}>
+                    <Text style={[styles.selectedStripPrice, { color: selectedProvider.color }]}>
                       ₦{Number(selectedBouquet.price).toLocaleString()}
                     </Text>
                   </View>
                 )}
 
-                {/* Proceed Button */}
                 {selectedProvider && selectedBouquet && (
                   <TouchableOpacity
                     style={[
@@ -582,12 +509,7 @@ const TVSubscriptionScreen = ({ navigation }) => {
                       <ActivityIndicator color="#fff" size={22} />
                     ) : (
                       <>
-                        <Ionicons
-                          name="arrow-forward-circle-outline"
-                          size={20}
-                          color="#fff"
-                          style={{ marginRight: spacing.sm }}
-                        />
+                        <Ionicons name="arrow-forward-circle-outline" size={20} color="#fff" style={{ marginRight: spacing.sm }} />
                         <Text style={gs.primaryButtonText}>Proceed</Text>
                       </>
                     )}
@@ -596,28 +518,18 @@ const TVSubscriptionScreen = ({ navigation }) => {
               </View>
             )}
 
-            {/* ── Order Summary ─────────────────── */}
             {showSummary && serviceStatus !== 'paused' && (
-              <View style={styles.summaryCard}>
-                <Text style={styles.summaryTitle}>Order Summary</Text>
-                <View style={styles.summaryDivider} />
-
+              <View style={[styles.summaryCard, { backgroundColor: colors.bgCard }]}>
+                <Text style={[styles.summaryTitle, { color: colors.textBlack }]}>Order Summary</Text>
+                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
                 <SummaryRow label="Provider" value={selectedProvider?.label} />
                 <SummaryRow label="Bouquet" value={selectedBouquet?.label} />
-                <SummaryRow
-                  label={selectedProvider?.verifyLabel}
-                  value={smartCardNumber}
-                />
+                <SummaryRow label={selectedProvider?.verifyLabel} value={smartCardNumber} />
                 <SummaryRow label="Customer" value={verifiedName} />
                 <SummaryRow label="Validity" value={selectedBouquet?.validity} />
-                <SummaryRow
-                  label="Amount"
-                  value={`₦${Number(selectedBouquet?.price).toLocaleString()}`}
-                />
+                <SummaryRow label="Amount" value={`₦${Number(selectedBouquet?.price).toLocaleString()}`} />
                 <SummaryRow label="Service Fee" value="₦0.00" />
-
-                <View style={styles.summaryDivider} />
-
+                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
                 <SummaryRow
                   label="Total"
                   value={`₦${Number(selectedBouquet?.price).toLocaleString()}`}
@@ -625,27 +537,17 @@ const TVSubscriptionScreen = ({ navigation }) => {
                   valueColor={selectedProvider?.color}
                 />
 
-                {/* Wallet Balance Check */}
-                <View style={styles.balanceCheckRow}>
+                <View style={[styles.balanceCheckRow, { backgroundColor: colors.bgLight }]}>
                   <Ionicons
-                    name={
-                      Number(selectedBouquet?.price) <= Number(walletBalance)
-                        ? 'checkmark-circle'
-                        : 'close-circle'
-                    }
+                    name={Number(selectedBouquet?.price) <= Number(walletBalance) ? 'checkmark-circle' : 'close-circle'}
                     size={18}
-                    color={
-                      Number(selectedBouquet?.price) <= Number(walletBalance)
-                        ? colors.successColor
-                        : colors.dangerColor
-                    }
+                    color={Number(selectedBouquet?.price) <= Number(walletBalance) ? colors.successColor : colors.dangerColor}
                   />
-                  <Text style={styles.balanceCheckText}>
+                  <Text style={[styles.balanceCheckText, { color: colors.textBlack }]}>
                     Wallet Balance: ₦{Number(walletBalance).toLocaleString()}
                   </Text>
                 </View>
 
-                {/* Confirm Button */}
                 <TouchableOpacity
                   style={[
                     styles.confirmBtn,
@@ -659,12 +561,7 @@ const TVSubscriptionScreen = ({ navigation }) => {
                     <ActivityIndicator color="#fff" size={22} />
                   ) : (
                     <>
-                      <Ionicons
-                        name="checkmark-circle-outline"
-                        size={20}
-                        color="#fff"
-                        style={{ marginRight: spacing.sm }}
-                      />
+                      <Ionicons name="checkmark-circle-outline" size={20} color="#fff" style={{ marginRight: spacing.sm }} />
                       <Text style={gs.primaryButtonText}>
                         Confirm & Pay ₦{Number(selectedBouquet?.price).toLocaleString()}
                       </Text>
@@ -672,17 +569,13 @@ const TVSubscriptionScreen = ({ navigation }) => {
                   )}
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={() => setShowSummary(false)}>
-                  <Text style={styles.editBtnText}>Edit Order</Text>
+                <TouchableOpacity style={styles.editBtn} onPress={() => setShowSummary(false)}>
+                  <Text style={[styles.editBtnText, { color: colors.textSecColor }]}>Edit Order</Text>
                 </TouchableOpacity>
               </View>
             )}
 
-            {/* ── Rewards Tips ─────────────────── */}
             <RewardsTipsCard />
-
             <View style={{ height: spacing.xxxl }} />
           </ScrollView>
         </TouchableWithoutFeedback>
@@ -692,36 +585,20 @@ const TVSubscriptionScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    },
-  scrollContent: {
-    paddingBottom: spacing.xxxl,
-  },
-
-  // Form Card
+  container: { flex: 1 },
+  scrollContent: { paddingBottom: spacing.xxxl },
   formCard: {
-    
     borderRadius: radius.xl,
     padding: spacing.xl,
     marginHorizontal: spacing.xl,
     marginBottom: spacing.lg,
     ...shadows.card,
   },
-
-  // Section
-  sectionContainer: {
-    marginBottom: spacing.lg,
-  },
-
-  // Input
-  inputGroup: {
-    marginBottom: spacing.lg,
-  },
+  sectionContainer: { marginBottom: spacing.lg },
+  inputGroup: { marginBottom: spacing.lg },
   inputLabel: {
     fontFamily: '_semiBold',
     fontSize: typography.base,
-    
     marginBottom: spacing.sm,
   },
   inputContainer: {
@@ -732,29 +609,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     height: 56,
   },
-  inputContainerFocused: {
-  },
-  inputIcon: {
-    marginRight: spacing.sm,
-  },
+  inputIcon: { marginRight: spacing.sm },
   inputField: {
     flex: 1,
     fontFamily: '_semiBold',
     fontSize: typography.lg,
-    
     paddingVertical: 0,
   },
   inputHint: {
     fontFamily: '_regular',
-    fontSize: typography.base,
-    
+    fontSize: typography.sm,
     marginTop: spacing.xs,
     lineHeight: 20,
   },
-
-  // Verify
   verifyBtn: {
-    
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -762,7 +630,6 @@ const styles = StyleSheet.create({
   verifyBtnText: {
     fontFamily: '_semiBold',
     fontSize: typography.sm,
-    
   },
   verifiedRow: {
     flexDirection: 'row',
@@ -773,11 +640,8 @@ const styles = StyleSheet.create({
   verifiedText: {
     fontFamily: '_semiBold',
     fontSize: typography.sm,
-    
     lineHeight: 20,
   },
-
-  // Provider Grid
   providerGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -791,19 +655,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1.5,
-    
-    
     position: 'relative',
     minHeight: 80,
   },
-  providerLogo: {
-    fontSize: 28,
-    marginBottom: spacing.xs,
-  },
+  providerLogo: { fontSize: 28, marginBottom: spacing.xs },
   providerLabel: {
     fontFamily: '_semiBold',
-    fontSize: typography.base,
-    
+    fontSize: typography.xs,
     textAlign: 'center',
   },
   providerCheck: {
@@ -816,12 +674,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  providerCheckText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-
-  // Bouquet Grid
+  providerCheckText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
   bouquetGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -835,8 +688,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     borderRadius: radius.lg,
     borderWidth: 1.5,
-    
-    
     position: 'relative',
     minHeight: 90,
     justifyContent: 'center',
@@ -851,20 +702,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  bouquetCheckText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
+  bouquetCheckText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
   bouquetLabel: {
     fontFamily: '_bold',
     fontSize: typography.sm,
-    
     textAlign: 'center',
   },
   bouquetValidity: {
     fontFamily: '_regular',
     fontSize: 10,
-    
     textAlign: 'center',
     marginTop: 2,
     lineHeight: 14,
@@ -872,48 +718,35 @@ const styles = StyleSheet.create({
   bouquetPrice: {
     fontFamily: '_bold',
     fontSize: typography.sm,
-    
     textAlign: 'center',
     marginTop: spacing.xs,
   },
-
-  // Selected Strip
   selectedStrip: {
     flexDirection: 'row',
     alignItems: 'center',
-    
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.lg,
     borderLeftWidth: 4,
     gap: spacing.md,
   },
-  selectedStripLogo: {
-    fontSize: 24,
-  },
-  selectedStripInfo: {
-    flex: 1,
-  },
+  selectedStripLogo: { fontSize: 24 },
+  selectedStripInfo: { flex: 1 },
   selectedStripLabel: {
     fontFamily: '_bold',
     fontSize: typography.base,
-    
     lineHeight: 22,
   },
   selectedStripSub: {
     fontFamily: '_regular',
     fontSize: typography.sm,
-    
     lineHeight: 20,
   },
   selectedStripPrice: {
     fontFamily: '_bold',
     fontSize: typography.lg,
   },
-
-  // Summary
   summaryCard: {
-    
     borderRadius: radius.xl,
     padding: spacing.xl,
     marginHorizontal: spacing.xl,
@@ -923,38 +756,29 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontFamily: '_bold',
     fontSize: typography.xl,
-    
     marginBottom: spacing.md,
   },
-  summaryDivider: {
-    height: 1,
-    marginVertical: spacing.md,
-  },
+  summaryDivider: { height: 1, marginVertical: spacing.md },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md,
   },
-  summaryRowTotal: {
-    marginTop: spacing.xs,
-  },
+  summaryRowTotal: { marginTop: spacing.xs },
   summaryLabel: {
     fontFamily: '_regular',
     fontSize: typography.base,
-    
     lineHeight: 22,
     flex: 1,
   },
   summaryLabelTotal: {
     fontFamily: '_bold',
     fontSize: typography.lg,
-    
   },
   summaryValue: {
     fontFamily: '_semiBold',
     fontSize: typography.base,
-    
     lineHeight: 22,
   },
   summaryValueTotal: {
@@ -965,7 +789,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -973,7 +796,6 @@ const styles = StyleSheet.create({
   balanceCheckText: {
     fontFamily: '_semiBold',
     fontSize: typography.base,
-    
     lineHeight: 22,
   },
   confirmBtn: {
@@ -993,13 +815,9 @@ const styles = StyleSheet.create({
   editBtnText: {
     fontFamily: '_semiBold',
     fontSize: typography.base,
-    
     lineHeight: 22,
   },
-
-  // Tips
   tipsCard: {
-    
     borderRadius: radius.xl,
     padding: spacing.xl,
     marginHorizontal: spacing.xl,
@@ -1015,20 +833,15 @@ const styles = StyleSheet.create({
   tipsTitle: {
     fontFamily: '_bold',
     fontSize: typography.base,
-    
     lineHeight: 22,
   },
   tipText: {
     fontFamily: '_regular',
     fontSize: typography.base,
-    
     marginBottom: spacing.sm,
     lineHeight: 22,
   },
-  tipHighlight: {
-    fontFamily: '_bold',
-    
-  },
+  tipHighlight: { fontFamily: '_bold' },
 });
 
 export default TVSubscriptionScreen;

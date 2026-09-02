@@ -25,131 +25,138 @@ import { EXAM_TYPES, getExamById } from '../constants/examTypes';
 // ── Exam Type Card ────────────────────────────────
 const ExamTypeCard = ({ exam, isSelected, onSelect }) => {
   const { colors } = useThemeStyles();
+
   return (
-  <TouchableOpacity
-    style={[
-      styles.examCard,
-      isSelected && {
-        borderColor: exam.color,
-        borderWidth: 2.5,
-        backgroundColor: exam.bgColor,
-      },
-    ]}
-    onPress={() => onSelect(exam)}
-    activeOpacity={0.8}>
+    <TouchableOpacity
+      style={[
+        styles.examCard,
+        {
+          borderColor: colors.dividerColor,
+          backgroundColor: colors.bgCard,
+        },
+        isSelected && {
+          borderColor: exam.color,
+          borderWidth: 2.5,
+          backgroundColor: exam.bgColor,
+        },
+      ]}
+      onPress={() => onSelect(exam)}
+      activeOpacity={0.8}>
 
-    {isSelected && (
-      <View style={[styles.examCheck, { backgroundColor: exam.color }]}>
-        <Text style={styles.examCheckText}>✓</Text>
-      </View>
-    )}
+      {isSelected && (
+        <View style={[styles.examCheck, { backgroundColor: exam.color }]}>
+          <Text style={styles.examCheckText}>✓</Text>
+        </View>
+      )}
 
-    {/* Icon */}
-    <LinearGradient
-      colors={isSelected ? [exam.color, exam.color + 'CC'] : ['#F3F4F6', '#E5E7EB']}
-      style={styles.examIconBox}>
-      <Text style={styles.examLogo}>{exam.logo}</Text>
-    </LinearGradient>
+      <LinearGradient
+        colors={isSelected ? [exam.color, exam.color + 'CC'] : ['#F3F4F6', '#E5E7EB']}
+        style={styles.examIconBox}>
+        <Text style={styles.examLogo}>{exam.logo}</Text>
+      </LinearGradient>
 
-    {/* Label */}
-    <Text style={[
-      styles.examLabel,
-      isSelected && { color: exam.color },
-    ]}>
-      {exam.label}
-    </Text>
-
-    {/* Full Name */}
-    <Text style={styles.examFullName} numberOfLines={2}>
-      {exam.fullName}
-    </Text>
-
-    {/* Price */}
-    <View style={[
-      styles.examPriceTag,
-      { backgroundColor: isSelected ? exam.color : colors.bgLight },
-    ]}>
       <Text style={[
-        styles.examPriceText,
-        { color: isSelected ? '#fff' : colors.primaryColor1 },
+        styles.examLabel,
+        { color: isSelected ? exam.color : colors.textBlack },
       ]}>
-        ₦{Number(exam.buyPrice).toLocaleString()}
+        {exam.label}
       </Text>
-    </View>
 
-  </TouchableOpacity>
-);};
+      <Text style={[styles.examFullName, { color: colors.textSecColor }]} numberOfLines={2}>
+        {exam.fullName}
+      </Text>
 
-// ── Quantity Selector ─────────────────────────────
-const QuantitySelector = ({ quantity, onIncrease, onDecrease, maxQty }) => (
-  <View style={styles.quantityContainer}>
-    <Text style={styles.inputLabel}>Number of Pins</Text>
-    <Text style={styles.inputHint}>
-      Select how many scratch card pins you need (max {maxQty} per transaction)
-    </Text>
-    <View style={styles.quantityRow}>
-      <TouchableOpacity
-        style={[styles.quantityBtn, quantity <= 1 && styles.quantityBtnDisabled]}
-        onPress={onDecrease}
-        disabled={quantity <= 1}>
-        <Ionicons
-          name="remove"
-          size={22}
-          color={quantity <= 1 ? colors.textSecColor : colors.primaryColor1}
-        />
-      </TouchableOpacity>
-
-      <View style={styles.quantityDisplay}>
-        <Text style={styles.quantityNumber}>{quantity}</Text>
-        <Text style={styles.quantityLabel}>
-          {quantity === 1 ? 'Pin' : 'Pins'}
+      <View style={[
+        styles.examPriceTag,
+        { backgroundColor: isSelected ? exam.color : colors.bgLight },
+      ]}>
+        <Text style={[
+          styles.examPriceText,
+          { color: isSelected ? '#fff' : colors.primaryColor1 },
+        ]}>
+          ₦{Number(exam.buyPrice).toLocaleString()}
         </Text>
       </View>
 
-      <TouchableOpacity
-        style={[styles.quantityBtn, quantity >= maxQty && styles.quantityBtnDisabled]}
-        onPress={onIncrease}
-        disabled={quantity >= maxQty}>
-        <Ionicons
-          name="add"
-          size={22}
-          color={quantity >= maxQty ? colors.textSecColor : colors.primaryColor1}
-        />
-      </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
+  );
+};
 
-    {/* Quick Quantity Buttons */}
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.quickQtyRow}>
-      {[1, 2, 3, 5, 10].filter(q => q <= maxQty).map((q) => (
+// ── Quantity Selector ─────────────────────────────
+const QuantitySelector = ({ quantity, onIncrease, onDecrease, maxQty }) => {
+  const { colors } = useThemeStyles();
+
+  return (
+    <View style={styles.quantityContainer}>
+      <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>Number of Pins</Text>
+      <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
+        Select how many scratch card pins you need (max {maxQty} per transaction)
+      </Text>
+
+      <View style={[styles.quantityRow, { backgroundColor: colors.bgLight }]}>
         <TouchableOpacity
-          key={q}
-          style={[
-            styles.quickQtyBtn,
-            quantity === q && styles.quickQtyBtnSelected,
-          ]}
-          onPress={() => {
-            // Call increase/decrease based on target
-            const diff = q - quantity;
-            if (diff > 0) {
-              Array.from({ length: diff }).forEach(() => onIncrease());
-            } else if (diff < 0) {
-              Array.from({ length: Math.abs(diff) }).forEach(() => onDecrease());
-            }
-          }}>
-          <Text style={[
-            styles.quickQtyBtnText,
-            quantity === q && styles.quickQtyBtnTextSelected,
-          ]}>
-            {q} {q === 1 ? 'Pin' : 'Pins'}
-          </Text>
+          style={[styles.quantityBtn, quantity <= 1 && styles.quantityBtnDisabled]}
+          onPress={onDecrease}
+          disabled={quantity <= 1}>
+          <Ionicons
+            name="remove"
+            size={22}
+            color={quantity <= 1 ? colors.textSecColor : colors.primaryColor1}
+          />
         </TouchableOpacity>
-      ))}
-    </ScrollView>
-  </View>
-);
+
+        <View style={styles.quantityDisplay}>
+          <Text style={[styles.quantityNumber, { color: colors.primaryColor1 }]}>{quantity}</Text>
+          <Text style={[styles.quantityLabel, { color: colors.textSecColor }]}>
+            {quantity === 1 ? 'Pin' : 'Pins'}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.quantityBtn, quantity >= maxQty && styles.quantityBtnDisabled]}
+          onPress={onIncrease}
+          disabled={quantity >= maxQty}>
+          <Ionicons
+            name="add"
+            size={22}
+            color={quantity >= maxQty ? colors.textSecColor : colors.primaryColor1}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.quickQtyRow}>
+        {[1, 2, 3, 5, 10].filter(q => q <= maxQty).map((q) => (
+          <TouchableOpacity
+            key={q}
+            style={[
+              styles.quickQtyBtn,
+              { borderColor: colors.dividerColor },
+              quantity === q && {
+                borderColor: colors.primaryColor1,
+                backgroundColor: colors.primaryColor1 + '20',
+              },
+            ]}
+            onPress={() => {
+              const diff = q - quantity;
+              if (diff > 0) Array.from({ length: diff }).forEach(() => onIncrease());
+              else if (diff < 0) Array.from({ length: Math.abs(diff) }).forEach(() => onDecrease());
+            }}>
+            <Text style={[
+              styles.quickQtyBtnText,
+              { color: colors.textSecColor },
+              quantity === q && { color: colors.primaryColor1, fontFamily: '_bold' },
+            ]}>
+              {q} {q === 1 ? 'Pin' : 'Pins'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};
 
 // ── Phone & Email Input ───────────────────────────
 const DeliveryInput = ({
@@ -164,7 +171,7 @@ const DeliveryInput = ({
     <View>
       {/* Phone Number */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Phone Number</Text>
+        <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>Phone Number</Text>
         <View style={[
           styles.inputContainer,
           phoneFocused && styles.inputContainerFocused,
@@ -176,7 +183,7 @@ const DeliveryInput = ({
             style={styles.inputIcon}
           />
           <TextInput
-            style={styles.inputField}
+            style={[styles.inputField, { color: colors.textBlack }]}
             value={phone}
             onChangeText={(t) => onPhoneChange(t.replace(/[^0-9]/g, ''))}
             placeholder="e.g. 08012345678"
@@ -186,18 +193,18 @@ const DeliveryInput = ({
             onFocus={() => setPhoneFocused(true)}
             onBlur={() => setPhoneFocused(false)}
           />
-          <TouchableOpacity onPress={onUseMine} style={styles.useMineBtn}>
-            <Text style={styles.useMineBtnText}>Use Mine</Text>
+          <TouchableOpacity onPress={onUseMine} style={[styles.useMineBtn, { backgroundColor: colors.bgLight }]}>
+            <Text style={[styles.useMineBtnText, { color: colors.primaryColor1 }]}>Use Mine</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.inputHint}>
+        <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
           Pin will be sent as SMS to this number
         </Text>
       </View>
 
       {/* Email Address */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Email Address</Text>
+        <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>Email Address</Text>
         <View style={[
           styles.inputContainer,
           emailFocused && styles.inputContainerFocused,
@@ -209,7 +216,7 @@ const DeliveryInput = ({
             style={styles.inputIcon}
           />
           <TextInput
-            style={styles.inputField}
+            style={[styles.inputField, { color: colors.textBlack }]}
             value={email}
             onChangeText={onEmailChange}
             placeholder="e.g. name@email.com"
@@ -221,7 +228,7 @@ const DeliveryInput = ({
             onBlur={() => setEmailFocused(false)}
           />
         </View>
-        <Text style={styles.inputHint}>
+        <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
           Pin will also be delivered to this email address
         </Text>
       </View>
@@ -267,39 +274,39 @@ const RewardsTipsCard = ({ examLabel }) => {
   }, []);
 
   return (
-    <View style={styles.tipsCard}>
+    <View style={[styles.tipsCard, { backgroundColor: colors.bgLight }]}>
       <View style={styles.tipsTitleRow}>
         <Ionicons
           name="information-circle-outline"
           size={18}
           color={colors.primaryColor1}
         />
-        <Text style={styles.tipsTitle}>Quick Tips</Text>
+        <Text style={[styles.tipsTitle, { color: colors.primaryColor1 }]}>Quick Tips</Text>
       </View>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Scratch card pins are delivered instantly to your phone and email
       </Text>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Keep your pin safe — it cannot be replaced once revealed
       </Text>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • You can purchase up to 10 pins per transaction
       </Text>
       {rewardRate && (
-        <Text style={styles.tipText}>
+        <Text style={[styles.tipText, { color: colors.textSecColor }]}>
           • You earn{' '}
           <Text style={styles.tipHighlight}>{rewardRate}% in coins</Text>
           {' '}on every {examLabel} card purchase
         </Text>
       )}
       {coinValue && (
-        <Text style={styles.tipText}>
+        <Text style={[styles.tipText, { color: colors.textSecColor }]}>
           • 🪙 1 coin ={' '}
           <Text style={styles.tipHighlight}>₦{coinValue} NGN</Text>
           {' '}— redeemable as bonus
         </Text>
       )}
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Top users earn quarterly & annual gift rewards 🎁
       </Text>
     </View>
@@ -486,12 +493,12 @@ const ExamCardsScreen = ({ navigation, route }) => {
             />
 
             {serviceStatus !== 'paused' && (
-              <View style={styles.formCard}>
+              <View style={[styles.formCard, { backgroundColor: colors.bgCard }]}>
 
                 {/* Exam Type Selector */}
                 <View style={styles.sectionContainer}>
-                  <Text style={styles.inputLabel}>Select Exam Type</Text>
-                  <Text style={styles.inputHint}>
+                  <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>Select Exam Type</Text>
+                  <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
                     Choose the examination body for your scratch card
                   </Text>
                   <View style={styles.examGrid}>
@@ -617,9 +624,9 @@ const ExamCardsScreen = ({ navigation, route }) => {
 
             {/* ── Order Summary ─────────────────── */}
             {showSummary && serviceStatus !== 'paused' && (
-              <View style={styles.summaryCard}>
-                <Text style={styles.summaryTitle}>Order Summary</Text>
-                <View style={styles.summaryDivider} />
+              <View style={[styles.summaryCard, { backgroundColor: colors.bgCard }]}>
+                <Text style={[styles.summaryTitle, { color: colors.textBlack }]}>Order Summary</Text>
+                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
 
                 <SummaryRow label="Exam Type" value={selectedExam?.label} />
                 <SummaryRow
@@ -642,7 +649,7 @@ const ExamCardsScreen = ({ navigation, route }) => {
                 />
                 <SummaryRow label="Service Fee" value="₦0.00" />
 
-                <View style={styles.summaryDivider} />
+                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
 
                 <SummaryRow
                   label="Total"
@@ -652,7 +659,7 @@ const ExamCardsScreen = ({ navigation, route }) => {
                 />
 
                 {/* Wallet Balance Check */}
-                <View style={styles.balanceCheckRow}>
+                <View style={[styles.balanceCheckRow, { backgroundColor: colors.bgLight }]}>
                   <Ionicons
                     name={
                       totalPrice <= Number(walletBalance)
@@ -666,7 +673,7 @@ const ExamCardsScreen = ({ navigation, route }) => {
                         : colors.dangerColor
                     }
                   />
-                  <Text style={styles.balanceCheckText}>
+                  <Text style={[styles.balanceCheckText, { color: colors.textBlack }]}>
                     Wallet Balance: ₦{Number(walletBalance).toLocaleString()}
                   </Text>
                 </View>
@@ -701,7 +708,7 @@ const ExamCardsScreen = ({ navigation, route }) => {
                 <TouchableOpacity
                   style={styles.editBtn}
                   onPress={() => setShowSummary(false)}>
-                  <Text style={styles.editBtnText}>Edit Order</Text>
+                  <Text style={[styles.editBtnText, { color: colors.textSecColor }]}>Edit Order</Text>
                 </TouchableOpacity>
               </View>
             )}

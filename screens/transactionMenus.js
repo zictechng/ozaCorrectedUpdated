@@ -1,282 +1,449 @@
-﻿import React, { useContext, useEffect, useRef, useState } from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground} from 'react-native';
+﻿import React, { useContext, useRef } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity,
+  ScrollView, StatusBar,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
-import Modal from "react-native-modal";
-import { MaterialIcons, Ionicons} from '@expo/vector-icons';
-import { gs,colors } from '../styles';
-import { StatusBar } from 'expo-status-bar';
-import HeaderMenu from '../components/headerMenu';
-import RBSheet from "react-native-raw-bottom-sheet";
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import RBSheet from 'react-native-raw-bottom-sheet';
+
+import { gs, spacing, radius, typography, shadows } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
 import { AuthContext } from '../contextAPI/authContext';
 import RateBottomSheet from '../components/rateBottomSheet';
 import paypalImage from '../assets/images/paypal2.png';
 import payoonerImage from '../assets/images/payooner3.png';
 import bitcoinImage from '../assets/images/bitcoin1.png';
-import bgImage from '../assets/images/app_land2.jpg';
 
+// ── Action Card ───────────────────────────────────
+const ActionCard = ({ icon, iconBg, iconColor, title, subtitle, onPress, colors }) => (
+  <TouchableOpacity
+    style={[styles.actionCard, { backgroundColor: colors.bgCard }]}
+    onPress={onPress}
+    activeOpacity={0.85}>
+    <View style={[styles.actionIconBox, { backgroundColor: iconBg }]}>
+      <Ionicons name={icon} size={26} color={iconColor} />
+    </View>
+    <View style={styles.actionInfo}>
+      <Text style={[styles.actionTitle, { color: colors.textBlack }]}>{title}</Text>
+      <Text style={[styles.actionSubtitle, { color: colors.textSecColor }]}>{subtitle}</Text>
+    </View>
+    <View style={[styles.actionArrow, { backgroundColor: colors.bgLight }]}>
+      <Ionicons name="chevron-forward" size={18} color={colors.primaryColor1} />
+    </View>
+  </TouchableOpacity>
+);
 
+// ── Main Transaction Menus ────────────────────────
 const TransactionMenus = () => {
-    const navigation = useNavigation();
-    const isFocused = useIsFocused();
+  const navigation = useNavigation();
+  const isFocused = useIsFocused();
+  const { colors, isDark } = useThemeStyles();
+  const { userInfo, appSettingDetails } = useContext(AuthContext);
 
-    const {userInfo, setUserInfo, appSettingDetails} = useContext(AuthContext);
+  const refRateSheet = useRef();
 
-    const [acctPin, setAcctPin] = useState(false);
-    const [rateView, setRateView] = useState(false);
+  const actions = [
+    {
+      id: 'fund',
+      icon: 'wallet-outline',
+      iconBg: '#EEF2FF',
+      iconColor: colors.primaryColor1,
+      title: 'Add Funds',
+      subtitle: 'Top up your wallet balance via Paystack',
+      route: 'FundAccount',
+    },
+    {
+      id: 'send',
+      icon: 'send-outline',
+      iconBg: '#D1FAE5',
+      iconColor: '#10B981',
+      title: 'Send Funds',
+      subtitle: 'Transfer funds to another user instantly',
+      route: 'SendFund',
+    },
+    {
+      id: 'withdraw',
+      icon: 'arrow-down-circle-outline',
+      iconBg: '#FEF3C7',
+      iconColor: '#F59E0B',
+      title: 'Withdraw Funds',
+      subtitle: 'Withdraw to your linked bank account',
+      route: 'withdraw-fund',
+    },
+    {
+      id: 'sell',
+      icon: 'trending-up-outline',
+      iconBg: '#FEE2E2',
+      iconColor: '#EF4444',
+      title: 'Sell Digital Assets',
+      subtitle: 'Sell PayPal, Payoneer or Bitcoin',
+      route: 'SalesPage',
+    },
+    {
+      id: 'buy',
+      icon: 'trending-down-outline',
+      iconBg: '#DBEAFE',
+      iconColor: '#3B82F6',
+      title: 'Buy Digital Assets',
+      subtitle: 'Buy PayPal, Payoneer or Bitcoin',
+      route: 'BuyPage',
+    },
+  ];
 
-    let myId = userInfo.userData._id; // get logged in user ID
-    const refVieRateBSheet = useRef();
-
-    useEffect(() => {
-       
-      }, [isFocused]);
-      
-      useEffect(() =>{
-       },[])
-
-      const OpenRateView = () =>
-      {
-        setRateView(!refVieRateBSheet.current.open())
-      }
-      
-    const [userDetails, setUserDetails] = React.useState({
-        new_pin: '',
-        confirm_secureTextEntry: true,
-        })
- 
-  
   return (
-        <ImageBackground style={{flex:1}} source={bgImage} resizeMode='cover'>
-            <SafeAreaView style={{flex:1}}>
-                {
-                isFocused &&
-                    <StatusBar
-                    style='light'/>
-                }
-                {!acctPin &&
-                    <StatusBar
-                    style='light'/>
-                    }
-                <HeaderMenu 
-                    buttonHome={
-                    <TouchableOpacity onPress={() =>{}}>
-                        <View style={gs.homeSideMenu}>
-                        {/* <Ionicons name='arrow-back' size={23} color={colors.textColor}/> */}
-                    </View>
-                    </TouchableOpacity>
-                    }
-                    titleName={'Transactions'}
-                    profileTitle={styles.settingTitle}
-                />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.bgColor}
+      />
 
-                <View style={{marginBottom:30}}></View>
-                <View style={{flex:1, backgroundColor:colors.bgColor}}>
-                <ScrollView showsVerticalScrollIndicator={false}>
-                    <View style={{marginHorizontal:10, marginTop:10}}>
-                        <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Transactions</Text>
-                    </View>
+      {/* ── Header ─────────────────────────────── */}
+      <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
+        <Text style={[styles.headerTitle, { color: colors.textBlack }]}>Transactions</Text>
+        <TouchableOpacity
+          style={[styles.rateBtn, { backgroundColor: colors.bgLight }]}
+          onPress={() => refRateSheet.current.open()}
+          activeOpacity={0.8}>
+          <MaterialIcons name="currency-exchange" size={18} color={colors.primaryColor1} />
+          <Text style={[styles.rateBtnText, { color: colors.primaryColor1 }]}>
+            View Rates
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-                    <TouchableOpacity style={styles.formPage} onPress={() =>navigation.navigate('FundAccount')}>
-                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                            <Ionicons name='add' size={25} color={colors.primaryColor2} />
-                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Add Funds</Text>
-                        </View>
-                    </TouchableOpacity>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
 
-                    <TouchableOpacity style={[styles.formPage, {marginBottom:-3}]}
-                        onPress={() =>navigation.navigate('SendFund')}>
-                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                            <Ionicons name='send-sharp' size={25} color={colors.primaryColor2} />
-                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Send Funds</Text>
-                        </View>
-                        
-                    </TouchableOpacity>
+        {/* ── Hero Banner ──────────────────────── */}
+        <LinearGradient
+          colors={[colors.primaryColor1, colors.primaryColor1b]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroBanner}>
+          <View style={styles.heroCircle1} />
+          <View style={styles.heroCircle2} />
+          <View style={styles.heroIconBox}>
+            <Ionicons name="swap-horizontal" size={28} color={colors.primaryColor1} />
+          </View>
+          <View style={styles.heroText}>
+            <Text style={styles.heroTitle}>Manage Your Funds</Text>
+            <Text style={styles.heroDesc}>
+              Add, send, withdraw and trade digital assets at the best rates
+            </Text>
+          </View>
+        </LinearGradient>
 
-                    <TouchableOpacity style={[styles.formPage, {marginBottom:30}]}
-                        onPress={() =>OpenRateView()}>
-                        <View style={{flexDirection:'row', padding:10, alignItems:'center'}}>
-                            <MaterialIcons name='currency-exchange' size={25} color={colors.primaryColor2} />
-                            <Text style={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textBlack}}>Exchange Rate</Text>
-                        </View>
-                        
-                    </TouchableOpacity>
+        {/* ── Wallet Balance Strip ──────────────── */}
+        <View style={[styles.balanceStrip, { backgroundColor: colors.bgCard, borderColor: colors.dividerColor }]}>
+          <View>
+            <Text style={[styles.balanceLabel, { color: colors.textSecColor }]}>
+              Wallet Balance
+            </Text>
+            <Text style={[styles.balanceValue, { color: colors.textBlack }]}>
+              ₦{Number(userInfo?.userData?.tran_account || 0).toLocaleString()}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.walletBtn, { backgroundColor: colors.primaryColor1 }]}
+            onPress={() => navigation.navigate('Wallet')}
+            activeOpacity={0.85}>
+            <Ionicons name="wallet-outline" size={16} color="#fff" />
+            <Text style={styles.walletBtnText}>My Wallet</Text>
+          </TouchableOpacity>
+        </View>
 
-                </ScrollView>
-                </View>
-                    
-                {/* Show current rate here... */}
-                <RBSheet
-                ref={refVieRateBSheet}
-                closeOnDragDown={true}
-                closeOnPressMask={true}
-                openDuration={500}
-                closeDuration={400}
-                height={250}
-                closeOnPressBack={true}
-                keyboardAvoidingViewEnabled={true}
-                customStyles={{
-                container:{
-                    backgroundColor: colors.bgColor,
-                },
-                draggableIcon: {
-                    backgroundColor: "#000"
-                }
-                }}>
-                <ScrollView>
-                <RateBottomSheet 
-                    titleText={'Rate'}
-                    titleStyle={{fontFamily:'_semiBold', fontSize:20, color:colors.textBlack}}
-                    imageIconPaypal={paypalImage}
-                    imageIconPayooner={payoonerImage}
-                    imageIconBitcoin={bitcoinImage}
-                    imageStyle={styles.bottomSheetImageStyle}
-                    buttonTextStyle={styles.bottomSheetButtonText}
-                    textStyle={{fontFamily:'_semiBold', fontSize:14, marginTop:8}}
-                />
+        {/* ── Section Title ─────────────────────── */}
+        <Text style={[styles.sectionTitle, { color: colors.textBlack }]}>
+          Quick Actions
+        </Text>
 
-                </ScrollView>
-                </RBSheet>
+        {/* ── Action Cards ──────────────────────── */}
+        {actions.map((action) => (
+          <ActionCard
+            key={action.id}
+            icon={action.icon}
+            iconBg={action.iconBg}
+            iconColor={action.iconColor}
+            title={action.title}
+            subtitle={action.subtitle}
+            colors={colors}
+            onPress={() => navigation.navigate(action.route)}
+          />
+        ))}
 
-                </SafeAreaView>
-        </ImageBackground>
-        
-        
+        {/* ── Rate Notice ───────────────────────── */}
+        <TouchableOpacity
+          style={[styles.rateNotice, {
+            backgroundColor: colors.bgLight,
+            borderColor: colors.dividerColor,
+          }]}
+          onPress={() => refRateSheet.current.open()}
+          activeOpacity={0.8}>
+          <MaterialIcons name="currency-exchange" size={20} color={colors.primaryColor1} />
+          <View style={styles.rateNoticeInfo}>
+            <Text style={[styles.rateNoticeTitle, { color: colors.textBlack }]}>
+              Current Exchange Rates
+            </Text>
+            <Text style={[styles.rateNoticeDesc, { color: colors.textSecColor }]}>
+              Tap to view live PayPal, Payoneer and Bitcoin rates
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.primaryColor1} />
+        </TouchableOpacity>
+
+        <View style={{ height: spacing.xxxl }} />
+      </ScrollView>
+
+      {/* ── Rate Bottom Sheet ────────────────────── */}
+      <RBSheet
+        ref={refRateSheet}
+        closeOnDragDown
+        closeOnPressMask
+        openDuration={400}
+        closeDuration={300}
+        height={260}
+        closeOnPressBack
+        customStyles={{
+          container: {
+            backgroundColor: colors.bgColor,
+            borderTopLeftRadius: radius.xl,
+            borderTopRightRadius: radius.xl,
+          },
+          draggableIcon: { backgroundColor: colors.dividerColor },
+        }}>
+        <ScrollView>
+          <RateBottomSheet
+            titleText="Live Exchange Rates"
+            titleStyle={{
+              fontFamily: '_bold',
+              fontSize: typography.xl,
+              color: colors.textBlack,
+              paddingHorizontal: spacing.xl,
+              paddingTop: spacing.md,
+            }}
+            imageIconPaypal={paypalImage}
+            imageIconPayooner={payoonerImage}
+            imageIconBitcoin={bitcoinImage}
+            imageStyle={styles.sheetImageStyle}
+            buttonTextStyle={{
+              fontFamily: '_semiBold',
+              fontSize: typography.base,
+              marginLeft: spacing.md,
+              color: colors.primaryColor1,
+            }}
+            textStyle={{
+              fontFamily: '_semiBold',
+              fontSize: typography.sm,
+              marginTop: spacing.xs,
+              color: colors.textSecColor,
+            }}
+          />
+        </ScrollView>
+      </RBSheet>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    accountDetailsTile:{
-    fontFamily:'_semiBold', 
-    fontSize:13, 
-    color:colors.textBlack
-    },
-    accountDetails:{
-    fontFamily:'_semiBold', 
-    fontSize:14, 
-    color:colors.textSecColor
-    },
-    accountView:{
-    flexDirection:'row', 
-    justifyContent:'space-between', 
-    marginBottom:10
-    },
-    dialogView1:{
-    borderRadius:10, 
-    marginHorizontal:10, 
-    backgroundColor:colors.textColor
-    },
-    dialogView2:{
-    width:'100%', 
-    borderTopRightRadius:10, 
-    borderTopLeftRadius:10, 
-    marginBottom:20, 
-    height:40, 
-    backgroundColor:colors.primaryColor1
-    },
-    bottomSheetImageStyle:{
-        width:30, 
-        height:30, 
-        borderRadius:10
-    },
-    bottomSheetButtonText:{
-        fontFamily:'_semiBold', 
-        fontSize:17, 
-        marginLeft:15, 
-        color:colors.primaryColor1
-    },
-    dialogText1:{
-    fontFamily:'_semiBold', 
-    fontSize:17, 
-    color:colors.bgColor, 
-    textAlign:'center', marginTop:5
-},
-dialogCancelBtn:{
-    marginTop: -45, 
-    borderRadius:50, 
-    backgroundColor:colors.bgColor, 
-    height:30, width:30, 
-    alignItems:'center', 
-    justifyContent:'center' 
-},
-    dialogText2:{
-        fontFamily:'_regular', 
-        fontSize:13, 
-        color:colors.textBlack, 
-        marginHorizontal:10, 
-        marginBottom:10, 
-},
-    dialogInputText1:{
-        flexDirection:'row',
-        marginBottom:35,
-        borderWidth: 1, 
-        borderRadius: 7,
-        borderColor: 'lightgrey',
-        paddingLeft: 10,
-        height: 50,
-        marginHorizontal:10
-},
-    dialogActionBtn:{
-        borderRadius:10, 
-        marginHorizontal:20, 
-        marginTop:5, 
-        marginBottom:10, 
-        width:80, 
-        height:35, 
-        alignItems:'center',
-        borderColor: colors.primaryColor1,
-        borderWidth:1
-    },
-    bottomSheetButton:{
-        flexDirection:'row', 
-        borderRadius:10, 
-        marginHorizontal:10, 
-        backgroundColor:colors.textColor, 
-        marginTop:20, 
-        height:50, 
-        alignItems:'center',
-        shadowColor: '#000',
-        shadowOffset: { 
-        width: 0, 
-        height: 1 
-        },
-        shadowOpacity: 0.5,
-        shadowRadius: 1,
-        elevation: 1, 
-        },
-    bottomSheetButtonText:{
-        fontFamily:'_semiBold', 
-        fontSize:17, 
-        marginLeft:15, 
-        color:colors.primaryColor1
-        },
-    settingTitle:{
-        color:colors.textColor,
-        fontSize:20,
-        marginLeft: -20,
-        fontFamily: '_semiBold',
-      },
-      formPage:{
-        borderRadius:10, 
-        marginHorizontal:10, 
-        backgroundColor:colors.textColor, 
-        marginTop:20,
-        shadowColor: '#000',
-        shadowOffset: { 
-        width: 0, 
-        height: 1 
-        },
-        shadowOpacity: 0.5,
-        shadowRadius: 0.9,
-        elevation: 1, 
-        },
+  container: { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxxl,
+  },
 
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  headerTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xxl,
+  },
+  rateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    gap: spacing.xs,
+  },
+  rateBtnText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.sm,
+    lineHeight: 20,
+  },
+
+  // Hero Banner
+  heroBanner: {
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    ...shadows.lg,
+  },
+  heroCircle1: {
+    position: 'absolute',
+    right: -30,
+    top: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  heroCircle2: {
+    position: 'absolute',
+    left: -20,
+    bottom: -20,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  heroIconBox: {
+    width: 54,
+    height: 54,
+    borderRadius: radius.lg,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.sm,
+  },
+  heroText: { flex: 1 },
+  heroTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+    color: '#fff',
+    marginBottom: 4,
+  },
+  heroDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 20,
+  },
+
+  // Balance Strip
+  balanceStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    ...shadows.card,
+  },
+  balanceLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  balanceValue: {
+    fontFamily: '_bold',
+    fontSize: typography.xxl,
+    lineHeight: 30,
+  },
+  walletBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+    ...shadows.sm,
+  },
+  walletBtnText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.sm,
+    color: '#fff',
+    lineHeight: 20,
+  },
+
+  // Section Title
+  sectionTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    marginBottom: spacing.md,
+  },
+
+  // Action Card
+  actionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    gap: spacing.md,
+    ...shadows.card,
+  },
+  actionIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionInfo: { flex: 1 },
+  actionTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: 2,
+  },
+  actionSubtitle: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 20,
+  },
+  actionArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Rate Notice
+  rateNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginTop: spacing.sm,
+    borderWidth: 1,
+    gap: spacing.md,
+  },
+  rateNoticeInfo: { flex: 1 },
+  rateNoticeTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: 2,
+  },
+  rateNoticeDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 20,
+  },
+
+  // Sheet
+  sheetImageStyle: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.sm,
+  },
 });
 
 export default TransactionMenus;

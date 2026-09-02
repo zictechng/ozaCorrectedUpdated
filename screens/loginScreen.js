@@ -21,7 +21,7 @@ import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import Checkbox from 'expo-checkbox';
 import { KeyboardAvoidingView, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { gs, spacing, radius, typography } from '../styles';
+import { gs, spacing, radius, typography, shadows } from '../styles';
 import useThemeStyles from '../hooks/useThemeStyles';
 
 import { AuthContext } from '../contextAPI/authContext';
@@ -107,27 +107,38 @@ const LoginScreen = ({ navigation }) => {
 
             {/* Header Gradient Bar */}
             <LinearGradient
-              colors={[colors.primaryColor1, colors.secondaryColor]}
+              colors={[colors.primaryColor1, colors.primaryColor1b || colors.primaryColor1 + 'AA']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.headerBar}
             />
 
             {/* Logo / Brand Area */}
+           
             <View style={styles.brandContainer}>
-              <View style={styles.logoCircle}>
-                <Ionicons name="wallet-outline" size={32} color={colors.textColor} />
+              <View style={[
+                styles.logoCircle,
+                { backgroundColor: colors.primaryColor1 + '15' },        
+              ]}>
+                <Ionicons name="wallet-outline" size={32} color={colors.primaryColor1} /> 
               </View>
-              <Text style={styles.brandName}>
+              <Text style={[styles.brandName, { color: colors.textBlack }]}>              
                 {appDetails.infoData?.app_name || 'OtaMobile'}
               </Text>
-              <Text style={styles.brandTagline}>
+              <Text style={[styles.brandTagline, { color: colors.textSecColor }]}>        
                 Your trusted financial companion
               </Text>
             </View>
 
             {/* Login Card */}
-             <View style={[styles.card, { backgroundColor: colors.bgCard }]}>
+             <View style={[
+                styles.card,
+                {
+                  backgroundColor: colors.bgCard,
+                  borderWidth: isDark ? 1 : 0,                                             
+                  borderColor: isDark ? colors.dividerColor : 'transparent',               
+                },
+              ]}>
 
               <Text style={[styles.cardTitle, { color: colors.textBlack }]}>Welcome back</Text>
               <Text style={[styles.cardSubtitle, { color: colors.textSecColor }]}>
@@ -136,11 +147,12 @@ const LoginScreen = ({ navigation }) => {
 
               {/* Email Input */}
               <View style={styles.inputGroup}>
-                <Text style={gs.inputLabel}>Email Address</Text>
+                <Text style={[gs.inputLabel, { color: colors.textSecColor }]}>Email Address</Text>
                 <View style={[
-                  gs.inputContainer,
-                  emailFocused && gs.inputContainerFocused,
-                ]}>
+                      gs.inputContainer,
+                      { borderColor: colors.dividerColor, backgroundColor: colors.bgLight },   
+                      emailFocused && { borderColor: colors.primaryColor1 },                   
+                    ]}>
                   <MaterialIcons
                     name="alternate-email"
                     size={20}
@@ -150,7 +162,7 @@ const LoginScreen = ({ navigation }) => {
                   <TextInput
                     placeholder="Enter your email"
                     placeholderTextColor="#9CA3AF"
-                    style={gs.inputField}
+                    style={[gs.inputField, { color: colors.textBlack }]}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -164,11 +176,12 @@ const LoginScreen = ({ navigation }) => {
 
               {/* Password Input */}
               <View style={styles.inputGroup}>
-                <Text style={gs.inputLabel}>Password</Text>
+                <Text style={[gs.inputLabel, { color: colors.textSecColor }]}>Password</Text>
                 <View style={[
-                  gs.inputContainer,
-                  passwordFocused && gs.inputContainerFocused,
-                ]}>
+                      gs.inputContainer,
+                      { borderColor: colors.dividerColor, backgroundColor: colors.bgLight },  
+                      passwordFocused && { borderColor: colors.primaryColor1 },               
+                    ]}>
                   <Ionicons
                     name="lock-closed-outline"
                     size={20}
@@ -178,7 +191,7 @@ const LoginScreen = ({ navigation }) => {
                   <TextInput
                     placeholder="Enter your password"
                     placeholderTextColor="#9CA3AF"
-                    style={gs.inputField}
+                    style={[gs.inputField, { color: colors.textBlack }]}
                     secureTextEntry={secureTextEntry}
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -213,26 +226,34 @@ const LoginScreen = ({ navigation }) => {
                   <Text style={[styles.rememberText, { color: colors.textSecColor }]}>Stay signed in</Text>
                 </TouchableOpacity>
                 <Pressable onPress={() => navigation.navigate('ForgetPassword')}>
-                  <Text style={styles.forgotText}>Forgot Password?</Text>
+                  <Text style={[styles.forgotText, { color: colors.primaryColor1 }]}> Forgot Password?</Text>
                 </Pressable>
               </View>
 
               {/* Login Button */}
-              <TouchableOpacity
-                style={[
-                  gs.primaryButton,
-                  (isButtonDisable || checkLoginState) && { opacity: 0.6 },
-                  { marginTop: spacing.xl },
-                ]}
-                onPress={UserLogin}
-                disabled={isButtonDisable || checkLoginState}
-                activeOpacity={0.85}>
-                {isBtnLoading ? (
-                  <ActivityIndicator color={colors.textColor} size={24} />
-                ) : (
-                  <Text style={gs.primaryButtonText}>Sign In</Text>
-                )}
-              </TouchableOpacity>
+                <LinearGradient
+                  colors={[colors.primaryColor1, colors.primaryColor1b]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[
+                    styles.loginBtn,
+                    (isButtonDisable || checkLoginState) && { opacity: 0.6 },
+                  ]}>
+                  <TouchableOpacity
+                    style={styles.loginBtnInner}
+                    onPress={UserLogin}
+                    disabled={isButtonDisable || checkLoginState}
+                    activeOpacity={0.85}>
+                    {isBtnLoading ? (
+                      <ActivityIndicator color="#fff" size={24} />
+                    ) : (
+                      <>
+                        <Ionicons name="log-in-outline" size={20} color="#fff" />
+                        <Text style={styles.loginBtnText}>Sign In</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </LinearGradient>
 
               {/* Divider */}
               <View style={styles.dividerRow}>
@@ -245,7 +266,7 @@ const LoginScreen = ({ navigation }) => {
               <View style={styles.signupRow}>
                 <Text style={[styles.signupPrompt, { color: colors.textSecColor }]}>Don't have an account? </Text>
                 <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                  <Text style={styles.signupLink}>Create Account</Text>
+                  <Text style={[styles.signupLink, { color: colors.primaryColor1 }]}>Create Account</Text>
                 </TouchableOpacity>
               </View>
 
@@ -255,13 +276,13 @@ const LoginScreen = ({ navigation }) => {
             <Text style={[styles.footerText, { color: colors.textSecColor }]}>
               By signing in, you agree to our{' '}
               <Text
-                style={styles.footerLink}
+                style={[styles.footerLink, { color: colors.primaryColor1 }]}
                 onPress={() => navigation.navigate('TermCondition')}>
                 Terms of Service
               </Text>
               {' '}and{' '}
               <Text
-                style={styles.footerLink}
+                style={[styles.footerLink, { color: colors.primaryColor1 }]}
                 onPress={() => navigation.navigate('PrivacyPolicy')}>
                 Privacy Policy
               </Text>
@@ -301,6 +322,23 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
+  loginBtn: {
+  borderRadius: radius.lg,
+  marginTop: spacing.xl,
+  ...shadows.md,
+},
+loginBtnInner: {
+  flexDirection: 'row',
+  justifyContent: 'center',
+  alignItems: 'center',
+  height: 54,
+  gap: spacing.sm,
+},
+loginBtnText: {
+  fontFamily: '_bold',
+  fontSize: typography.lg,
+  color: '#fff',
+},
   brandName: {
     fontFamily: '_bold',
     fontSize: typography.xxl,
@@ -308,7 +346,7 @@ const styles = StyleSheet.create({
   },
   brandTagline: {
     fontFamily: '_regular',
-    fontSize: typography.sm,
+    fontSize: typography.base,
     marginTop: 4,
   },
   card: {
@@ -383,11 +421,11 @@ const styles = StyleSheet.create({
   },
   signupLink: {
     fontFamily: '_bold',
-    fontSize: typography.base,
+    fontSize: typography.md,
   },
   footerText: {
     fontFamily: '_regular',
-    fontSize: typography.xs,
+    fontSize: typography.sm,
     textAlign: 'center',
     marginTop: spacing.xl,
     marginHorizontal: spacing.xl,
@@ -395,6 +433,8 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     fontFamily: '_semiBold',
+    fontSize: typography.sm,
+    
   },
 });
 

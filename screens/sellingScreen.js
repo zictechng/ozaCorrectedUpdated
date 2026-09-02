@@ -1,858 +1,807 @@
-﻿import React, { useContext, useState, useRef, useEffect } from 'react';
-import { 
-    View, 
-    Text, 
-    TextInput, 
-    StyleSheet, 
-    TouchableOpacity,
-    KeyboardAvoidingView, 
-    Keyboard, 
-    TouchableWithoutFeedback, 
-    Image, 
-    ImageBackground, 
-    ScrollView, 
-    Platform,
-    Alert} from 'react-native';
+﻿import React, { useState, useContext, useEffect, useRef } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  StatusBar, TextInput, ActivityIndicator, Platform,
+  KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard,
+  Image,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as WebBrowser from 'expo-web-browser';
-import { Ionicons, FontAwesome} from '@expo/vector-icons';
-import * as Animatable from 'react-native-animatable'
-import { gs,colors } from '../styles';
-import { StatusBar } from 'expo-status-bar';
-import CustomButton from '../components/customButton';
+import { useIsFocused } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
+import RBSheet from 'react-native-raw-bottom-sheet';
+
+import { gs, spacing, radius, typography, shadows } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
+import { AuthContext } from '../contextAPI/authContext';
+import { noticeData } from '../components/errorNotice';
+import client from '../contextAPI/client';
+
 import paypalImage from '../assets/images/paypal2.png';
 import payoonerImage from '../assets/images/payooner3.png';
 import bitcoinImage from '../assets/images/bitcoin1.png';
-import moneyImage from '../assets/images/money_ex.png';
-import { AuthContext } from '../contextAPI/authContext';
-import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
-import { noticeData } from '../components/errorNotice';
-import RBSheet from 'react-native-raw-bottom-sheet';
-import client from '../contextAPI/client';
-import LoaderIndicator from '../components/loaderIndicator';
-import { ActivityIndicator } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ShowLogoutModal } from '../components/controls';
 
+// ── Asset Types ───────────────────────────────────
+const ASSETS = [
+  {
+    id: 'paypal',
+    label: 'PayPal',
+    image: paypalImage,
+    color: '#003087',
+    bgColor: '#E8F0FE',
+    currency: 'USD',
+    placeholder: 'Enter PayPal amount in USD',
+    hint: 'Enter the USD amount you want to sell from your PayPal account',
+  },
+  {
+    id: 'payoneer',
+    label: 'Payoneer',
+    image: payoonerImage,
+    color: '#FF4800',
+    bgColor: '#FFF0EB',
+    currency: 'USD',
+    placeholder: 'Enter Payoneer amount in USD',
+    hint: 'Enter the USD amount you want to sell from your Payoneer account',
+  },
+  {
+    id: 'bitcoin',
+    label: 'Bitcoin',
+    image: bitcoinImage,
+    color: '#F7931A',
+    bgColor: '#FFF4E5',
+    currency: 'BTC',
+    placeholder: 'Enter Bitcoin amount in USD equivalent',
+    hint: 'Enter the USD equivalent of the Bitcoin amount you want to sell',
+  },
+];
 
-const SellingScreen = ({route, navigation}) => {
-    let routeName = route.params?.pageName;
-    let routeServiceType = route.params?.categoryType
-      const {userToken, userInfo, setUserInfo} = useContext(AuthContext);
-      const [isLoading, setIsLoading] = useState(false);
-      
-      const [result, setResult] = useState(null);
-      const [openedBrowser, setOpenedBrowser] = useState(false);
-      const [emailVerify, setEmailVerify] = useState("");
-      const [currentRate, setCurrentRate] = useState({});
-      const [paymentButton, setPaymentButton] = useState(false);
+// ── Asset Selector Card ───────────────────────────
+const AssetCard = ({ asset, isSelected, onSelect, colors }) => (
+  <TouchableOpacity
+    style={[
+      styles.assetCard,
+      { backgroundColor: colors.bgCard, borderColor: colors.dividerColor },
+      isSelected && { borderColor: asset.color, backgroundColor: asset.bgColor },
+    ]}
+    onPress={() => onSelect(asset)}
+    activeOpacity={0.85}>
+    <Image source={asset.image} style={styles.assetImage} resizeMode="contain" />
+    <Text style={[
+      styles.assetLabel,
+      { color: colors.textBlack },
+      isSelected && { color: asset.color },
+    ]}>
+      {asset.label}
+    </Text>
+    {isSelected && (
+      <View style={[styles.assetCheck, { backgroundColor: asset.color }]}>
+        <Ionicons name="checkmark" size={12} color="#fff" />
+      </View>
+    )}
+  </TouchableOpacity>
+);
 
-      const [baseUrl, setBaseUrl] = useState({});
+// ── Rate Row ──────────────────────────────────────
+const RateRow = ({ label, value, highlight, colors }) => (
+  <View style={[styles.rateRow, { borderBottomColor: colors.dividerColor }]}>
+    <Text style={[styles.rateLabel, { color: colors.textSecColor }]}>{label}</Text>
+    <Text style={[
+      styles.rateValue,
+      { color: highlight ? colors.primaryColor1 : colors.textBlack },
+      highlight && { fontFamily: '_bold', fontSize: typography.lg },
+    ]}>
+      {value}
+    </Text>
+  </View>
+);
 
-      const [contactData, setContactData] = useState({
-        tag_id: '',
-        sell_amt: '',
-        sell_note: '',
-    });
+// ── Main Selling Screen ───────────────────────────
+const SellingScreen = ({ navigation }) => {
+  const isFocused = useIsFocused();
+  const { colors, isDark } = useThemeStyles();
+  const { userToken, userInfo } = useContext(AuthContext);
 
-    // get local storage app setting details
-    const data = AsyncStorage.getItem('AppSettingData').then((res) => {
-      const dataBaseUrl = JSON.parse(res)
-      setBaseUrl(dataBaseUrl.app_baseurl)
-      })
+  const refRateSheet = useRef();
 
-    const refSellCheckOut = useRef();
-    //console.log(baseUrl)
+  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [amount, setAmount] = useState('');
+  const [rates, setRates] = useState([]);
+  const [selectedRate, setSelectedRate] = useState(null);
+  const [isLoadingRates, setIsLoadingRates] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [amountFocused, setAmountFocused] = useState(false);
 
-    // function for message input field
-    const handleInputChange = (name, val) => {
-        setContactData({
-          ...contactData,
-          [name]: val,
-        });
-    }
+  const walletBalance = Number(userInfo?.userData?.tran_account || 0);
 
-    // close logout modal
-    const closeModal = () =>{
-      setPaymentButton(false);
-    }
-
-     // get current exchange rate from db
-     const getCurrentRate = async() =>{
-      try{
-        const res = await client.get('/api/current_rate',{
-          headers: {
-              'Authorization': 'Bearer '+userToken,
-                  }
-          })
-        if(res.data.msg !== '404'){
-          setCurrentRate(res.data)
-          //console.log('No Notification ', res.data)
-        }
-        else if(res.data.status == '404') {
-          //console.log('No Active Notification 404')
-           }
-        
-      }catch (e){
-        console.log('error ',e.message);
-      }
-     };
-  var totalMoneySend = '';
-   // function that will calculate the new total and return the new total
-   const totalAmount = () =>{
-      let totalMoneySend = ''
-      if(routeName == 'PayPal'){
-        totalMoneySend = currentRate.paypal_buying * contactData.sell_amt
-      return  totalMoneySend
-      }
-      else if(routeName == 'Payoneer'){
-        totalMoneySend = currentRate.payoneer_buying * contactData.sell_amt
-        return  totalMoneySend
-      }
-      else if(routeName == 'Bitcoin'){
-        totalMoneySend = currentRate.btc_buying * contactData.sell_amt
-        return  totalMoneySend
-      }
-    }
-
-    //process the sell request here
-    const sellData ={
-        tag_id: userInfo.userData.tag_id,
-        myId: userInfo.userData._id,
-        sell_amt: contactData.sell_amt,
-        sell_note: contactData.sell_note,
-        serviceName: routeName,
-        serviceCategory: 'Exchange',
-        service_type: routeServiceType,
-        total_moneySell: totalAmount(),
-     }
-
-    const processSell = () =>{
-        
-        if(sellData.sell_amt == null || sellData.sell_amt == ''){
-            Toast.show({
-                type: ALERT_TYPE.DANGER,
-                title: 'Error',
-                textBody: 'Some required information are missing',
-                titleStyle: noticeData[0].errorTitleStyle,
-                textBodyStyle: noticeData[0].errorMessageStyle,
-                })
-                return
-             }
-        if(sellData.sell_amt == 0){
-            Toast.show({
-                type: ALERT_TYPE.DANGER,
-                title: 'Error',
-                textBody: 'Wrong value entered',
-                titleStyle: noticeData[0].errorTitleStyle,
-                textBodyStyle: noticeData[0].errorMessageStyle,
-                })
-                return
-        }
-        if(sellData.sell_amt < 5){
-            Toast.show({
-                type: ALERT_TYPE.DANGER,
-                title: 'Error',
-                textBody: 'Minimum of $5 accepted',
-                titleStyle: noticeData[0].errorTitleStyle,
-                textBodyStyle: noticeData[0].errorMessageStyle,
-                })
-                return
-        }
-             refSellCheckOut.current.open();
-     }
-
-    const CheckRouteName = () =>{
-        if(routeName == 'PayPal' || routeName == 'Paypal'){
-            return ( <Image source={paypalImage} style={{borderRadius:10, width:40, height:40}}/>
-            )
-        }
-        else if(routeName == 'Payoneer'){
-            return ( <Image source={payoonerImage} style={{borderRadius:10, width:40, height:40}}/>
-            )
-        }
-        else if(routeName == 'Bitcoin' || routeName == 'bitcoin'){
-            return ( <Image source={bitcoinImage} style={{borderRadius:10, width:40, height:40}}/>
-            )
-        }
-        else{
-            return ( <Image source={moneyImage} style={{borderRadius:10, width:50, height:50, opacity: 0.3}}/>
-            )
-        }
-    }
-    
-    // manual checkout action routes
-    const checkOutManually = async()=>{
-       refSellCheckOut.current.close();
-       const manualData ={
-        tag_id: userInfo.userData.tag_id,
-        myId: userInfo.userData._id,
-        sell_amt: contactData.sell_amt,
-        sell_note: contactData.sell_note,
-        serviceName: routeName,
-        serviceCategory: 'Exchange',
-        method: 'Manual Checkout',
-        total_money: totalAmount(),
-        "serviceType": routeServiceType
-      }
-        try {
-            setIsLoading(true);
-            const res = await client.post('/api/fundPurchase_funding', manualData,{
-                headers: {
-                'Authorization': 'Bearer '+userToken,
-                }
-            })
-            // if the response is successful redirect to the new page
-                if(res.data.msg == '200'){
-                     navigation.navigate('CheckManual', {
-                        paymentDetails: sellData,
-                        tid: res.data
-                    })
-                    setContactData({
-                        tag_id: '',
-                        sell_amt: '',
-                        sell_note: '',
-                    })
-                }
-            
-            else if(res.data.status == '401'){
-                Toast.show({
-                    type: ALERT_TYPE.DANGER,
-                    title: 'Failed to authenticate',
-                    textBody: res.data.message,
-                    titleStyle: noticeData[0].errorTitleStyle,
-                    textBodyStyle: noticeData[0].errorMessageStyle,
-                    })
-            }
-            else if(res.data.status == '500'){
-                Toast.show({
-                    type: ALERT_TYPE.DANGER,
-                    title: 'Error',
-                    textBody: res.data.message,
-                    titleStyle: noticeData[0].errorTitleStyle,
-                    textBodyStyle: noticeData[0].errorMessageStyle,
-                    })
-            }
-            
-         } catch (error) {
-            console.log('Error catch ', error.message)
-            if(error.message == 'Network Error'){
-            Toast.show({
-                type: ALERT_TYPE.DANGER,
-                title: 'Error',
-                textBody: error.message,
-                titleStyle: noticeData[0].errorTitleStyle,
-                textBodyStyle: noticeData[0].errorMessageStyle,
-                })
-                return
-            }
-            if(error.status == '500'){
-                Toast.show({
-                type: ALERT_TYPE.DANGER,
-                title: 'Error',
-                textBody: 'Server error ' +error.message,
-                titleStyle: noticeData[0].errorTitleStyle,
-                textBodyStyle: noticeData[0].errorMessageStyle,
-                })
-                return
-                } 
-            }
-            finally{
-            setIsLoading(false)
-            }
-        }
-
-    const checkOutPaypal2 = () => {
-        refSellCheckOut.current.close();
-        const manualData ={
-            tag_id: userInfo.userData.tag_id,
-            myId: userInfo.userData._id,
-            amt: contactData.sell_amt,
-            sell_note: contactData.sell_note,
-            serviceName: routeName,
-            serviceCategory: 'Exchange',
-            method: 'Paypal Checkout',
-            "serviceType": routeServiceType
-        }
-        if(sellData.sell_amt != ''){
-            navigation.navigate('PaypalPayment', {
-                'amt': manualData
-            })
-            setContactData({
-                sell_amt:''
-            })
-        }
-    }
-
-    // checkout with payoneer
-    const checkOutPayoneer = () => {
-        refSellCheckOut.current.close();
-        const manualData ={
-            tag_id: userInfo.userData.tag_id,
-            myId: userInfo.userData._id,
-            amt: contactData.sell_amt,
-            sell_note: contactData.sell_note,
-            serviceName: routeName,
-            serviceCategory: 'Exchange',
-            method: 'Payoneer Checkout',
-            total_money: totalAmount(),
-            "serviceType": routeServiceType
-        }
-        if(sellData.sell_amt != ''){
-            setIsLoading(false)
-            navigation.navigate('PayoneerCheckout', {
-                'amt': manualData
-            })
-            setContactData({
-                sell_amt:''
-            })
-        }
-    }
-
-      useEffect(() => {
-        if (openedBrowser) {
-            refSellCheckOut.current.close();
-            const observer = setInterval(() => {
-                // your logic: anything you need to happen when the browser has closed
-                console.log('Payment closed ')
-                setContactData({
-                    sell_amt:''
-                })
-                setOpenedBrowser(false);
-                setIsLoading(false)
-            }, 500);
-          navigation.navigate('Home')
-            return () => {
-                clearInterval(observer);
-            };
-          
-        }
-    }, [openedBrowser]);
-
-    // send request to backend to process payment with paypal
-const checkOutPaypal3 = async () => {
-    //console.log('send Mail ', userAmount)
-    if (contactData.sell_amt === "" || contactData.sell_amt === null) {
-      Toast.show({
-        type: ALERT_TYPE.DANGER,
-        title: "Error",
-        textBody: "Please enter amount",
-        titleStyle: noticeData[0].errorTitleStyle,
-        textBodyStyle: noticeData[0].errorMessageStyle,
-      });
-      return;
-    }
-    // send request to backend here....
-    // Prepare data for the payment request
-    const paymentData = {
-      amount: contactData.sell_amt, 
-      currency: "USD",
-      tag_id: userInfo.userData.tag_id,
-      myId: userInfo.userData._id,
-      amt: contactData.sell_amt,
-      sell_note: contactData.sell_note,
-      serviceName: routeName,
-      serviceCategory: 'Exchange',
-      method: 'Paypal Checkout',
-      "serviceType": routeServiceType
-    };
-    setIsLoading(true)
-    try {
-      // Make a POST request to the backend endpoint
-      const response = await fetch(`${baseUrl}/api/create-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer '+userToken,
-        },
-        body: JSON.stringify(paymentData),
-      });
-
-      if (!response.ok) {
-        // Handle error response from the server
-        console.error('Error:', response.statusText);
-        Toast.show({
-          type: ALERT_TYPE.DANGER,
-          title: 'Error',
-          textBody: 'Failed to initiate payment',
-          titleStyle: noticeData[0].errorTitleStyle,
-          textBodyStyle: noticeData[0].errorMessageStyle,
-        });
-        return;
-      }
-      const responseData = await response.json();
-      //console.log('My way ', responseData.status);
-      if(responseData.status == '401'){
-        Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title: 'Error',
-            textBody: responseData.message + '!\n Your login not authenticated',
-            titleStyle: noticeData[0].errorTitleStyle,
-            textBodyStyle: noticeData[0].errorMessageStyle,
-          });
-          setIsLoading(false);
-          return;
-      }
-
-      // Parse the response JSON
-      console.log(responseData.approvalUrl, "FDFd")
-      _handlePressButtonAsync(responseData.approvalUrl)
-      setEmailVerify(responseData.approvalUrl)
-      
-      // console.log('Payment feedback ', result);
-      if (result && result.type === "cancel") {
-        console.log('Browser closed by user');
-      }else if (result && result.type === "dismiss") {
-        console.log('Browser dismiss by user');
-      }
-      else if (result && result.type === "successful") {
-        console.log('Payment successful');
-      }
-      else if (result && result.type === "success") {
-        console.log('Payment success');
-      }
-      
-      setIsLoading(false)
-      setContactData({
-        sell_amt:''
-    })
-
-    } catch (error) {
-      console.error('Error:', error.message);
-      Toast.show({
-        type: ALERT_TYPE.DANGER,
-        title: 'Error',
-        textBody: 'An error occurred while processing the payment',
-        titleStyle: noticeData[0].errorTitleStyle,
-        textBodyStyle: noticeData[0].errorMessageStyle,
-      });
-      setIsLoading(false)
-      return
-    }
-
-  };
-
-   // send request to backend to process payment with paypal
-const checkOutPaypal = async () => {
-    //console.log('send Mail ', userAmount)
-    if (contactData.sell_amt === "" || contactData.sell_amt === null) {
-      Toast.show({
-        type: ALERT_TYPE.DANGER,
-        title: "Error",
-        textBody: "Please enter amount",
-        titleStyle: noticeData[0].errorTitleStyle,
-        textBodyStyle: noticeData[0].errorMessageStyle,
-      });
-      return;
-    }
-    // send request to backend here....
-    setIsLoading(true)
-    // check if paystack button/api is available
-    const response = await client.get('/api/check_paymentBtn',{
-      headers: {
-      'Authorization': 'Bearer '+userToken,
-      }
-  })
-  if(response.data.status == '404'){
-      Toast.show({
-          type: ALERT_TYPE.DANGER,
-          title: 'Failed to authenticate',
-          textBody: res.data.msg,
-          titleStyle: noticeData[0].errorTitleStyle,
-          textBodyStyle: noticeData[0].errorMessageStyle,
-          })
-          setIsLoading(false)
-          refSellCheckOut.current.close();
-      return
-      }
-  if(response.data.app_paypal_bnt == false || response.data.app_paypal_bnt =='false'){
-      
-          setPaymentButton(true);
-          setIsLoading(false)
-          refSellCheckOut.current.close();
-      return
-      }
-    // Prepare data for the payment request
-    const paymentData = {
-      amount: contactData.sell_amt, 
-      currency: "USD",
-      tag_id: userInfo.userData.tag_id,
-      myId: userInfo.userData._id,
-      amt: contactData.sell_amt,
-      sell_note: contactData.sell_note,
-      serviceName: routeName,
-      serviceCategory: 'Exchange',
-      method: 'Paypal Checkout',
-      total_money: totalAmount(),
-      "serviceType": routeServiceType
-      };
-    
-    try {
-      // Make a POST request to the backend endpoint
-      const response = await fetch(`${baseUrl}/api/create-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer '+userToken,
-        },
-        body: JSON.stringify(paymentData),
-      });
-
-      if (!response.ok) {
-        // Handle error response from the server
-        console.error('Error:', response.statusText);
-        Toast.show({
-          type: ALERT_TYPE.DANGER,
-          title: 'Error',
-          textBody: 'Failed to initiate payment',
-          titleStyle: noticeData[0].errorTitleStyle,
-          textBodyStyle: noticeData[0].errorMessageStyle,
-        });
-        return;
-      }
-      const responseData = await response.json();
-      //console.log('My way ', responseData.status);
-      if(responseData.status == '401'){
-        Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title: 'Error',
-            textBody: responseData.message + '!\n Your login not authenticated',
-            titleStyle: noticeData[0].errorTitleStyle,
-            textBodyStyle: noticeData[0].errorMessageStyle,
-          });
-          setIsLoading(false);
-          return;
-      }
-      if(responseData.msg == '200'){
-        Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title: 'Success',
-            textBody: 'Payment successful done',
-            titleStyle: noticeData[0].errorTitleStyle,
-            textBodyStyle: noticeData[0].errorMessageStyle,
-          });
-          setIsLoading(false)
-          return;
-      }
-
-      // Parse the response JSON
-      //console.log(responseData.approvalUrl, "FDFd")
-      const approvalUrl = responseData.approvalUrl;
-      //navigation.navigate('WebViewScreen', { uri: approvalUrl });
-      navigation.navigate('paypalWebview', { uri: approvalUrl });
-      setIsLoading(false)
-      refSellCheckOut.current.close();
-      
-      // console.log('Payment feedback ', result);
-      if (result && result.type === "cancel") {
-        console.log('Browser closed by user');
-      }else if (result && result.type === "dismiss") {
-        console.log('Browser dismiss by user');
-      }
-      else if (result && result.type === "successful") {
-        console.log('Payment successful');
-      }
-      else if (result && result.type === "success") {
-        console.log('Payment success');
-      }
-      
-      setIsLoading(false)
-      setContactData({
-        sell_amt:''
-    })
-
-    } catch (error) {
-      console.error('Error:', error.message);
-      Toast.show({
-        type: ALERT_TYPE.DANGER,
-        title: 'Error',
-        textBody: 'An error occurred while processing the payment',
-        titleStyle: noticeData[0].errorTitleStyle,
-        textBodyStyle: noticeData[0].errorMessageStyle,
-      });
-      setIsLoading(false)
-      return
-    }
-
-  };
-
+  // ── Fetch rates when asset selected ──────────
   useEffect(() => {
-    getCurrentRate()
-    //console.log(" Money ", totalAmount())
-     
-    }, [contactData.sell_amt]);
+    if (!selectedAsset) return;
+    fetchRates(selectedAsset.id);
+  }, [selectedAsset]);
+
+  const fetchRates = async (assetId) => {
+    setIsLoadingRates(true);
+    setRates([]);
+    setSelectedRate(null);
+    try {
+      const res = await client.get(`/api/fetchRate/${assetId}`, {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      });
+      if (res.data.msg === '200') {
+        setRates(res.data.rateData || []);
+        if (res.data.rateData?.length > 0) {
+          setSelectedRate(res.data.rateData[0]);
+        }
+      }
+    } catch (error) {
+      console.log('Fetch rates error:', error.message);
+    } finally {
+      setIsLoadingRates(false);
+    }
+  };
+
+  // ── Calculate NGN equivalent ──────────────────
+  const ngnEquivalent = () => {
+    if (!amount || !selectedRate?.rate) return '0';
+    return (Number(amount) * Number(selectedRate.rate)).toLocaleString();
+  };
+
+  // ── Validate ──────────────────────────────────
+  const validate = () => {
+    if (!selectedAsset) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Select Asset', textBody: 'Please select a digital asset you want to sell.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      return false;
+    }
+    if (!amount || Number(amount) <= 0) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Invalid Amount', textBody: 'Please enter a valid amount to sell.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      return false;
+    }
+    if (!selectedRate) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'No Rate', textBody: 'No exchange rate available. Please try again later.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      return false;
+    }
+    return true;
+  };
+
+  // ── Proceed to checkout ───────────────────────
+  const handleProceed = async () => {
+    Keyboard.dismiss();
+    if (!validate()) return;
+    setIsProcessing(true);
+    try {
+      navigation.navigate('CheckManual', {
+        asset: selectedAsset.id,
+        assetLabel: selectedAsset.label,
+        amount,
+        rate: selectedRate.rate,
+        ngnAmount: ngnEquivalent(),
+        rateId: selectedRate._id,
+        currency: selectedAsset.currency,
+        userId: userInfo?.userData?._id,
+      });
+    } catch (error) {
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Something went wrong. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
-    
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex:1, backgroundColor:colors.bgColor}}>
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <SafeAreaView style={{flex:1}}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.bgColor}
+      />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled">
 
-                <StatusBar style='dark' />
-
-            <View style={gs.homeHeaderRow}>
-                <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                <TouchableOpacity onPress={() => navigation.goBack()} >
-                        <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                            <Ionicons name='close' size={25} color={colors.blackColor1}/>
-                      </View>
-                    </TouchableOpacity>
-                    
-                    {/* <Text style={styles.settingTitle}>Settings</Text> */}
-                   
-                    
-                    
-                </View>
-                <View style={{marginBottom:30}}></View>
-                
+            {/* ── Header ──────────────────────── */}
+            <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
+              <TouchableOpacity
+                style={[styles.backBtn, { backgroundColor: colors.bgLight }]}
+                onPress={() => navigation.goBack()}>
+                <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
+              </TouchableOpacity>
+              <Text style={[styles.headerTitle, { color: colors.textBlack }]}>
+                Sell Assets
+              </Text>
+              <TouchableOpacity
+                style={[styles.rateBtn, { backgroundColor: colors.bgLight }]}
+                onPress={() => refRateSheet.current.open()}>
+                <Ionicons name="trending-up-outline" size={18} color={colors.primaryColor1} />
+              </TouchableOpacity>
             </View>
-        <View style={{flex:1, backgroundColor:colors.bgColor}}>
-         
-        <ScrollView>
-            <View style={{marginHorizontal:10, marginTop:10}}>
-                <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Sell</Text>
+
+            {/* ── Hero Banner ──────────────────── */}
+            <LinearGradient
+              colors={['#EF4444', '#DC2626']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.heroBanner}>
+              <View style={styles.heroCircle1} />
+              <View style={styles.heroCircle2} />
+              <View style={[styles.heroIconBox, { backgroundColor: 'rgba(255,255,255,0.95)' }]}>
+                <Ionicons name="trending-up" size={28} color="#EF4444" />
+              </View>
+              <View style={styles.heroText}>
+                <Text style={styles.heroTitle}>Sell Digital Assets</Text>
+                <Text style={styles.heroDesc}>
+                  Sell PayPal, Payoneer or Bitcoin at the best rates — funds credited to your wallet instantly
+                </Text>
+              </View>
+            </LinearGradient>
+
+            {/* ── Wallet Balance ────────────────── */}
+            <View style={[styles.balanceCard, {
+              backgroundColor: colors.bgCard,
+              borderColor: colors.dividerColor,
+            }]}>
+              <View style={[styles.balanceIconBox, { backgroundColor: '#FEE2E2' }]}>
+                <Ionicons name="wallet-outline" size={20} color="#EF4444" />
+              </View>
+              <View style={styles.balanceInfo}>
+                <Text style={[styles.balanceLabel, { color: colors.textSecColor }]}>
+                  Wallet Balance
+                </Text>
+                <Text style={[styles.balanceValue, { color: colors.textBlack }]}>
+                  ₦{walletBalance.toLocaleString()}
+                </Text>
+              </View>
             </View>
-            {/* show loader when processing request */}
-            {/* {isLoading && <LoaderIndicator 
-                loader={isLoading}
-                textInfo={'Processing...'}
-                />} */}
-        <View style={{backgroundColor:colors.bgColor, flex:1,}}>
-            <View style={{flexDirection:'row', justifyContent:'space-between', marginHorizontal:70, marginTop:20}}>
-            
-            {CheckRouteName()}
-            <FontAwesome name='exchange' size={30} color={colors.textSecColor} style={{}} />
-            
-            <Image source={moneyImage} style={{borderRadius:10, width:40, height:40}}/>
-          </View>
-                
-      </View>
 
-            <View style={{marginHorizontal:20, marginTop:10}}>
-                <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>
-                    Most reliable, secure and profitable way to your hard earned virtual funds, with instant payment</Text>
-             </View>
-
-             <Animatable.View
-                animation={'fadeInUpBig'}
-                delay={100}
-                useNativeDriver={true}
-                style={[styles.formPage, {marginTop:30}]}>
-                    
-                    <View style={{marginHorizontal:20, marginTop:10, marginBottom:20}}>
-                        <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textBlack}}>
-                            Enter the amount you want to sell/exchange.</Text>
-                    </View>
-                    <View style={{
-                        flexDirection:'row', 
-                        marginBottom:15,
-                        marginHorizontal:10,
-                        borderWidth: 1,  // size/width of the border
-                        borderRadius: 7,
-                        borderColor: 'lightgrey',  // color of the border
-                        paddingLeft: 10,
-                        height: 50}}>
-                        <FontAwesome name='dollar' size={20} color='#666' style={{marginRight:5, marginTop:15, opacity:0.4}} />
-                        <TextInput 
-                        placeholder='Amount'
-                        style={{flex:1}}
-                        keyboardType='numeric'
-                        maxLength={4}
-                        onChangeText={(val) => handleInputChange("sell_amt", val)}
-                        value={contactData.sell_amt}/>
-                    </View>
-                    <View style={styles.textAreaContainer}>
-                         <View style={[styles.action, {marginRight: 10}]}>
-                            <TextInput 
-                            placeholder="Reason/purpose (Optional)"
-                            style={styles.textInput}
-                            autoCapitalize="none"
-                            onChangeText={(val) => handleInputChange("sell_note", val)}
-                            multiline={true}
-                            numberOfLines={10}
-                            maxLength={350}
-                            textAlignVertical="top"
-                            value={contactData.sell_note}
-                            />
-                        </View>
-                
-                    </View>
-
-                </Animatable.View>
-            
-                {/* custom button here */}
-                <Animatable.View
-                  animation={'zoomIn'}
-                  delay={500}
-                  useNativeDriver={true}>
-                  <CustomButton 
-                      buttonStyle={{borderRadius:10, marginHorizontal:10, backgroundColor:colors.primaryColor1, marginTop:30, marginBottom:20}}
-                      viewStyle={{padding:10, alignItems:'center'}}
-                      textStyle={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textColor}}
-                      textLabel={'Submit'}
-                      buttonAction={() => processSell()}
+            {/* ── Select Asset ──────────────────── */}
+            <View style={[styles.sectionCard, { backgroundColor: colors.bgCard }]}>
+              <Text style={[styles.sectionTitle, { color: colors.textBlack }]}>
+                Select Asset to Sell
+              </Text>
+              <Text style={[styles.sectionDesc, { color: colors.textSecColor }]}>
+                Choose the digital asset you want to exchange for Naira
+              </Text>
+              <View style={styles.assetsRow}>
+                {ASSETS.map((asset) => (
+                  <AssetCard
+                    key={asset.id}
+                    asset={asset}
+                    isSelected={selectedAsset?.id === asset.id}
+                    onSelect={(a) => {
+                      setSelectedAsset(a);
+                      setAmount('');
+                    }}
+                    colors={colors}
                   />
-                </Animatable.View>
-               
-                
-            </ScrollView>
-         </View>
+                ))}
+              </View>
+            </View>
 
-                <RBSheet
-                    ref={refSellCheckOut}
-                    closeOnDragDown={true}
-                    closeOnPressMask={true}
-                    openDuration={400}
-                    closeDuration={300}
-                    height={276}
-                    closeOnPressBack={true}
-                    keyboardAvoidingViewEnabled={true}
-                    customStyles={{
-                    container:{
-                        backgroundColor: colors.bgColor,
-                    },
-                    draggableIcon: {
-                        backgroundColor: "#000"
-                    }
-                    }}>
-                  <ScrollView>
-                    <View style={{alignItems:'center', marginTop:10, marginHorizontal:10}}>
-                        <Text style={{fontFamily:'_semiBold', fontSize:17, color:colors.textBlack, marginBottom:10}}>Choose checkout method</Text>
-                        {routeName != 'Bitcoin' && <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textSecColor}}>It's faster to get paid when you checkout with {routeName} directly</Text>}
-                        {routeName == 'Bitcoin' && <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textSecColor}}>Safe, secured, reliable and convenient way to get virtual funds</Text>}
-                    </View>
-                        {routeName == 'Paypal' || routeName == 'PayPal' ?
-                    <TouchableOpacity style={styles.checkBtn}
-                        onPress={checkOutPaypal}>
-                        <View>
-                            <Text style={{fontFamily:'_regular', fontSize:17, color:colors.bgColor}}>  
-                             {isLoading ? " " : "Check out with Paypal"}
-                                {isLoading && (
-                                <ActivityIndicator color={colors.textColor} size={25} />
-                                )}
-                            </Text>
-                        </View>
+            {/* ── Rate Card ─────────────────────── */}
+            {selectedAsset && (
+              <View style={[styles.rateCard, {
+                backgroundColor: colors.bgCard,
+                borderColor: selectedAsset.color,
+              }]}>
+                <View style={styles.rateCardHeader}>
+                  <Image
+                    source={selectedAsset.image}
+                    style={styles.rateCardImage}
+                    resizeMode="contain"
+                  />
+                  <View style={styles.rateCardInfo}>
+                    <Text style={[styles.rateCardTitle, { color: colors.textBlack }]}>
+                      {selectedAsset.label} Exchange Rate
+                    </Text>
+                    <Text style={[styles.rateCardSub, { color: colors.textSecColor }]}>
+                      Current buying rate from our platform
+                    </Text>
+                  </View>
+                </View>
+                {isLoadingRates ? (
+                  <ActivityIndicator
+                    color={selectedAsset.color}
+                    style={{ marginVertical: spacing.lg }}
+                  />
+                ) : selectedRate ? (
+                  <>
+                    <View style={[styles.rateDivider, { backgroundColor: colors.dividerColor }]} />
+                    <RateRow
+                      label="Exchange Rate"
+                      value={`₦${Number(selectedRate.rate).toLocaleString()} per $1`}
+                      colors={colors}
+                    />
+                    {selectedRate.min_amount && (
+                      <RateRow
+                        label="Minimum Amount"
+                        value={`$${selectedRate.min_amount}`}
+                        colors={colors}
+                      />
+                    )}
+                    {selectedRate.max_amount && (
+                      <RateRow
+                        label="Maximum Amount"
+                        value={`$${selectedRate.max_amount}`}
+                        colors={colors}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <Text style={[styles.noRateText, { color: colors.textSecColor }]}>
+                    No rate available at the moment. Please try again later.
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* ── Amount Input ──────────────────── */}
+            {selectedAsset && selectedRate && (
+              <View style={[styles.formCard, { backgroundColor: colors.bgCard }]}>
+                <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>
+                  Amount ({selectedAsset.currency})
+                </Text>
+                <View style={[
+                  styles.inputContainer,
+                  {
+                    borderColor: amountFocused
+                      ? selectedAsset.color
+                      : colors.dividerColor,
+                    backgroundColor: amountFocused
+                      ? selectedAsset.bgColor
+                      : colors.bgLight,
+                  },
+                ]}>
+                  <Image
+                    source={selectedAsset.image}
+                    style={styles.inputAssetIcon}
+                    resizeMode="contain"
+                  />
+                  <TextInput
+                    style={[styles.inputField, { color: colors.textBlack }]}
+                    placeholder={selectedAsset.placeholder}
+                    placeholderTextColor={colors.textSecColor2}
+                    keyboardType="numeric"
+                    value={amount}
+                    onChangeText={(v) => setAmount(v.replace(/[^0-9.]/g, ''))}
+                    onFocus={() => setAmountFocused(true)}
+                    onBlur={() => setAmountFocused(false)}
+                  />
+                  {amount.length > 0 && (
+                    <TouchableOpacity onPress={() => setAmount('')}>
+                      <Ionicons name="close-circle" size={20} color={colors.textSecColor} />
                     </TouchableOpacity>
-                    :''}
-                    {routeName == 'Payoneer' ?
-                    <TouchableOpacity style={styles.checkBtn} 
-                    onPress={() => checkOutPayoneer()}>
-                        <View>
-                            <Text style={{fontFamily:'_regular', fontSize:17, color:colors.bgColor}}> Check out with Payoneer</Text>
-                        </View>
-                    </TouchableOpacity>
-                    :''}
-                    <TouchableOpacity style={[styles.checkBtn, {backgroundColor:colors.bgColor, borderColor:colors.primaryColor1, borderWidth:1, marginBottom:10, marginTop:10}]}
-                    onPress={() => checkOutManually()}>
-                        <View>
-                            <Text style={{fontFamily:'_regular', fontSize:17, color:colors.primaryColor1}}> Manual Transfer</Text>
-                        </View>
-                    </TouchableOpacity>
-                    <View style={{marginBottom: 20}}></View>
-                </ScrollView>
-             </RBSheet>
+                  )}
+                </View>
+                <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
+                  {selectedAsset.hint}
+                </Text>
 
+                {/* NGN Equivalent */}
+                {amount.length > 0 && (
+                  <View style={[styles.ngnCard, {
+                    backgroundColor: colors.bgLight,
+                    borderColor: colors.dividerColor,
+                  }]}>
+                    <Text style={[styles.ngnLabel, { color: colors.textSecColor }]}>
+                      You will receive
+                    </Text>
+                    <Text style={[styles.ngnValue, { color: colors.primaryColor1 }]}>
+                      ₦{ngnEquivalent()}
+                    </Text>
+                    <Text style={[styles.ngnNote, { color: colors.textSecColor }]}>
+                      Rate: ₦{Number(selectedRate.rate).toLocaleString()} per $1
+                    </Text>
+                  </View>
+                )}
 
-             <ShowLogoutModal 
-              openModal={paymentButton}
-              animationType={'fade'}
-              modalTitle={'Error!'}
-              ModalDesc={'Payment gateway not available at the moment! Please, Use manual transfer'}
-              closeBtn={() => closeModal(!paymentButton)}
-              logoutBtn={() => closeModal(!paymentButton)}
-              modalBgColor={"rgba(0,0,0,0.3)"}
-              bntYesText={'Okay'}
-             />
-          </SafeAreaView>
+                {/* Proceed Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.proceedBtn,
+                    { backgroundColor: selectedAsset?.color || '#EF4444' },
+                    (!amount || isProcessing) && { opacity: 0.6 },
+                  ]}
+                  onPress={handleProceed}
+                  disabled={!amount || isProcessing}
+                  activeOpacity={0.85}>
+                  {isProcessing ? (
+                    <ActivityIndicator color="#fff" size={22} />
+                  ) : (
+                    <>
+                      <Ionicons name="arrow-forward-circle-outline" size={22} color="#fff" />
+                      <Text style={styles.proceedBtnText}>Proceed to Sell</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
 
+            {/* ── How it Works ──────────────────── */}
+            <View style={[styles.howCard, {
+              backgroundColor: colors.bgCard,
+            }]}>
+              <Text style={[styles.howTitle, { color: colors.textBlack }]}>
+                How It Works
+              </Text>
+              {[
+                { icon: 'hand-left-outline', text: 'Select the asset you want to sell and enter the amount' },
+                { icon: 'send-outline', text: 'Send the asset to our official wallet address provided after checkout' },
+                { icon: 'checkmark-circle-outline', text: 'Upload your payment proof and we confirm within minutes' },
+                { icon: 'wallet-outline', text: 'Naira equivalent is credited to your wallet instantly' },
+              ].map((step, i) => (
+                <View key={i} style={styles.howRow}>
+                  <View style={[styles.howNum, { backgroundColor: '#FEE2E2' }]}>
+                    <Ionicons name={step.icon} size={18} color="#EF4444" />
+                  </View>
+                  <Text style={[styles.howText, { color: colors.textSecColor }]}>
+                    {step.text}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            <View style={{ height: spacing.xxxl }} />
+          </ScrollView>
         </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-    action: {
-        marginTop: 20,
-        borderBottomColor: '#aaa',
-        paddingBottom: 5,
-        height:130,
-    },
-    checkBtn:{
-        borderRadius:10, 
-        marginHorizontal:10, 
-        backgroundColor:colors.primaryColor1, 
-        marginTop:20, 
-        marginBottom:20,
-        height:50,
-        justifyContent:'center',
-        alignItems:'center',
-        marginHorizontal:20,
-        shadowColor: '#000',
-        shadowOffset: { 
-        width: 0, 
-        height: 1 
-        },
-        shadowOpacity: 0.5,
-        shadowRadius: 0.9,
-        elevation: 0.8, 
-    },
-    container: {
-      flex: 1,
-      backgroundColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    settingTitle:{
-        color:colors.textColor,
-        fontSize:20,
-        marginLeft: -20,
-        fontFamily: '_semiBold',
-      },
-      
-    actionButton:{
-      width:100, 
-      height:30, 
-      borderRadius:20, 
-      backgroundColor:colors.primaryColor1, 
-      justifyContent:'center', 
-      alignItems:'center', 
-     },
-  buttonSellText:{
-    color:colors.textColor, 
-    fontFamily:'_semiBold', 
-    fontSize:15
-},
-formPage:{
-    borderRadius:10, 
-    marginHorizontal:10, 
-    backgroundColor:colors.textColor, 
-    marginTop:20,
-    shadowColor: '#000',
-    shadowOffset: { 
-    width: 0, 
-    height: 1 
-    },
-    shadowOpacity: 0.5,
-    shadowRadius: 0.9,
-    elevation: 0.8, 
-    },
-textAreaContainer: {
-    borderWidth: 0.5,
-    borderRadius:10,
-    marginHorizontal:10,
-    marginBottom:20,
-},
-  textArea: {
-    height: 50,
-    justifyContent: "flex-start"
-  },
-  textInput: {
-    flex: 1,
-    marginTop: Platform.OS === 'ios' ? 0 : -12,
-    paddingLeft: 10,
-    fontFamily: '_regular',
-},
+  container: { flex: 1 },
+  scrollContent: { paddingBottom: spacing.xxxl },
 
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  headerTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+  },
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rateBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Hero
+  heroBanner: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    ...shadows.lg,
+  },
+  heroCircle1: {
+    position: 'absolute',
+    right: -30,
+    top: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  heroCircle2: {
+    position: 'absolute',
+    left: -20,
+    bottom: -20,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  heroIconBox: {
+    width: 54,
+    height: 54,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.sm,
+  },
+  heroText: { flex: 1 },
+  heroTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+    color: '#fff',
+    marginBottom: 4,
+  },
+  heroDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 22,
+  },
+
+  // Balance Card
+  balanceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    gap: spacing.md,
+    ...shadows.card,
+  },
+  balanceIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  balanceInfo: { flex: 1 },
+  balanceLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: 2,
+  },
+  balanceValue: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+    lineHeight: 28,
+  },
+
+  // Section Card
+  sectionCard: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+  sectionTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    marginBottom: 4,
+  },
+  sectionDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+  },
+
+  // Asset Cards
+  assetsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  assetCard: {
+    flex: 1,
+    alignItems: 'center',
+    borderRadius: radius.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.sm,
+    borderWidth: 1.5,
+    position: 'relative',
+    ...shadows.sm,
+  },
+  assetImage: {
+    width: 40,
+    height: 40,
+    marginBottom: spacing.sm,
+    borderRadius: radius.sm,
+  },
+  assetLabel: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  assetCheck: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Rate Card
+  rateCard: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    borderWidth: 1.5,
+    ...shadows.card,
+  },
+  rateCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  rateCardImage: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.sm,
+  },
+  rateCardInfo: { flex: 1 },
+  rateCardTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  rateCardSub: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginTop: 2,
+  },
+  rateDivider: {
+    height: 1,
+    marginBottom: spacing.md,
+  },
+  rateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  rateLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  rateValue: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  noRateText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    textAlign: 'center',
+    paddingVertical: spacing.lg,
+  },
+
+  // Form Card
+  formCard: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+  inputLabel: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    marginBottom: spacing.sm,
+    lineHeight: 22,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    height: 56,
+    marginBottom: spacing.xs,
+  },
+  inputAssetIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.xs,
+    marginRight: spacing.sm,
+  },
+  inputField: {
+    flex: 1,
+    fontFamily: '_semiBold',
+    fontSize: typography.lg,
+    paddingVertical: 0,
+  },
+  inputHint: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+  },
+
+  // NGN Equivalent Card
+  ngnCard: {
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+  },
+  ngnLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: 4,
+  },
+  ngnValue: {
+    fontFamily: '_bold',
+    fontSize: typography.huge,
+    lineHeight: 42,
+  },
+  ngnNote: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginTop: 4,
+  },
+
+  // Proceed Button
+  proceedBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 56,
+    borderRadius: radius.lg,
+    gap: spacing.sm,
+    ...shadows.md,
+  },
+  proceedBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    color: '#fff',
+  },
+
+  // How it Works
+  howCard: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+  howTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    marginBottom: spacing.lg,
+  },
+  howRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  howNum: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  howText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    flex: 1,
+    paddingTop: spacing.xs,
+  },
 });
 
 export default SellingScreen;

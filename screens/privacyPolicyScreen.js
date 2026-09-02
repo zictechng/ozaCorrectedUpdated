@@ -1,210 +1,417 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { Dimensions, StyleSheet, View, Text, TextInput, TouchableOpacity,  ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View, Text, StyleSheet, TouchableOpacity,
+  StatusBar, ActivityIndicator, Dimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { gs,colors } from '../styles';
-import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
-import { Entypo, Ionicons,} from '@expo/vector-icons';
-import HTMLView from 'react-native-htmlview';
-import client from '../contextAPI/client';
-import HeaderMenu from '../components/headerMenu';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { WebView } from 'react-native-webview';
 
-const {width, height} = Dimensions.get('screen');
+import { spacing, radius, typography, shadows } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
+import client from '../contextAPI/client';
+
+const { width, height } = Dimensions.get('window');
+
 const PrivacyPolicyScreen = () => {
   const navigation = useNavigation();
-    
-    const[fetchInfo, setFetchInfo] = useState({})
-    const[fetchLoading, setFetchLoading] = useState(false)
-    const[emptyContent, setEmptyContent] = useState(false)
-    
-    useEffect(() =>{
-      loadAbout()
-    },[])
+  const { colors, isDark } = useThemeStyles();
 
-    // load about company details
-    const loadAbout = async() =>{
-          setFetchLoading(true)
-      try {
-        const res = await client.get('/api/fetchAboutCompany')
-      if(res.data.msg == '200'){
-        setFetchInfo(res.data.infoData)
-        //console.log("result ", res.data.infoData)
-        }
-        else if(res.data.status == '404'){
-          setEmptyContent(true)
-          console.log("Error message ", res.data)
-        }
-      } catch (error) {
-        console.log('Server error occurred ', error.message)
+  const [fetchInfo, setFetchInfo] = useState({});
+  const [fetchLoading, setFetchLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    loadPrivacyPolicy();
+  }, []);
+
+  const loadPrivacyPolicy = async () => {
+    setFetchLoading(true);
+    setHasError(false);
+    try {
+      const res = await client.get('/api/fetchAboutCompany');
+      if (res.data.msg === '200') {
+        setFetchInfo(res.data.infoData);
+      } else {
+        setHasError(true);
       }
-      finally{
-        setFetchLoading(false);
-      }
+    } catch (error) {
+      console.log('Server error occurred:', error.message);
+      setHasError(true);
+    } finally {
+      setFetchLoading(false);
     }
+  };
 
+  // ── Check if policy content is available ──────
+  const isPolicyAvailable =
+    !fetchLoading &&
+    fetchInfo?.company_privacy_policy != null &&
+    fetchInfo?.policy_status === 'Active';
+
+  const isPolicyEmpty =
+    !fetchLoading &&
+    (fetchInfo?.company_privacy_policy == null ||
+      fetchInfo?.policy_status !== 'Active');
+
+  // ── Build HTML content for WebView ───────────
+  const buildHtmlContent = (content) => `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 15px;
+            line-height: 1.7;
+            padding: 16px;
+            background-color: ${isDark ? '#1E2132' : '#ffffff'};
+            color: ${isDark ? '#E5E7EB' : '#1F2937'};
+          }
+          h1, h2, h3, h4, h5, h6 {
+            color: ${isDark ? '#F9FAFB' : '#111827'};
+            margin-bottom: 12px;
+            margin-top: 20px;
+            line-height: 1.4;
+          }
+          p {
+            margin-bottom: 14px;
+            color: ${isDark ? '#D1D5DB' : '#374151'};
+          }
+          ul, ol {
+            margin-left: 20px;
+            margin-bottom: 14px;
+          }
+          li {
+            margin-bottom: 8px;
+            color: ${isDark ? '#D1D5DB' : '#374151'};
+          }
+          a {
+            color: ${isDark ? '#818CF8' : '#4C5FD5'};
+            text-decoration: none;
+          }
+          strong, b {
+            color: ${isDark ? '#F9FAFB' : '#111827'};
+          }
+          hr {
+            border: none;
+            border-top: 1px solid ${isDark ? '#374151' : '#E5E7EB'};
+            margin: 20px 0;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+          }
+          td, th {
+            border: 1px solid ${isDark ? '#374151' : '#E5E7EB'};
+            padding: 8px 12px;
+            color: ${isDark ? '#D1D5DB' : '#374151'};
+          }
+          th {
+            background-color: ${isDark ? '#2D3250' : '#F3F4F6'};
+            color: ${isDark ? '#F9FAFB' : '#111827'};
+          }
+        </style>
+      </head>
+      <body>${content}</body>
+    </html>
+  `;
 
   return (
-    // <View style={{flex:1, backgroundColor:'transparent'}}>
-    //           <SafeAreaView style={{flex:1}}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.bgColor}
+      />
 
-    //                 <StatusBar style='dark' />
+      {/* ── Header ──────────────────────────────── */}
+      <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
+        <TouchableOpacity
+          style={[styles.backBtn, { backgroundColor: colors.bgLight }]}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.8}>
+          <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.textBlack }]}>
+          Privacy Policy
+        </Text>
+        <View style={styles.backBtn} />
+      </View>
 
-    //                    <View style={{backgroundColor:'transparent', marginTop:Platform.OS ==='ios'? 10 : 40 , marginLeft: 20, marginBottom:5} }>
-    //                    <TouchableOpacity
-    //                       onPress={() =>navigation.goBack()}>
-    //                           <View style={{backgroundColor:colors.primaryColor2, width:30, height:30, alignItems:'center', justifyContent:'center', borderRadius:20} }>
-    //                             <Ionicons name='arrow-back' size={23} color={colors.textColor}/>
-    //                           </View>
-    //                     </TouchableOpacity>
-    //                   </View>
-    //                 <View style={{backgroundColor:colors.bgColor, flex:1,}}>      
-    //                     {/* list view will come here for each tab clicked */}
-    //                             {!fetchLoading && fetchInfo?.company_term_conditions == null?
-    //                             <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
-    //                                 <Ionicons name="information-circle-outline" size={50} color="black" style={{opacity: 0.2}} />
-    //                               <Text style={{fontFamily:'_regular', fontSize:17, color:colors.textSecColor}}>No information at the moment!</Text>
-    //                             </View>
-    //                             : ''}
-    //                 <View style={styles.webviewContainer}>
-    //                       <WebView
-    //                           originWhitelist={['*']}
-    //                         source={{ uri: 'https://oza-mobile-website.onrender.com/mobileUserPolicy' }}
-    //                         javaScriptEnabled={true}
-    //                         domStorageEnabled={true}
-    //                         startInLoadingState={true}
-                            
-    //                         renderLoading={() => <ActivityIndicator
-    //                           style={{
-    //                               backgroundColor: 'transparent', position: 'absolute', left: width * 0.35, top: height / 2 - 50, zIndex: 9,
-    //                               height: width * 0.3,
-    //                               width: width * 0.3,
-    //                               borderRadius: 20
-    //                           }}
-    //                           color={colors.primaryColor1}
-    //                           size="large" />}
-    //                         />
-    //                   </View>
-    //                 </View>
+      {/* ── Hero Banner ──────────────────────────── */}
+      <LinearGradient
+        colors={['#8B5CF6', '#6D28D9']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.heroBanner}>
+        <View style={styles.heroCircle1} />
+        <View style={styles.heroCircle2} />
+        <View style={[styles.heroIconBox, { backgroundColor: 'rgba(255,255,255,0.95)' }]}>
+          <Ionicons name="shield-checkmark-outline" size={26} color="#8B5CF6" />
+        </View>
+        <View style={styles.heroText}>
+          <Text style={styles.heroTitle}>Privacy Policy</Text>
+          <Text style={styles.heroDesc}>
+            How we collect, use and protect your personal data
+          </Text>
+        </View>
+      </LinearGradient>
 
-    //         </SafeAreaView>
-    //  </View>
-    <View style={{flex:1, backgroundColor:colors.primaryColor2}}>
-              <SafeAreaView style={{flex:1}}>
+      {/* ── Content Area ─────────────────────────── */}
+      <View style={[styles.contentCard, { backgroundColor: colors.bgCard }]}>
 
-                    <StatusBar style='light' />
+        {/* Loading State */}
+        {fetchLoading && (
+          <View style={styles.centerState}>
+            <View style={[styles.loadingBox, { backgroundColor: colors.bgLight }]}>
+              <ActivityIndicator color={colors.primaryColor1} size="large" />
+              <Text style={[styles.loadingText, { color: colors.textSecColor }]}>
+                Loading Privacy Policy...
+              </Text>
+            </View>
+          </View>
+        )}
 
-                        <HeaderMenu 
-                          buttonHome={<TouchableOpacity
-                          onPress={() =>navigation.goBack()}>
-                              <View style={gs.homeSideMenu}>
-                                <Ionicons name='arrow-back' size={23} color={colors.textColor}/>
-                              </View>
-                              </TouchableOpacity>}
-                          titleName={'Privacy Policy'}
-                          profileTitle={styles.profileTitle}
-                        />
-                        <View style={{marginBottom:30}}></View>
-                    <View style={{backgroundColor:colors.bgColor, flex:1,}}>      
-                        {/* list view will come here for each tab clicked */}
-                                {!fetchLoading && fetchInfo?.company_privacy_policy == null || fetchInfo?.policy_status !='Active'?
-                                <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
-                                    <Ionicons name="information-circle-outline" size={50} color="black" style={{opacity: 0.2}} />
-                                  <Text style={{fontFamily:'_regular', fontSize:17, color:colors.textSecColor}}>No information at the moment!</Text>
-                                </View>
-                                : ''}
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                          {fetchLoading ? <ActivityIndicator size={30} color={colors.primaryColor1} />:''}
+        {/* Error State */}
+        {hasError && !fetchLoading && (
+          <View style={styles.centerState}>
+            <View style={[styles.stateIconBox, { backgroundColor: '#FEE2E2' }]}>
+              <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+            </View>
+            <Text style={[styles.stateTitle, { color: colors.textBlack }]}>
+              Could Not Load
+            </Text>
+            <Text style={[styles.stateDesc, { color: colors.textSecColor }]}>
+              Unable to load the Privacy Policy. Please check your connection.
+            </Text>
+            <TouchableOpacity
+              style={[styles.retryBtn, { backgroundColor: colors.primaryColor1 }]}
+              onPress={loadPrivacyPolicy}
+              activeOpacity={0.85}>
+              <Ionicons name="refresh-outline" size={18} color="#fff" />
+              <Text style={styles.retryBtnText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
-                            {!fetchLoading && fetchInfo?.company_privacy_policy != null && fetchInfo?.policy_status == 'Active' ?
-                              <View style={{marginHorizontal:15, marginTop:8}}>
-                                
-                                <View style={{marginHorizontal: 5, flex:1}}>
-                                  <HTMLView
-                                    value={fetchInfo?.company_privacy_policy != null || fetchInfo?.company_privacy_policy != undefined? fetchInfo?.company_privacy_policy: '' }
-                                    stylesheet={styles.style}
-                                  />   
-                                </View>
-                              </View>
-                            :''}
+        {/* Empty State */}
+        {isPolicyEmpty && !hasError && (
+          <View style={styles.centerState}>
+            <View style={[styles.stateIconBox, { backgroundColor: colors.bgLight }]}>
+              <Ionicons name="document-outline" size={48} color={colors.textSecColor} />
+            </View>
+            <Text style={[styles.stateTitle, { color: colors.textBlack }]}>
+              Not Available
+            </Text>
+            <Text style={[styles.stateDesc, { color: colors.textSecColor }]}>
+              Privacy Policy is not available at the moment. Please check back later.
+            </Text>
+          </View>
+        )}
 
-                        </ScrollView>
-                        
-                    </View>
+        {/* Policy Content via WebView */}
+        {isPolicyAvailable && (
+          <WebView
+            originWhitelist={['*']}
+            source={{ html: buildHtmlContent(fetchInfo.company_privacy_policy) }}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            showsVerticalScrollIndicator={false}
+            style={[styles.webview, { backgroundColor: colors.bgCard }]}
+            renderLoading={() => (
+              <View style={styles.centerState}>
+                <ActivityIndicator color={colors.primaryColor1} size="large" />
+              </View>
+            )}
+          />
+        )}
+      </View>
 
-            </SafeAreaView>
-     </View>
+      {/* ── Footer Notice ────────────────────────── */}
+      <View style={[
+        styles.footerNotice,
+        {
+          backgroundColor: colors.bgLight,
+          borderColor: colors.dividerColor,
+        },
+      ]}>
+        <Ionicons name="lock-closed-outline" size={14} color={colors.primaryColor1} />
+        <Text style={[styles.footerText, { color: colors.textSecColor }]}>
+          Last updated · Your data is protected and never sold
+        </Text>
+      </View>
+    </SafeAreaView>
   );
-}
-
-
+};
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    style: {
-    fontFamily:'_regular', 
-    fontSize:14, 
-    color:colors.textBlack, 
-    textAlign:'justify' 
+  container: {
+    flex: 1,
   },
-    webviewContainer: {
-      flex: 1,
-      alignSelf: 'stretch',
-    },
-    actionButton:{
-        width:100, 
-        height:30, 
-        borderRadius:20, 
-        backgroundColor:colors.primaryColor1, 
-        alignItems:'center',
-        },
-    buttonSellText:{
-      color:colors.textColor, 
-      fontFamily:'_semiBold', 
-      fontSize:15
-    },
-    homeHeaderRow:{
-        backgroundColor:'transparent', 
-        marginTop:40, 
-        marginHorizontal:15
-      },
-      homeSideMenu:{
-        borderRadius: 8, 
-        borderWidth: 2, 
-        backgroundColor:colors.primaryColor2, 
-        width:30, 
-        alignItems:'center', 
-        justifyContent:'center'
-      },
-      profileTitle:{
-        color:colors.textColor,
-        fontSize:20,
-        marginLeft: -20,
-        fontFamily: '_semiBold',
-      },
 
-      signInButton: {
-        width: '100%',
-        height: 50,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 10,
-        flexDirection: 'row',
-         backgroundColor: colors.primaryColor1
-    },
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  headerTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+  },
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 
-    textSign:{
-        fontFamily:'_semiBold',
-        fontSize: 17,
-        color: colors.textColor
-    },
+  // Hero Banner
+  heroBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    overflow: 'hidden',
+    gap: spacing.md,
+    ...shadows.md,
+  },
+  heroCircle1: {
+    position: 'absolute',
+    right: -30,
+    top: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  heroCircle2: {
+    position: 'absolute',
+    left: -20,
+    bottom: -20,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  heroIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.sm,
+  },
+  heroText: {
+    flex: 1,
+  },
+  heroTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    color: '#fff',
+    marginBottom: 4,
+  },
+  heroDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 20,
+  },
 
-})
+  // Content Card
+  contentCard: {
+    flex: 1,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.sm,
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    ...shadows.card,
+  },
+  webview: {
+    flex: 1,
+  },
 
+  // Center States (loading, error, empty)
+  centerState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+    gap: spacing.md,
+  },
+  loadingBox: {
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    alignItems: 'center',
+    gap: spacing.md,
+    ...shadows.card,
+  },
+  loadingText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  stateIconBox: {
+    width: 80,
+    height: 80,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stateTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+    textAlign: 'center',
+  },
+  stateDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    ...shadows.sm,
+  },
+  retryBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    color: '#fff',
+  },
+
+  // Footer
+  footerNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+  },
+  footerText: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    lineHeight: 20,
+  },
+});
 
 export default PrivacyPolicyScreen;

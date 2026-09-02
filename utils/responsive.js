@@ -52,10 +52,10 @@ export const rs = (small, medium, large, xlarge) => {
 // ── Hero Height ───────────────────────────────────
 // Safe hero section heights per device
 export const heroHeight = rs(
-  SCREEN_HEIGHT * 0.38,   // small phones  — 38%
-  SCREEN_HEIGHT * 0.44,   // medium phones — 44%
-  SCREEN_HEIGHT * 0.48,   // large phones  — 48%
-  SCREEN_HEIGHT * 0.50,   // XL phones     — 50%
+  SCREEN_HEIGHT * 0.30,   // small phones  — 30%
+  SCREEN_HEIGHT * 0.34,   // medium phones — 34%
+  SCREEN_HEIGHT * 0.36,   // large phones  — 36%
+  SCREEN_HEIGHT * 0.38,   // XL phones     — 38%
 );
 
 // ── Bottom Sheet Heights ──────────────────────────

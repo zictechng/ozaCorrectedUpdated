@@ -28,36 +28,46 @@ import { DISCOS } from '../constants/discoList';
 const MeterTypeSelector = ({ selectedType, onSelect }) => {
   const { colors } = useThemeStyles();
   return (
-  
-  <View style={styles.meterTypeContainer}>
-    <Text style={styles.inputLabel}>Meter Type</Text>
-    <View style={styles.meterTypeRow}>
-      {['Prepaid', 'Postpaid'].map((type) => {
-        const isSelected = selectedType === type;
-        return (
-          <TouchableOpacity
-            key={type}
-            style={[styles.meterTypeBtn, isSelected && styles.meterTypeBtnSelected]}
-            onPress={() => onSelect(type)}
-            activeOpacity={0.8}>
-            <MaterialCommunityIcons
-              name={type === 'Prepaid' ? 'meter-electric' : 'meter-electric-outline'}
-              size={20}
-              color={isSelected ? '#fff' : colors.textSecColor}
-            />
-            <Text style={[
-              styles.meterTypeBtnText,
-              isSelected && styles.meterTypeBtnTextSelected,
-            ]}>
-              {type}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+    <View style={styles.meterTypeContainer}>
+      <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>Meter Type</Text>
+      <View style={styles.meterTypeRow}>
+        {['Prepaid', 'Postpaid'].map((type) => {
+          const isSelected = selectedType === type;
+          return (
+            <TouchableOpacity
+              key={type}
+              style={[
+                styles.meterTypeBtn,
+                {
+                  borderColor: colors.dividerColor,       
+                  backgroundColor: colors.bgLight,        
+                },
+                isSelected && {
+                  borderColor: colors.primaryColor1,      
+                  backgroundColor: colors.primaryColor1,  
+                },
+              ]}
+              onPress={() => onSelect(type)}
+              activeOpacity={0.8}>
+              <MaterialCommunityIcons
+                name={type === 'Prepaid' ? 'meter-electric' : 'meter-electric-outline'}
+                size={20}
+                color={isSelected ? '#fff' : colors.textSecColor}
+              />
+              <Text style={[
+                styles.meterTypeBtnText,
+                { color: colors.textSecColor },          
+                isSelected && { color: '#fff' },          
+              ]}>
+                {type}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
-  </View>
-   );
-  };
+  );
+};
 
 // ── DISCO Selector ────────────────────────────────
 const DiscoSelector = ({ selectedDisco, onSelect }) => {
@@ -67,8 +77,8 @@ const DiscoSelector = ({ selectedDisco, onSelect }) => {
 
   return (
     <View style={styles.discoContainer}>
-      <Text style={styles.inputLabel}>Select Your DISCO</Text>
-      <Text style={styles.inputHint}>
+      <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>Select Your DISCO</Text>
+      <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
         Choose the electricity distribution company for your area
       </Text>
       <View style={styles.discoGrid}>
@@ -79,11 +89,18 @@ const DiscoSelector = ({ selectedDisco, onSelect }) => {
               key={disco.id}
               style={[
                 styles.discoCard,
-                { borderColor: isSelected ? disco.color : colors.dividerColor },
-                isSelected && { backgroundColor: disco.bgColor },
+                {
+                  borderColor: colors.dividerColor,      
+                  backgroundColor: colors.bgCard,         
+                },
+                isSelected && {
+                  borderColor: disco.color,
+                  backgroundColor: disco.bgColor,
+                },
               ]}
               onPress={() => onSelect(disco)}
               activeOpacity={0.8}>
+
               <View style={[
                 styles.discoIconBox,
                 { backgroundColor: isSelected ? disco.color : disco.bgColor },
@@ -94,16 +111,20 @@ const DiscoSelector = ({ selectedDisco, onSelect }) => {
                   color={isSelected ? '#fff' : disco.color}
                 />
               </View>
+
+              {/*{ color: colors.textBlack } as default */}
               <Text style={[
                 styles.discoLabel,
+                { color: colors.textBlack },
                 isSelected && { color: disco.color, fontFamily: '_bold' },
-              ]}
-                numberOfLines={1}>
+              ]} numberOfLines={1}>
                 {disco.id}
               </Text>
-              <Text style={styles.discoState} numberOfLines={1}>
+
+              <Text style={[styles.discoState, { color: colors.textSecColor }]} numberOfLines={1}>
                 {disco.state.split('/')[0]}
               </Text>
+
               {isSelected && (
                 <View style={[styles.discoCheck, { backgroundColor: disco.color }]}>
                   <Text style={styles.discoCheckText}>✓</Text>
@@ -114,9 +135,9 @@ const DiscoSelector = ({ selectedDisco, onSelect }) => {
         })}
       </View>
       <TouchableOpacity
-        style={styles.showMoreBtn}
+        style={[styles.showMoreBtn, { backgroundColor: "transparent" }]}
         onPress={() => setShowAll(!showAll)}>
-        <Text style={styles.showMoreText}>
+        <Text style={[styles.showMoreText, { color: colors.primaryColor1 }]}>
           {showAll ? 'Show Less' : `Show All ${DISCOS.length} DISCOs`}
         </Text>
         <Ionicons
@@ -135,10 +156,14 @@ const MeterInput = ({ value, onChangeText, onVerify, isVerifying, verifiedName }
   const [isFocused, setIsFocused] = useState(false);
   return (
     <View style={styles.inputGroup}>
-      <Text style={styles.inputLabel}>Meter Number</Text>
+      <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>Meter Number</Text>
       <View style={[
         styles.inputContainer,
-        isFocused && styles.inputContainerFocused,
+        {
+          borderColor: colors.dividerColor,              // ✅ ADD — visible border in dark
+          backgroundColor: colors.bgCard,               // ✅ ADD — card bg
+        },
+        isFocused && { borderColor: colors.primaryColor1 }, // ✅ ADD — focus highlight
       ]}>
         <MaterialCommunityIcons
           name="counter"
@@ -147,7 +172,7 @@ const MeterInput = ({ value, onChangeText, onVerify, isVerifying, verifiedName }
           style={styles.inputIcon}
         />
         <TextInput
-          style={styles.inputField}
+          style={[styles.inputField, { color: colors.textBlack }]}
           value={value}
           onChangeText={(text) => onChangeText(text.replace(/[^0-9]/g, ''))}
           placeholder="Enter meter number"
@@ -159,13 +184,18 @@ const MeterInput = ({ value, onChangeText, onVerify, isVerifying, verifiedName }
         />
         {value.length >= 11 && (
           <TouchableOpacity
-            style={styles.verifyBtn}
+            style={[styles.verifyBtn, { backgroundColor: colors.bgLight }]}
             onPress={onVerify}
             disabled={isVerifying}>
             {isVerifying ? (
               <ActivityIndicator size={14} color={colors.primaryColor1} />
             ) : (
-              <Text style={styles.verifyBtnText}>Verify</Text>
+              <Text style={[
+                styles.verifyBtnText,
+                { color: colors.primaryColor1 },         // ✅ ADD — visible in dark
+              ]}>
+                Verify
+              </Text>
             )}
           </TouchableOpacity>
         )}
@@ -173,10 +203,10 @@ const MeterInput = ({ value, onChangeText, onVerify, isVerifying, verifiedName }
       {verifiedName ? (
         <View style={styles.verifiedRow}>
           <Ionicons name="checkmark-circle" size={16} color={colors.successColor} />
-          <Text style={styles.verifiedText}>{verifiedName}</Text>
+          <Text style={[styles.verifiedText, { color: colors.successColor }]}>{verifiedName}</Text>
         </View>
       ) : (
-        <Text style={styles.inputHint}>
+        <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
           Enter your 11–13 digit meter number to verify
         </Text>
       )}
@@ -188,16 +218,24 @@ const MeterInput = ({ value, onChangeText, onVerify, isVerifying, verifiedName }
 const SummaryRow = ({ label, value, isTotal }) => {
   const { colors } = useThemeStyles();
   return (
-  <View style={[styles.summaryRow, isTotal && styles.summaryRowTotal]}>
-    <Text style={[styles.summaryLabel, isTotal && styles.summaryLabelTotal]}>
-      {label}
-    </Text>
-    <Text style={[styles.summaryValue, isTotal && styles.summaryValueTotal]}>
-      {value}
-    </Text>
-  </View>
-    );
-  };
+    <View style={[styles.summaryRow, isTotal && styles.summaryRowTotal]}>
+      <Text style={[
+        styles.summaryLabel,
+        { color: colors.textSecColor },                  // ✅ ADD
+        isTotal && { ...styles.summaryLabelTotal, color: colors.textBlack },
+      ]}>
+        {label}
+      </Text>
+      <Text style={[
+        styles.summaryValue,
+        { color: colors.textBlack },                     // ✅ ADD
+        isTotal && styles.summaryValueTotal,
+      ]}>
+        {value}
+      </Text>
+    </View>
+  );
+};
 
 // ── Rewards Tips Card ─────────────────────────────
 const RewardsTipsCard = ({ serviceName, minAmount }) => {
@@ -221,31 +259,31 @@ const RewardsTipsCard = ({ serviceName, minAmount }) => {
   }, []);
 
   return (
-    <View style={styles.tipsCard}>
+    <View style={[styles.tipsCard, { backgroundColor: colors.bgLight }]}>
       <View style={styles.tipsTitleRow}>
         <Ionicons name="information-circle-outline" size={18} color={colors.primaryColor1} />
-        <Text style={styles.tipsTitle}>Quick Tips</Text>
+        <Text style={[styles.tipsTitle, { color: colors.primaryColor1 }]}>Quick Tips</Text>
       </View>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Token is delivered to your email and SMS instantly
       </Text>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Always verify your meter number before payment
       </Text>
       {rewardRate && (
-        <Text style={styles.tipText}>
+        <Text style={[styles.tipText, { color: colors.textSecColor }]}>
           • You earn <Text style={styles.tipHighlight}>{rewardRate}% in coins</Text> on every {serviceName}
         </Text>
       )}
       {coinValue && (
-        <Text style={styles.tipText}>
+        <Text style={[styles.tipText, { color: colors.textSecColor }]}>
           • 🪙 1 coin = <Text style={styles.tipHighlight}>₦{coinValue} NGN</Text> — redeemable as bonus
         </Text>
       )}
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Minimum {serviceName} payment is {minAmount}
       </Text>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Top users earn quarterly & annual gift rewards 🎁
       </Text>
     </View>
@@ -459,7 +497,7 @@ const ElectricityScreen = ({ navigation }) => {
             />
 
             {serviceStatus !== 'paused' && (
-              <View style={styles.formCard}>
+              <View style={[styles.formCard, { backgroundColor: colors.bgCard }]}>
 
                 {/* DISCO Selector */}
                 <DiscoSelector
@@ -538,9 +576,9 @@ const ElectricityScreen = ({ navigation }) => {
 
             {/* ── Order Summary ────────────────── */}
             {showSummary && serviceStatus !== 'paused' && (
-              <View style={styles.summaryCard}>
-                <Text style={styles.summaryTitle}>Order Summary</Text>
-                <View style={styles.summaryDivider} />
+              <View style={[styles.summaryCard, { backgroundColor: colors.bgCard }]}>
+                <Text style={[styles.summaryTitle, { color: colors.textBlack }]}>Order Summary</Text>
+                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
                 <SummaryRow label="DISCO" value={selectedDisco?.label} />
                 <SummaryRow label="Meter Type" value={meterType} />
                 <SummaryRow label="Meter Number" value={meterNumber} />
@@ -550,7 +588,7 @@ const ElectricityScreen = ({ navigation }) => {
                   value={`₦${Number(amount).toLocaleString()}`}
                 />
                 <SummaryRow label="Service Fee" value="₦0.00" />
-                <View style={styles.summaryDivider} />
+                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
                 <SummaryRow
                   label="Total"
                   value={`₦${Number(amount).toLocaleString()}`}
@@ -586,7 +624,7 @@ const ElectricityScreen = ({ navigation }) => {
                 <TouchableOpacity
                   style={styles.editBtn}
                   onPress={() => setShowSummary(false)}>
-                  <Text style={styles.editBtnText}>Edit Order</Text>
+                  <Text style={[styles.editBtnText, { color: colors.textSecColor }]}>Edit Order</Text>
                 </TouchableOpacity>
               </View>
             )}

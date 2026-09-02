@@ -1,564 +1,676 @@
-﻿import React, { useState, useContext, useFocusEffect, useEffect, useCallback, useRef } from 'react';
-import { View,Platform, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+﻿import React, { useState, useContext, useEffect, useRef } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  StatusBar, Platform, ToastAndroid, Alert, ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
 import { useIsFocused } from '@react-navigation/native';
-import { ALERT_TYPE, Dialog } from 'react-native-alert-notification';
-import Modal from "react-native-modal";
-import { gs,colors } from '../styles';
-import { StatusBar } from 'expo-status-bar';
-import CustomButton from '../components/customButton';
-import {NumberValueFormat} from '../components/formatValue';
-//import CountDown from 'react-native-countdown-component';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Clipboard from 'expo-clipboard';
+import Modal from 'react-native-modal';
 import CountDownTimer from 'react-native-countdown-timer-hooks';
+
+import { spacing, radius, typography, shadows } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
 import { AuthContext } from '../contextAPI/authContext';
+import { NumberValueFormat } from '../components/formatValue';
+import { applicationDetails } from '../components/controls';
 import client from '../contextAPI/client';
-import { ToastAndroid } from 'react-native';
-import { Alert } from 'react-native';
-import { ConfirmPaymentModal, applicationDetails } from '../components/controls';
 
+// ── Bank Detail Row ───────────────────────────────
+const BankDetailRow = ({ label, value, colors }) => (
+  <View style={[styles.bankDetailRow, { borderBottomColor: colors.dividerColor }]}>
+    <Text style={[styles.bankDetailLabel, { color: colors.textSecColor }]}>{label}</Text>
+    <Text style={[styles.bankDetailValue, { color: colors.textBlack }]}>{value || '—'}</Text>
+  </View>
+);
 
-const FundAccountNextScreen = ({route, navigation}) => {
-    const refTimer = useRef();
-    const isFocused = useIsFocused();
-    let amtReceive = route.params?.payment;
-    let payId = route.params?.track_id;
-    const {userToken, userInfo, setUserInfo} = useContext(AuthContext)
-    const [paymentDone, setPaymentDone] = useState(false);
-    const [currentRate, setCurrentRate] = useState({});
-    const [companyBank, setCompanyBank] = useState({});
-    const [paymentTime, setPaymentTime] = useState(false);
-    const [paymentTimer, setPaymentTimer] = useState(3540);
-    const [timerDisplay, setTimerDisplay] = useState(true);
-    const [appInfo, setAppInfo] = useState({})
-       // For keeping a track on the Timer
-    const [timerEnd, setTimerEnd] = useState(false);
-    const [payBtnConfirm, setPayBtnConfirm] = useState(false);
+// ── Bank Card ─────────────────────────────────────
+const BankCard = ({ title, bank, onCopy, colors }) => (
+  <View style={[styles.bankCard, { backgroundColor: colors.bgLight, borderColor: colors.dividerColor }]}>
+    <View style={styles.bankCardHeader}>
+      <Text style={[styles.bankCardTitle, { color: colors.textBlack }]}>{title}</Text>
+      <TouchableOpacity
+        style={[styles.copyBtn, { backgroundColor: colors.primaryColor1 }]}
+        onPress={onCopy}
+        activeOpacity={0.8}>
+        <Ionicons name="copy-outline" size={14} color="#fff" />
+        <Text style={styles.copyBtnText}>Copy</Text>
+      </TouchableOpacity>
+    </View>
+    <BankDetailRow label="Account Name" value={bank.acctName} colors={colors} />
+    <BankDetailRow label="Account Number" value={bank.acctNumber} colors={colors} />
+    <BankDetailRow label="Bank Name" value={bank.bankName} colors={colors} />
+  </View>
+);
 
-    const paymentConfirmed = () =>{
-        setPaymentDone(true);
-    }
+// ── Main Screen ───────────────────────────────────
+const FundAccountNextScreen = ({ route, navigation }) => {
+  const isFocused = useIsFocused();
+  const { colors, isDark } = useThemeStyles();
+  const { userToken, userInfo } = useContext(AuthContext);
 
-    const paymentCloseConfirmed = () =>{
-        setPaymentDone(false);
-    }
+  const amtReceive = route.params?.payment;
+  const payId = route.params?.track_id;
 
-    // const cancelledModal =() =>{
-    //     navigation.replace('Home');
-    //     Dialog.hide();
-    // }
-    const cancelledModal =() =>{
-        setPayBtnConfirm(false);
-        //navigation.replace('Home');
-        navigation.navigate('UploadPaymentProof',{
-            track_id:payId
-            });
-        //Dialog.hide();
-    }
-    const timerCallbackFunc = (timerFlag) => {
-        // Setting timer flag to finished
-        setTimerEnd(timerFlag);
-        setPaymentTime(true)
-        setPaymentTimer('00:00:00')
-        console.log(
-          ' Timer is out.',
-        );};
+  const [companyBank, setCompanyBank] = useState({});
+  const [appInfo, setAppInfo] = useState({});
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [timerExpired, setTimerExpired] = useState(false);
+  const [blink, setBlink] = useState(true);
 
-      const paymentMade =()=>{
-        //setPayBtnConfirm(true);
-        navigation.navigate('UploadPaymentProof',{
-            track_id:payId
-            });
-       }
+  // ── Fetch Company Bank & App Info ─────────────
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const bankRes = await client.get('/api/fetchBankInfo');
+        if (bankRes.data.msg === '200') setCompanyBank(bankRes.data.bankData);
+      } catch (e) { console.log('Bank fetch error:', e.message); }
+      applicationDetails().then((res) => {
+        if (res?.infoData) setAppInfo(res.infoData);
+      });
+    };
+    fetchData();
+  }, []);
 
-    // get the current rate
-      const getCurrentRate = async() =>{
-        try {
-            const res = await client.get('/api/fetchRate')
-            if(res.data.msg == '200'){
-              const userDetails = res.data.infoData; 
-              setCurrentRate(userDetails)
-              //console.log('User rate ', userDetails) 
-            }
-            else{
-                console.log("something went wrong while fetching current rate details")
-            }
-        } catch (error) {
-            console.log( 'fetching rate information failed ', error)
-        }
-      }
-      // get the current company bank account information
-      const getCompanyBank = async() =>{
-        try {
-            const res = await client.get('/api/fetchBankInfo')
-            if(res.data.msg == '200'){
-              const userDetails = res.data.bankData; 
-              setCompanyBank(userDetails)
-              //console.log('Bank details ', userDetails) 
-            }
-            else{
-                console.log("something went wrong while fetching company bank details")
-            }
-        } catch (error) {
-            console.log( 'fetching bank information failed ', error)
-        }
-      }
- // fetch app laughing page information 
- const appDetails = () =>{
-    applicationDetails().then((res )=>{
-    //console.log(res);
-    setAppInfo(res.infoData)
-    })
-}
+  // ── Blink effect for expired timer ───────────
+  useEffect(() => {
+    if (!timerExpired) return;
+    const interval = setInterval(() => setBlink(b => !b), 800);
+    return () => clearInterval(interval);
+  }, [timerExpired]);
 
-    useEffect(() => {
-        getCurrentRate();
-        getCompanyBank();
-        appDetails()
-      }, [])
-      
-      useEffect(() => {
-        const interval = setInterval(() => {
-            setTimerDisplay((timerDisplay) => !timerDisplay)
-        }, 1000)
-        return () => {
-            clearInterval(interval)
-        }
-      }, [])
-      // function to copy bank one information
-      const copyToClipboardBank1 = async () => {
+  // ── Copy helpers ──────────────────────────────
+  const copyBank = async (acctNumber, acctName, bankName) => {
     try {
-            await Clipboard.setStringAsync(
-                `${appInfo.app_name} App \n`+ ' Account Number: '+ companyBank.company_acct_number1
-                +'\n '+'Account Name: '+ companyBank.company_acct_name1
-                +'\n '+'Bank Name: '+ companyBank.company_bank1);
-        // Display a success message 
-        if (Platform.OS === 'android') { 
-            ToastAndroid.show('Bank details copied successfully!', 
-                ToastAndroid.SHORT); 
-        } else if (Platform.OS === 'ios') { 
-            Alert.alert('Bank details copied successfully!'); 
-        } 
-        } catch (error) {
-            console.error(error);
-        }
-        
-    };
+      await Clipboard.setStringAsync(
+        `${appInfo.app_name || 'OtaMobile'}\nAccount Name: ${acctName}\nAccount Number: ${acctNumber}\nBank Name: ${bankName}`
+      );
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Bank details copied!', ToastAndroid.SHORT);
+      } else {
+        Alert.alert('Copied!', 'Bank details copied to clipboard.');
+      }
+    } catch (e) { console.log('Copy error:', e.message); }
+  };
 
-    // function to copy bank two information
-    const copyToClipboardBank2 = async () => {
-        try {
-             await Clipboard.setStringAsync(
-                `${appInfo.app_name} App \n`+ 'Account Number: '+ companyBank.company_acct_number2
-                    +'\n '+'Account Name: '+ companyBank.company_acct_name2
-                    +'\n '+'Bank Name: '+ companyBank.company_bank2
-             );
-            // Display a success message 
-            if (Platform.OS === 'android') { 
-                ToastAndroid.show('Bank details copied successfully!', 
-                    ToastAndroid.SHORT); 
-            } else if (Platform.OS === 'ios') { 
-                Alert.alert('Bank details copied successfully!'); 
-            } 
-        } catch (error) {
-            console.log(error);
-        }
-        
-    };
-     const copyToClipboardMoMo = async () => {
-        try {
-             await Clipboard.setStringAsync(
-                `${appInfo.app_name} App \n`+ 'Account Number: '+ companyBank.company_momoAccount
-                    +'\n '+'Bank Name: '+ 'MoMo '
-             );
-            // Display a success message 
-            if (Platform.OS === 'android') { 
-                ToastAndroid.show('Account details copied successfully!', 
-                    ToastAndroid.SHORT); 
-            } else if (Platform.OS === 'ios') { 
-                Alert.alert('Account details copied successfully!'); 
-            } 
-        } catch (error) {
-            console.log(error);
-        }
-        
-    };
-      //const dueAmount = (currentRate * amtReceive) 
+  const bank1 = {
+    acctName: companyBank.company_acct_name1,
+    acctNumber: companyBank.company_acct_number1,
+    bankName: companyBank.company_bank1,
+  };
+  const bank2 = {
+    acctName: companyBank.company_acct_name2,
+    acctNumber: companyBank.company_acct_number2,
+    bankName: companyBank.company_bank2,
+  };
 
   return (
-    <View style={{flex:1, backgroundColor:colors.bgColor}}>
-        <SafeAreaView style={{flex:1}}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.bgColor}
+      />
 
-            <StatusBar style='dark' />
+      {/* ── Header ──────────────────────────────── */}
+      <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
+        <TouchableOpacity
+          style={[styles.closeBtn, { backgroundColor: colors.bgLight }]}
+          onPress={() => navigation.replace('Home')}>
+          <Ionicons name="close" size={22} color={colors.textBlack} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.textBlack }]}>
+          Funding Initiated
+        </Text>
+        <View style={styles.closeBtn} />
+      </View>
 
-                <View style={gs.homeHeaderRow}>
-                    <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                        {/* <TouchableOpacity style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                            <Ionicons name='arrow-back' size={25} color={colors.textColor}/>
-                        </TouchableOpacity> */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
 
-                        {/* <Text style={styles.settingTitle}>Settings</Text> */}
-                        <TouchableOpacity style={{}} onPress={() =>navigation.replace('Home')}>
-                        <View>
-                            <Ionicons name='close-outline' size={30} color={colors.blackColor1}/>
-                           
-                        </View>
-                     </TouchableOpacity>
-                    </View>
-                    <View style={{marginBottom:30}}></View>
-                    
-                 </View>
-                 <View style={{flex:1, backgroundColor:colors.bgColor}}>
-                    <ScrollView>
-                        <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:25, color:colors.textBlack}}>Funding Initiated</Text>
-                        </View>
+        {/* ── Hero Banner ──────────────────────── */}
+        <LinearGradient
+          colors={[colors.primaryColor1, colors.primaryColor1b]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroBanner}>
+          <View style={styles.heroCircle1} />
+          <View style={styles.heroCircle2} />
+          <View style={[styles.heroIconBox, { backgroundColor: 'rgba(255,255,255,0.95)' }]}>
+            <Ionicons name="time-outline" size={28} color={colors.primaryColor1} />
+          </View>
+          <View style={styles.heroText}>
+            <Text style={styles.heroTitle}>Payment Pending</Text>
+            <Text style={styles.heroDesc}>
+              Your funding request is awaiting payment. Complete your transfer within the time shown below.
+            </Text>
+          </View>
+        </LinearGradient>
 
-                        {/* <View style={{marginHorizontal:20, marginTop:10}}>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>
-                                Request to fund your account has been sent Successfully.</Text>
-                         </View> */}
-                                <View style={{marginHorizontal:20, marginTop:10, marginBottom:20}}>
-                                    <Text style={{fontFamily:'_regular', fontSize:13, color:colors.textBlack, opacity:0.7}}>
-                                        Use your email ID or Transaction ID in your description when making the transfer payment to fast track your account funding.</Text>
-                                </View>
-                            <View style={[styles.formPage, {marginTop:5}]}>
-                                
-                                <View style={{marginHorizontal:20, marginTop:10, marginBottom:20}}>
-                                    <Text style={{fontFamily:'_regular', fontSize:13, color:colors.textBlack, opacity:0.6}}>
-                                        Your request is currently pending, till payment is receive your wallet will be funded.
-                                        </Text>
-                                </View>
+        {/* ── Amount Card ───────────────────────── */}
+        <View style={[styles.amountCard, { backgroundColor: colors.bgCard }]}>
+          <Text style={[styles.amountLabel, { color: colors.textSecColor }]}>
+            Amount to Transfer
+          </Text>
+          <Text style={[styles.amountValue, { color: colors.primaryColor1 }]}>
+            <NumberValueFormat value={amtReceive} />
+          </Text>
+          <View style={[styles.amountDivider, { backgroundColor: colors.dividerColor }]} />
+          <Text style={[styles.amountNote, { color: colors.textSecColor }]}>
+            Transfer exactly this amount in Naira to our official account below
+          </Text>
+        </View>
 
-                                <View style={{justifyContent:'center', alignItems:'center', marginBottom:15}}>
+        {/* ── Countdown Timer ───────────────────── */}
+        <View style={[styles.timerCard, { backgroundColor: colors.bgCard }]}>
+          <Text style={[styles.timerTitle, { color: colors.textBlack }]}>
+            Time Remaining
+          </Text>
+          <Text style={[styles.timerDesc, { color: colors.textSecColor }]}>
+            Complete your transfer before the timer expires
+          </Text>
+          <View style={styles.timerBox}>
+            {!timerExpired ? (
+              <CountDownTimer
+                timestamp={3540}
+                timerCallback={() => setTimerExpired(true)}
+                containerStyle={[styles.timerContainer, { backgroundColor: colors.primaryColor1 }]}
+                textStyle={styles.timerText}
+              />
+            ) : (
+              <View style={[styles.timerContainer, { backgroundColor: '#EF4444' }]}>
+                {blink && (
+                  <Text style={styles.timerText}>EXPIRED</Text>
+                )}
+              </View>
+            )}
+          </View>
+          {timerExpired && (
+            <View style={[styles.expiredNotice, { backgroundColor: '#FEE2E2', borderColor: '#FECACA' }]}>
+              <Ionicons name="warning-outline" size={18} color="#EF4444" />
+              <Text style={[styles.expiredText, { color: '#EF4444' }]}>
+                Timer expired. Your request is still valid for 24 hours. You can still make the transfer.
+              </Text>
+            </View>
+          )}
+        </View>
 
-                                {!paymentTime && <CountDownTimer
-                                                //ref={refTimer}
-                                                timestamp={paymentTimer}
-                                                timerCallback={timerCallbackFunc}
-                                                containerStyle={{
-                                                    height: 40,
-                                                    width: 100,
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    borderRadius: 10,
-                                                    backgroundColor: 
-                                                    colors.blackColor1,
-                                                }}
-                                                textStyle={{
-                                                    fontSize: 25,
-                                                    fontWeight: '500',
-                                                    letterSpacing: 0.25,
-                                                    }}
-                                                />}
-                                                {/*  */}
-                                                {paymentTime && <View style={{
-                                                    height: 56,
-                                                    width: 120,
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    borderRadius: 10,
-                                                    backgroundColor:'#bf5f0b',
-                                                }}>
-                                                <Text style={[styles.blinkStyle, {
-                                                 display: timerDisplay ? 'none': 'flex'
-                                                }]}>
-                                                00:00:00
-                                            </Text>
-                                        </View>}
+        {/* ── Instructions Card ─────────────────── */}
+        <View style={[styles.instructionsCard, { backgroundColor: colors.bgCard }]}>
+          <Text style={[styles.instructionsTitle, { color: colors.textBlack }]}>
+            Payment Instructions
+          </Text>
+          {[
+            'Transfer exactly the amount shown above in Nigerian Naira',
+            `Use your email address or Transaction ID as payment description to fast-track processing`,
+            'Make payment to our official bank account only',
+            'After payment, click "I\'ve Made Payment" below to notify us',
+          ].map((instruction, i) => (
+            <View key={i} style={styles.instructionRow}>
+              <View style={[styles.instructionNum, { backgroundColor: colors.primaryColor1 }]}>
+                <Text style={styles.instructionNumText}>{i + 1}</Text>
+              </View>
+              <Text style={[styles.instructionText, { color: colors.textSecColor }]}>
+                {instruction}
+              </Text>
+            </View>
+          ))}
+        </View>
 
-                                        <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textBlack, opacity:0.6}}>
-                                                Request elapsed withing 24hours
-                                        </Text>
-                                </View>
-                           
-                            </View>
-                                {/* This show count down timer in seconds */}
-                                    {/* <CountdownCircleTimer
-                                        isPlaying
-                                        duration={60}
-                                        colors={['#004777', '#F7B801', '#A30000', '#A30000']}
-                                        colorsTime={[7, 5, 2, 0]}>
-                                        {({ remainingTime }) => <Text>{remainingTime}</Text>}
-                                    </CountdownCircleTimer> */
-                                    }
+        {/* ── View Account Details Button ───────── */}
+        <TouchableOpacity
+          style={[styles.viewBankBtn, {
+            backgroundColor: colors.bgLight,
+            borderColor: colors.primaryColor1,
+          }]}
+          onPress={() => setShowBankModal(true)}
+          activeOpacity={0.85}>
+          <Ionicons name="business-outline" size={20} color={colors.primaryColor1} />
+          <Text style={[styles.viewBankBtnText, { color: colors.primaryColor1 }]}>
+            View Bank Account Details
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.primaryColor1} />
+        </TouchableOpacity>
 
-                            <View style={[styles.formPage, {marginTop:40}]}>
-                                
-                                <View style={{marginHorizontal:20, marginTop:10, marginBottom:20}}>
-                                    <View style={{flexDirection:'row', justifyContent:"space-between"}}>
-                                        <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textBlack}}>
-                                            Amount to send in naira
-                                        </Text>
-                                        {/* <TouchableOpacity onPress={() =>paymentConfirmed()}>
-                                            <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.primaryColor1}}>
-                                                Account Details
-                                            </Text>
-                                        </TouchableOpacity> */}
-                                        
-                                    </View>
-                                    
-                                        <Text style={{fontFamily:'_regular', fontSize:30, color:colors.textBlack}}>
-                                            <NumberValueFormat value={amtReceive} />
-                                        </Text>
-                                </View>
-                           
-                            </View>
+        {/* ── I've Made Payment Button ──────────── */}
+        <TouchableOpacity
+          style={[styles.paymentBtn, { backgroundColor: colors.primaryColor1 }]}
+          onPress={() => navigation.navigate('UploadPaymentProof', { track_id: payId })}
+          activeOpacity={0.85}>
+          <Ionicons name="checkmark-circle-outline" size={22} color="#fff" />
+          <Text style={styles.paymentBtnText}>I've Made Payment</Text>
+        </TouchableOpacity>
 
-                                <View style={{marginHorizontal:20, marginTop:10, marginBottom:20}}>
-                                    <Text style={{fontFamily:'_regular', fontSize:12, color:colors.textBlack}}>
-                                        Payment should be made in naira to {appInfo.app_name} official account only from any where in the world.</Text>
-                                        <TouchableOpacity onPress={() =>paymentConfirmed()}>
-                                            <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.primaryColor1, marginTop:10}}>
-                                                View Account Details
-                                            </Text>
-                                        </TouchableOpacity>
-                                </View>
-                        
-                            {/* custom button here */}
-                            <CustomButton 
-                                buttonStyle={{borderRadius:10, marginHorizontal:10, backgroundColor:colors.primaryColor1, marginTop:10, marginBottom:20, justifyContent:'center', alignItems:'center'}}
-                                viewStyle={{padding:12, alignItems:'center'}}
-                                textStyle={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textColor}}
-                                textLabel={"I'v made payment"}
-                                buttonAction={() => paymentMade()}
-                            />
-                    {/* view bank details modal */}
-                    <Modal isVisible={paymentDone}
-                        animationIn={'zoomIn'}
-                        animationInTiming={700}
-                        animationOut={'slideOutDown'}
-                        animationOutTiming={500}
-                        backdropOpacity={0.60}>
-                    <View style={styles.dialogView1}>
-                        <View style={styles.dialogView2}>
-                            <Text style={styles.dialogText1}>
-                                Company Account Details
-                            </Text>
-                            {/* <Pressable style={styles.dialogCancelBtn}
-                            onPress={() =>openAcctPinModal(false)}>
-                            <Ionicons name='close' size={20} />
-                            </Pressable> */}
-                        </View>
-                            <Text style={[styles.dialogText2, {fontSize:15, fontFamily:'_semiBold', textAlign:"center"}]}>
-                                Use this details to do your payment.
-                            </Text>
+        {/* ── Security Notice ───────────────────── */}
+        <View style={[styles.securityNotice, {
+          backgroundColor: colors.bgLight,
+          borderColor: colors.dividerColor,
+        }]}>
+          <Ionicons name="shield-checkmark-outline" size={18} color={colors.successColor} />
+          <Text style={[styles.securityText, { color: colors.textSecColor }]}>
+            Only transfer to our official bank accounts shown above. We will never ask you to transfer to a personal account.
+          </Text>
+        </View>
 
-                            <View style={{flexDirection:'row', marginHorizontal:10}}>
-                                <TouchableOpacity onPress={() => copyToClipboardBank1()}>
-                                <View style={{width:30, height:30}}>
-                                    <Ionicons name='copy-outline' size={20} color={colors.primaryColor2} />
-                                </View>
-                                    </TouchableOpacity>
-                                <View style={{flexDirection:'column'}}>
-                                    <Text style={styles.dialogText2}>
-                                        Account Name: <Text style={[styles.dialogText2, {fontFamily:'_semiBold'}]}>{companyBank.company_acct_name1}</Text>
-                                    </Text>
-                                    <Text style={styles.dialogText2}>
-                                        Bank Name: <Text style={[styles.dialogText2, {fontFamily:'_semiBold'}]}>{companyBank.company_bank1}</Text>
-                                    </Text>
-                                    <Text style={styles.dialogText2}>
-                                        Account Number: <Text style={[styles.dialogText2, {fontFamily:'_semiBold'}]}>{companyBank.company_acct_number1}</Text>
-                                    </Text>
-                                </View>
-                            </View>
-                         
-                            <View style={{borderBottomWidth:1, color:colors.redColor, marginBottom:8, opacity:0.3}}></View>
-                            
-                                <View style={{flexDirection:'row', marginHorizontal:10}}>
-                                    <TouchableOpacity onPress={() => copyToClipboardBank2()}>
-                                    <View style={{width:30, height:30}}>
-                                    <Ionicons name='copy-outline' size={20} color={colors.primaryColor2} />
-                                    
-                                    </View>
-                                        </TouchableOpacity>
-                                <View style={{flexDirection:'column'}}>
-                                    <Text style={styles.dialogText2}>
-                                        Account Name: <Text style={[styles.dialogText2, {fontFamily:'_semiBold'}]}>{companyBank.company_acct_name2}</Text>
-                                    </Text>
-                                    <Text style={styles.dialogText2}>
-                                    Account Number: <Text style={[styles.dialogText2, {fontFamily:'_semiBold'}]}>{companyBank.company_acct_number2}</Text>
-                                    </Text>
-                                    <Text style={styles.dialogText2}>
-                                    Bank Name: <Text style={[styles.dialogText2, {fontFamily:'_semiBold'}]}>{companyBank.company_bank2}</Text>
-                                    </Text>
-                                 </View>
-                            </View>
+        <View style={{ height: spacing.xxxl }} />
+      </ScrollView>
 
-                            <View style={{borderBottomWidth:1, color:colors.redColor, marginBottom:8, opacity:0.3}}></View>
-                            
-                                {/* <View style={{flexDirection:'row', marginHorizontal:10}}>
-                                    <TouchableOpacity onPress={() => copyToClipboardMoMo()}>
-                                    <View style={{width:30, height:30}}>
-                                        <Ionicons name='copy-outline' size={20} color={colors.primaryColor2} />
-                                    </View>
-                                        </TouchableOpacity>
-                                <View style={{flexDirection:'column'}}>
-                                    <Text style={styles.dialogText2}>
-                                        Account Name: <Text style={[styles.dialogText2, {fontFamily:'_semiBold'}]}>MoMo</Text>
-                                    </Text>
-                                    <Text style={styles.dialogText2}>
-                                    Account Number: <Text style={[styles.dialogText2, {fontFamily:'_semiBold'}]}>{companyBank.company_momoAccount}</Text>
-                                    </Text>
-                                    
-                                 </View>
-                            </View> */}
-                            
-                        <View style={{justifyContent:'center', alignItems:'center', marginBottom:10, marginTop:10}}>
-                            <TouchableOpacity style={styles.dialogActionBtn}
-                            onPress={() => paymentCloseConfirmed()}>
-                            <Text style={{fontFamily:'_semiBold', fontSize:17, color:colors.primaryColor1, marginTop:4}}>Okay</Text>
-                            </TouchableOpacity>
-                        </View>
+      {/* ── Bank Details Modal ─────────────────────── */}
+      <Modal
+        isVisible={showBankModal}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        animationInTiming={400}
+        animationOutTiming={300}
+        backdropOpacity={0.6}
+        onBackdropPress={() => setShowBankModal(false)}>
+        <View style={[styles.modalCard, { backgroundColor: colors.bgCard }]}>
+          <LinearGradient
+            colors={[colors.primaryColor1, colors.primaryColor1b]}
+            style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Company Bank Accounts</Text>
+            <TouchableOpacity
+              style={[styles.modalCloseBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
+              onPress={() => setShowBankModal(false)}>
+              <Ionicons name="close" size={20} color="#fff" />
+            </TouchableOpacity>
+          </LinearGradient>
 
-                    </View>
-                </Modal>
+          <ScrollView
+            style={styles.modalBody}
+            showsVerticalScrollIndicator={false}>
+            <Text style={[styles.modalDesc, { color: colors.textSecColor }]}>
+              Make your transfer to any of the accounts below. Include your email or transaction ID as payment description.
+            </Text>
 
-                <ConfirmPaymentModal 
-                    openModal={payBtnConfirm}
-                    animationType={'slide'}
-                    //modalTitle={'Wow!'}
-                    ModalShortDesc={'Wow...'}
-                    ModalDesc={`This sounds good! If payment has been made, we will review and credit your account shortly, thank you.`}
-                    closeBtn={() => cancelledModal()}
-                    logoutBtn={() => cancelledModal()}
-                    modalBgColor={"rgba(0,0,0,0.7)"}
-                    bntYesText={'Okay'}
-                />
+            <BankCard
+              title="Account 1"
+              bank={bank1}
+              colors={colors}
+              onCopy={() => copyBank(bank1.acctNumber, bank1.acctName, bank1.bankName)}
+            />
 
-        </ScrollView>
-     </View>
-            
-        </SafeAreaView>
-    </View>
+            {bank2.acctNumber && (
+              <BankCard
+                title="Account 2"
+                bank={bank2}
+                colors={colors}
+                onCopy={() => copyBank(bank2.acctNumber, bank2.acctName, bank2.bankName)}
+              />
+            )}
+
+            <TouchableOpacity
+              style={[styles.modalDoneBtn, { backgroundColor: colors.primaryColor1 }]}
+              onPress={() => setShowBankModal(false)}
+              activeOpacity={0.85}>
+              <Text style={styles.modalDoneBtnText}>Close</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-    action: {
-        marginTop: 20,
-        borderBottomColor: '#aaa',
-        paddingBottom: 5,
-        
-    },
-    blinkStyle:{
-        fontSize: 25,
-        fontWeight: '500',
-        letterSpacing: 0.25,
-        },
-    container: {
-      flex: 1,
-      backgroundColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    dialogView1:{
-        borderRadius:10, 
-        marginHorizontal:10, 
-        backgroundColor:colors.textColor
-        },
-        dialogView2:{
-            width:'100%', 
-            borderTopRightRadius:10, 
-            borderTopLeftRadius:10, 
-            marginBottom:20, 
-            height:40, 
-            backgroundColor:colors.primaryColor1
-        },
-        dialogText1:{
-        fontFamily:'_semiBold', 
-        fontSize:15, 
-        color:colors.bgColor, 
-        textAlign:'center', marginTop:5
-    },
-    dialogCancelBtn:{
-        marginTop: -45, 
-        borderRadius:50, 
-        backgroundColor:colors.bgColor, 
-        height:30, width:30, 
-        alignItems:'center', 
-        justifyContent:'center' 
-    },
-        dialogText2:{
-            fontFamily:'_regular', 
-            fontSize:13, 
-            color:colors.textBlack, 
-            marginHorizontal:10, 
-            marginBottom:10, 
-    },
-        dialogInputText1:{
-            flexDirection:'row',
-            marginBottom:35,
-            borderWidth: 1, 
-            borderRadius: 7,
-            borderColor: 'lightgrey',
-            paddingLeft: 10,
-            height: 50,
-            marginHorizontal:10
-    },
-        dialogActionBtn:{
-            borderRadius:10, 
-            marginHorizontal:20, 
-            marginTop:5, 
-            marginBottom:10, 
-            width:80, 
-            height:35, 
-            alignItems:'center',
-            borderColor: colors.primaryColor1,
-            borderWidth:1
-        },
-    formPage:{
-        borderRadius:10, 
-        marginHorizontal:10, 
-        backgroundColor:colors.textColor, 
-        marginTop:5,
-        shadowColor: '#000',
-        shadowOffset: { 
-        width: 0, 
-        height: 1 
-        },
-        shadowOpacity: 0.5,
-        shadowRadius: 1,
-        elevation: 0.9, 
-        },
-    settingTitle:{
-        color:colors.textColor,
-        fontSize:20,
-        marginLeft: -20,
-        fontFamily: '_semiBold',
-      },
-      
-    actionButton:{
-      width:100, 
-      height:30, 
-      borderRadius:20, 
-      backgroundColor:colors.primaryColor1, 
-      justifyContent:'center', 
-      alignItems:'center', 
-     },
-  buttonSellText:{
-    color:colors.textColor, 
-    fontFamily:'_semiBold', 
-    fontSize:15
-},
-textAreaContainer: {
-    borderWidth: 0.5,
-    borderRadius:10,
-    marginHorizontal:10,
-    marginBottom:20
-  },
-  textArea: {
-    height: 50,
-    justifyContent: "flex-start"
-  },
-  textInput: {
-    flex: 1,
-    marginTop: Platform.OS === 'ios' ? 0 : -12,
-    paddingLeft: 10,
-    fontFamily: '_regular',
-},
+  container: { flex: 1 },
+  scrollContent: { paddingBottom: spacing.xxxl },
 
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  headerTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+  },
+  closeBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Hero Banner
+  heroBanner: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    ...shadows.lg,
+  },
+  heroCircle1: {
+    position: 'absolute',
+    right: -30,
+    top: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  heroCircle2: {
+    position: 'absolute',
+    left: -20,
+    bottom: -20,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  heroIconBox: {
+    width: 54,
+    height: 54,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.sm,
+  },
+  heroText: { flex: 1 },
+  heroTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+    color: '#fff',
+    marginBottom: 4,
+  },
+  heroDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 22,
+  },
+
+  // Amount Card
+  amountCard: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    alignItems: 'center',
+    ...shadows.card,
+  },
+  amountLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: spacing.xs,
+  },
+  amountValue: {
+    fontFamily: '_bold',
+    fontSize: typography.huge,
+    lineHeight: 48,
+    marginBottom: spacing.md,
+  },
+  amountDivider: {
+    width: '100%',
+    height: 1,
+    marginBottom: spacing.md,
+  },
+  amountNote: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+
+  // Timer Card
+  timerCard: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    alignItems: 'center',
+    ...shadows.card,
+  },
+  timerTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    marginBottom: 4,
+  },
+  timerDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  timerBox: {
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  timerContainer: {
+    height: 56,
+    minWidth: 140,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.xl,
+  },
+  timerText: {
+    fontSize: typography.xl,
+    fontFamily: '_bold',
+    color: '#fff',
+    letterSpacing: 1,
+  },
+  expiredNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  expiredText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    flex: 1,
+  },
+
+  // Instructions Card
+  instructionsCard: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+  instructionsTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    marginBottom: spacing.lg,
+  },
+  instructionRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  instructionNum: {
+    width: 26,
+    height: 26,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  instructionNumText: {
+    fontFamily: '_bold',
+    fontSize: typography.sm,
+    color: '#fff',
+    lineHeight: 16,
+  },
+  instructionText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    flex: 1,
+  },
+
+  // View Bank Button
+  viewBankBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1.5,
+    gap: spacing.md,
+  },
+  viewBankBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    lineHeight: 22,
+    flex: 1,
+  },
+
+  // Payment Button
+  paymentBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 56,
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+    ...shadows.md,
+  },
+  paymentBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    color: '#fff',
+  },
+
+  // Security Notice
+  securityNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    gap: spacing.sm,
+  },
+  securityText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    flex: 1,
+  },
+
+  // Modal
+  modalCard: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.lg,
+  },
+  modalTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    color: '#fff',
+    flex: 1,
+  },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBody: {
+    padding: spacing.xl,
+  },
+  modalDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+  },
+
+  // Bank Card
+  bankCard: {
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+  },
+  bankCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  bankCardTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  copyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    gap: 4,
+  },
+  copyBtnText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.sm,
+    color: '#fff',
+    lineHeight: 20,
+  },
+
+  // Bank Detail Row
+  bankDetailRow: {
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  bankDetailLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: 2,
+  },
+  bankDetailValue: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+
+  // Modal Done Button
+  modalDoneBtn: {
+    height: 52,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadows.md,
+  },
+  modalDoneBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    color: '#fff',
+  },
 });
 
 export default FundAccountNextScreen;

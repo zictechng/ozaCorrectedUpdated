@@ -65,20 +65,20 @@ const PinConfirmModal = ({ visible, onClose, onConfirm, isProcessing, totalAmoun
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.pinModalOverlay}>
-        <View style={styles.pinModalCard}>
+        <View style={[styles.pinModalCard, { backgroundColor: colors.bgCard }]}>
 
           {/* Header */}
-          <View style={styles.pinModalHeader}>
-            <Text style={styles.pinModalTitle}>Confirm Payment</Text>
+          <View style={[styles.pinModalHeader, { backgroundColor: colors.bgLight }]}>
+            <Text style={[styles.pinModalTitle, { color: colors.textBlack }]}>Confirm Payment</Text>
             <TouchableOpacity onPress={onClose} style={styles.pinModalClose}>
               <Ionicons name="close" size={22} color={colors.textSecColor} />
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.pinModalAmount}>
+          <Text style={[styles.pinModalAmount, { color: colors.textBlack }]}>
             ₦{Number(totalAmount).toLocaleString()}
           </Text>
-          <Text style={styles.pinModalService}>{serviceTitle}</Text>
+          <Text style={[styles.pinModalService, { color: colors.textSecColor }]}>{serviceTitle}</Text>
 
           {/* PIN Dots */}
           <View style={styles.pinDots}>
@@ -92,7 +92,7 @@ const PinConfirmModal = ({ visible, onClose, onConfirm, isProcessing, totalAmoun
               />
             ))}
           </View>
-          <Text style={styles.pinHint}>Enter your 4-digit transaction PIN</Text>
+          <Text style={[styles.pinHint, { color: colors.textSecColor }]}>Enter your 4-digit transaction PIN</Text>
 
           {/* Keypad */}
           {isProcessing ? (
@@ -122,7 +122,7 @@ const PinConfirmModal = ({ visible, onClose, onConfirm, isProcessing, totalAmoun
                           color={colors.textBlack}
                         />
                       ) : (
-                        <Text style={styles.keypadBtnText}>{key}</Text>
+                        <Text style={[styles.keypadBtnText, { color: colors.textBlack }]}>{key}</Text>
                       )}
                     </TouchableOpacity>
                   ))}
@@ -268,7 +268,7 @@ const BillsConfirmScreen = ({ navigation, route }) => {
           onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Confirm Payment</Text>
+        <Text style={[styles.headerTitle, { color: colors.textBlack }]}>Confirm Payment</Text>
         <View style={[gs.homeSideMenu, { opacity: 0 }]} />
       </View>
 
@@ -295,22 +295,22 @@ const BillsConfirmScreen = ({ navigation, route }) => {
         </LinearGradient>
 
         {/* ── Review Notice ─────────────────────── */}
-        <View style={styles.reviewNotice}>
+        <View style={[styles.reviewNotice, { backgroundColor: colors.bgLight, borderColor: colors.dividerColor }]}>
           <Ionicons
             name="eye-outline"
             size={18}
             color={colors.primaryColor1}
           />
-          <Text style={styles.reviewNoticeText}>
+          <Text style={[styles.reviewNoticeText, { color: colors.primaryColor1 }]}>
             Please review your order carefully before confirming payment.
             This transaction cannot be reversed once processed.
           </Text>
         </View>
 
         {/* ── Order Summary Card ────────────────── */}
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Order Details</Text>
-          <View style={styles.summaryDivider} />
+        <View style={[styles.summaryCard, { backgroundColor: colors.bgCard }]}>
+          <Text style={[styles.summaryTitle, { color: colors.textBlack }]}>Order Details</Text>
+          <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
 
           {summaryItems.map((item, index) => (
             <SummaryRow
@@ -320,7 +320,7 @@ const BillsConfirmScreen = ({ navigation, route }) => {
             />
           ))}
 
-          <View style={styles.summaryDivider} />
+          <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
 
           <SummaryRow
             label="Service Fee"
@@ -335,14 +335,14 @@ const BillsConfirmScreen = ({ navigation, route }) => {
         </View>
 
         {/* ── Wallet Balance ────────────────────── */}
-        <View style={styles.walletCard}>
+        <View style={[styles.walletCard, { backgroundColor: colors.bgCard }]}>
           <View style={styles.walletRow}>
             <View style={styles.walletIconBox}>
               <Ionicons name="wallet-outline" size={20} color={colors.primaryColor1} />
             </View>
             <View style={styles.walletInfo}>
-              <Text style={styles.walletLabel}>Wallet Balance</Text>
-              <Text style={styles.walletBalance}>
+              <Text style={[styles.walletLabel, { color: colors.textSecColor }]}>Wallet Balance</Text>
+              <Text style={[styles.walletBalance, { color: colors.textBlack }]}>
                 ₦{Number(userInfo?.userData?.tran_account || 0).toLocaleString()}
               </Text>
             </View>
@@ -386,9 +386,9 @@ const BillsConfirmScreen = ({ navigation, route }) => {
         </View>
 
         {/* ── Security Notice ───────────────────── */}
-        <View style={styles.securityNotice}>
+        <View style={[styles.securityNotice, { backgroundColor: colors.greenColorLight, borderColor: colors.lightGreenColor1 }]}>
           <Ionicons name="shield-checkmark-outline" size={18} color={colors.successColor} />
-          <Text style={styles.securityText}>
+          <Text style={[styles.securityText, { color: colors.successColor }]}>
             Your transaction is secured with end-to-end encryption.
             You will be asked to enter your PIN to authorize this payment.
           </Text>
@@ -413,7 +413,7 @@ const BillsConfirmScreen = ({ navigation, route }) => {
             color="#fff"
             style={{ marginRight: spacing.sm }}
           />
-          <Text style={styles.payBtnText}>
+          <Text style={[styles.payBtnText, { color: "#fff" }]}>
             Authorize & Pay ₦{Number(totalAmount).toLocaleString()}
           </Text>
         </TouchableOpacity>
@@ -422,7 +422,7 @@ const BillsConfirmScreen = ({ navigation, route }) => {
         <TouchableOpacity
           style={styles.cancelBtn}
           onPress={() => navigation.goBack()}>
-          <Text style={styles.cancelBtnText}>Cancel Transaction</Text>
+          <Text style={[styles.cancelBtnText, { color: colors.dangerColor }]}>Cancel Transaction</Text>
         </TouchableOpacity>
 
         <View style={{ height: spacing.xxxl }} />

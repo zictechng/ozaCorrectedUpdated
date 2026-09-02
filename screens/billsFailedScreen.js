@@ -97,7 +97,7 @@ const BillsFailedScreen = ({ navigation, route }) => {
           colors={['#EF4444', '#B91C1C']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.heroSection}>
+          style={[styles.heroSection, { backgroundColor: colors.bgColor }]}>
           <View style={styles.heroCircle1} />
           <View style={styles.heroCircle2} />
 
@@ -134,37 +134,37 @@ const BillsFailedScreen = ({ navigation, route }) => {
         }}>
 
           {/* ── Error Message Card ────────────────── */}
-          <View style={styles.errorCard}>
+          <View style={[styles.errorCard, { backgroundColor: colors.bgCard }]}>
             <View style={styles.errorIconRow}>
-              <View style={styles.errorIconBox}>
+              <View style={[styles.errorIconBox, { backgroundColor: colors.lightRed }]}>
                 <Ionicons name="alert-circle-outline" size={24} color={colors.dangerColor} />
               </View>
-              <Text style={styles.errorTitle}>What went wrong?</Text>
+              <Text style={[styles.errorTitle, { color: colors.textBlack }]}>What went wrong?</Text>
             </View>
-            <Text style={styles.errorMessage}>{errorMessage}</Text>
+            <Text style={[styles.errorMessage, { color: colors.dangerColor }]}>{errorMessage}</Text>
           </View>
 
           {/* ── Possible Reasons ─────────────────── */}
-          <View style={styles.reasonsCard}>
+          <View style={[styles.reasonsCard, { backgroundColor: colors.bgCard }]}>
             <Text style={styles.reasonsTitle}>Possible Reasons</Text>
             {getFailureReasons().map((reason, index) => (
               <View key={index} style={styles.reasonRow}>
                 <View style={styles.reasonDot} />
-                <Text style={styles.reasonText}>{reason}</Text>
+                <Text style={[styles.reasonText, { color: colors.textSecColor }]}>{reason}</Text>
               </View>
             ))}
           </View>
 
           {/* ── Wallet Safety Notice ──────────────── */}
-          <View style={styles.safetyCard}>
+          <View style={[styles.safetyCard, { backgroundColor: colors.greenColorLight, borderColor: colors.lightGreenColor1 }]}>
             <Ionicons
               name="shield-checkmark-outline"
               size={20}
               color={colors.successColor}
             />
             <View style={styles.safetyInfo}>
-              <Text style={styles.safetyTitle}>Your wallet is safe</Text>
-              <Text style={styles.safetyDesc}>
+              <Text style={[styles.safetyTitle, { color: colors.successColor }]}>Your wallet is safe</Text>
+              <Text style={[styles.safetyDesc, { color: colors.textSecColor }]}>
                 If your wallet was debited and the service was not delivered,
                 your balance will be automatically refunded within 24 hours.
                 Contact support if not resolved.
@@ -173,9 +173,9 @@ const BillsFailedScreen = ({ navigation, route }) => {
           </View>
 
           {/* ── Support Notice ────────────────────── */}
-          <View style={styles.supportCard}>
-            <Text style={styles.supportTitle}>Need Help?</Text>
-            <Text style={styles.supportDesc}>
+          <View style={[styles.supportCard, { backgroundColor: colors.bgLight, borderColor: colors.dividerColor }]}>
+            <Text style={[styles.supportTitle, { color: colors.primaryColor1 }]}>Need Help?</Text>
+            <Text style={[styles.supportDesc, { color: colors.textSecColor }]}>
               If this issue persists, please contact our support team
               with your transaction reference number for quick resolution.
             </Text>

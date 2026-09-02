@@ -1,492 +1,620 @@
-﻿import React, { useContext, useState, useEffect} from 'react';
-import { useIsFocused } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Animatable from 'react-native-animatable'
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, ImageBackground, ScrollView } from 'react-native';
+﻿import React, { useState, useContext } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  StatusBar, ActivityIndicator, Image, Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons} from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system'
-import { gs,colors } from '../styles';
-import { StatusBar } from 'expo-status-bar';
-import CustomButton from '../components/customButton';
-import client from '../contextAPI/client';
+import { ALERT_TYPE, Toast, Dialog } from 'react-native-alert-notification';
+
+import { spacing, radius, typography, shadows } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
 import { AuthContext } from '../contextAPI/authContext';
-import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import { noticeData } from '../components/errorNotice';
-import LoaderIndicator from '../components/loaderIndicator';
-import Verify2faSuccess from '../components/veriy2faSuccess';
-import {CLOUDINARY_ACCOUNT_NAME, CLOUDINARY_PRESET_NAME} from '@env'
+import client from '../contextAPI/client';
 
+// ── Accepted document types ───────────────────────
+const PROOF_TYPES = [
+  {
+    id: 'utility_bill',
+    label: 'Utility Bill',
+    icon: 'flash-outline',
+    iconBg: '#FEF3C7',
+    iconColor: '#F59E0B',
+    desc: 'Electricity, water or gas bill showing your name and address',
+  },
+  {
+    id: 'bank_statement',
+    label: 'Bank Statement',
+    icon: 'business-outline',
+    iconBg: '#EEF2FF',
+    iconColor: '#4C5FD5',
+    desc: 'Recent bank statement with your name and address (last 3 months)',
+  },
+  {
+    id: 'tenancy_agreement',
+    label: 'Tenancy Agreement',
+    icon: 'home-outline',
+    iconBg: '#D1FAE5',
+    iconColor: '#10B981',
+    desc: 'Signed tenancy or lease agreement showing your current address',
+  },
+  {
+    id: 'govt_letter',
+    label: 'Government Letter',
+    icon: 'document-text-outline',
+    iconBg: '#DBEAFE',
+    iconColor: '#3B82F6',
+    desc: 'Any official government correspondence addressed to you',
+  },
+];
 
-const UploadProofAddress = ({navigation}) => {
-      const isFocused = useIsFocused();
-      
-      const [image, setImage] = useState(null);
-      const {userInfo, setUserInfo, userToken, completeRegData, setCompleteRegData} = useContext(AuthContext)
-      const [loading, setLoading] = useState(false);
-      const [loading2, setLoading2] = useState(false);
-      const [documentUploaded, setDocumentUploaded] = useState(false);
-      const [imageValue, setImageValue] = useState('');
-      
-      let myId = userInfo.userData._id; // get logged in user ID
+// ── Proof Type Card ───────────────────────────────
+const ProofTypeCard = ({ proof, isSelected, onSelect, colors }) => (
+  <TouchableOpacity
+    style={[
+      styles.proofTypeCard,
+      {
+        backgroundColor: colors.bgCard,
+        borderColor: isSelected ? colors.primaryColor1 : colors.dividerColor,
+      },
+      isSelected && { backgroundColor: colors.bgLight },
+    ]}
+    onPress={() => onSelect(proof)}
+    activeOpacity={0.85}>
+    <View style={[styles.proofTypeIcon, { backgroundColor: proof.iconBg }]}>
+      <Ionicons name={proof.icon} size={22} color={proof.iconColor} />
+    </View>
+    <View style={styles.proofTypeInfo}>
+      <Text style={[styles.proofTypeLabel, { color: colors.textBlack }]}>{proof.label}</Text>
+      <Text style={[styles.proofTypeDesc, { color: colors.textSecColor }]}>{proof.desc}</Text>
+    </View>
+    <View style={[
+      styles.proofRadio,
+      {
+        borderColor: isSelected ? colors.primaryColor1 : colors.dividerColor,
+        backgroundColor: isSelected ? colors.primaryColor1 : 'transparent',
+      },
+    ]}>
+      {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+    </View>
+  </TouchableOpacity>
+);
 
-      useEffect(() => {
-        if(isFocused){
-       // console.log("navigation changed ", userInfo?.userData )
-                if(userInfo?.userData.reg_stage6 =="Yes"){
-                    navigation.navigate('Home');
-                }
-            }
-         }, [isFocused]);
+// ── Main Upload Address Screen ────────────────────
+const UploadProofAddress = ({ navigation }) => {
+  const { colors, isDark } = useThemeStyles();
+  const { userToken, userInfo } = useContext(AuthContext);
 
-      // image/file picker here
-        const pickImage = async () => {
-          // No permissions request is necessary for launching the image library
-          let resultResponse = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.All,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
-          });
-          //console.log("File details ", resultResponse.type);
-          // check file type here
-          if(resultResponse.assets[0].type =='video') {
-            Toast.show({
-                type: ALERT_TYPE.WARNING,
-                title:'Error',
-                textBody: 'Videos files are not supported',
-                titleStyle: noticeData[0].errorTitleStyle,
-                textBodyStyle: noticeData[0].errorMessageStyle,
-              })
-              resultResponse.canceled = true;
-              setImage(null)
-              return
-            }
-          
-          if (!resultResponse.canceled) {
-            setImage(resultResponse.assets[0].uri);
-            let fileInfo = await FileSystem.getInfoAsync(resultResponse.assets[0].uri);
-            fileSize = 1024 * 1024 * 5
-            if(fileInfo.size > fileSize) {
-              console.log('file size larger than expected')
-              Toast.show({
-                    type: ALERT_TYPE.DANGER,
-                    title:'Error',
-                    textBody: 'File size is larger than 5MB',
-                    titleStyle: noticeData[0].errorTitleStyle,
-                    textBodyStyle: noticeData[0].errorMessageStyle,
-                  })
-                setImage(null)
-              return
-            }
-          }
-        };
+  const [selectedProofType, setSelectedProofType] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-      // close success modal and go back to home page
-        const closeModal = () =>{
-            setDocumentUploaded(false);
-            //FetchLocalStorage();
-            navigation.navigate('Home')
-          }
-
-      // Get user details from local storage after every request/operation into the database
-      const FetchLocalStorage = async()=>{
-        setLoading(true)
-        try {
-          let userInfoDetails = await AsyncStorage.getItem('userInfo');
-                userInfoDetails = JSON.parse(userInfoDetails)
-            if(userInfoDetails){
-              setUserInfo(userInfoDetails);
-             //console.log('User Details fetch local storage ', userInfoDetails)
-            }
-           
-        } catch (error) {
-          console.log(`Fetch local storage error ${error}`);
-          
-        }
-        finally{
-          setLoading(false);
-        }
+  // ── Pick from gallery ─────────────────────────
+  const pickFromGallery = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow access to your photo library.', [{ text: 'OK' }]);
+        return;
       }
-
-       // delete method here
-       const deleteImageId = async(data) =>{
-        const sendData = {
-          'userId': myId,
-          'delete_url': data
-        }
-          try {
-              const res = await client.post('/api/deleteUploaded_image', sendData,{
-                headers: {
-                  'Authorization': 'Bearer '+userToken,
-              }
-          })
-          if(res.data.msg == '201'){
-             let userInfo = await AsyncStorage.getItem('userInfo');
-             userInfo = JSON.parse(userInfo)
-            setUserInfo(userInfo)
-           }
-          else if(res.data.status == '401'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Failed',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return
-          }
-          else if(res.data.status == '402'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: 'You need to login and try again.',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return
-          }
-          else if(res.data.status == '500'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return
-          }
-        } catch (error) {
-          console.log(error.message)
-        }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.9,
+      });
+      if (!result.canceled && result.assets?.length > 0) {
+        setSelectedImage(result.assets[0]);
       }
+    } catch (error) {
+      console.log('Gallery error:', error.message);
+    }
+  };
 
-      // function to upload photo here
-      const uploadPhoto = async() => {
-              if (!image) {
-                Toast.show({
-                  type: ALERT_TYPE.DANGER,
-                  title: 'Error',
-                  textBody: 'Please select a document to upload',
-                  titleStyle: noticeData[0].errorTitleStyle,
-                  textBodyStyle: noticeData[0].errorMessageStyle,
-                });
-                return;
-              }
-            
-              setLoading(true);
-            
-              let newfile = {
-                uri: image,
-                type:`document2FA/${image.split(".")[1]}`,
-                name:`document2FA.${image.split(".")[1]}`,
-              }
-              const data = new FormData()
-              data.append('file', newfile)
-              data.append('upload_preset', CLOUDINARY_PRESET_NAME)
-              data.append('upload_name', CLOUDINARY_ACCOUNT_NAME)
-            
-              try {
-                const response = await fetch(
-                  "https://api.cloudinary.com/v1_1/ddm1owlon/image/upload",
-                  {
-                    method: 'POST',
-                    body: data,
-                  }
-                );
-            
-                const result = await response.json(); // Parse JSON
-                const secureUrl = result.secure_url;
-            
-                setImageValue(result.public_id);
-            
-                if (secureUrl) {
-                  uploadPhotoURL(secureUrl);
-                  setLoading(false);
-                }
-
-              } catch (error) {
-                deleteImageId(imageValue);
-                console.log(error.message);
-                setLoading(false);
-              }
-          
-          }
-
-      const uploadPhotoURL = async(data) => {
-        setLoading2(true)
-        const sendData = {
-          'userId': myId,
-          'image_url': data
-        }
-          try {
-              const res = await client.post('/api/user_uploadProof_address', sendData,{
-                headers: {
-                  'Authorization': 'Bearer '+userToken,
-              }
-          })
-          if(res.data.msg == '201'){
-            let userInfoReturn = res.data;
-            AsyncStorage.setItem('userInfo', JSON.stringify(userInfoReturn));
-
-            FetchLocalStorage()
-            setDocumentUploaded(true)
-            setCompleteRegData(false)
-            setImage(null)
-            let userInfo = await AsyncStorage.getItem('userInfo');
-                userInfo = JSON.parse(userInfo)
-                setUserInfo(userInfo)
-            Toast.show({
-              type: ALERT_TYPE.SUCCESS,
-              title:'Success',
-              textBody: 'Proof of address uploaded successfully',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })  
-            navigation.navigate('Home');
-              
-          }
-          else if(res.data.status == '401'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Failed',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return deleteImageId(imageValue)
-            
-          }
-          else if(res.data.status == '400'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: 'File too large',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return deleteImageId(imageValue)
-          }
-          else if(res.data.status == '404'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Failed',
-              textBody: 'You need to have an account',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return deleteImageId(imageValue)
-           }
-          else if(res.data.status == '402'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: 'You need to login and try again.',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            deleteImageId(imageValue)
-            return
-          }
-          else if(res.data.status == '500'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return deleteImageId(imageValue)
-          }
-          
-         } catch (error) {
-          deleteImageId(imageValue)
-          console.log(error.message)
-        }
-        finally{
-          setLoading2(false)
-        }
-          
+  // ── Take photo ────────────────────────────────
+  const takePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow camera access.', [{ text: 'OK' }]);
+        return;
       }
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: false,
+        quality: 0.9,
+      });
+      if (!result.canceled && result.assets?.length > 0) {
+        setSelectedImage(result.assets[0]);
+      }
+    } catch (error) {
+      console.log('Camera error:', error.message);
+    }
+  };
+
+  // ── Upload ────────────────────────────────────
+  const handleUpload = async () => {
+    if (!selectedProofType) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Select Document Type', textBody: 'Please select the type of proof of address document.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      return;
+    }
+    if (!selectedImage) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'No Document Selected', textBody: 'Please select or take a photo of your proof of address document.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      const filename = selectedImage.uri.split('/').pop();
+      const ext = filename.split('.').pop()?.toLowerCase();
+      formData.append('address_proof', {
+        uri: selectedImage.uri,
+        name: filename,
+        type: ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png',
+      });
+      formData.append('proof_type', selectedProofType.id);
+      formData.append('proof_label', selectedProofType.label);
+      formData.append('userId', userInfo?.userData?._id);
+
+      const res = await client.post(
+        '/api/uploadProofAddress_mobile',
+        formData,
+        {
+          headers: {
+            'Authorization': 'Bearer ' + userToken,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (res.data.msg === '200') {
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Document Uploaded!',
+          textBody: 'Your proof of address has been submitted. We will review it within 24 hours.',
+          button: 'Done',
+          titleStyle: noticeData[0].errorTitleStyle,
+          textBodyStyle: noticeData[0].errorMessageStyle,
+          onHide: () => navigation.goBack(),
+        });
+      } else {
+        Toast.show({ type: ALERT_TYPE.DANGER, title: 'Upload Failed', textBody: res.data.message || 'Could not upload document. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      }
+    } catch (error) {
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Something went wrong. Please check your connection.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
-    <View style={{flex:1, backgroundColor:colors.bgColor}}>
-        <SafeAreaView style={{flex:1}}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.bgColor}
+      />
 
-            <StatusBar style='dark' />
+      {/* ── Header ──────────────────────────────── */}
+      <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
+        <TouchableOpacity
+          style={[styles.backBtn, { backgroundColor: colors.bgLight }]}
+          onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.textBlack }]}>
+          Proof of Address
+        </Text>
+        <View style={styles.backBtn} />
+      </View>
 
-                <View style={gs.homeHeaderRow}>
-                    <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                      <Text></Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('SignupSteps')}>
-                              <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                              <Ionicons name='close-outline' size={23} color={colors.blackColor1}/>
-                              </View>
-                        </TouchableOpacity>
-                        
-                        {/* <Text style={styles.settingTitle}>Settings</Text> */}
-                        
-                        {/* <TouchableOpacity style={gs.homeSideMenu}>
-                            <Feather name='bell' size={20} color={colors.textColor}/>
-                            
-                        </TouchableOpacity> */}
-                    </View>
-                    <View style={{marginBottom:30}}></View>
-                    
-                 </View>
-                        {/* show loader when processing request */}
-                        {loading && <LoaderIndicator 
-                        loader={loading}
-                        textInfo={'  Processing...'}
-                        />}
-                        {loading2 && <LoaderIndicator 
-                        loader={loading2}
-                        textInfo={'  Updating...'}
-                        />}
-                 <View style={{flex:1, backgroundColor:colors.bgColor}}>
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Upload Proof of Address</Text>
-                        </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
 
-                        <View style={{marginHorizontal:20, marginTop:10}}>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>It's highly recommended to upload proof of address to verified your address.</Text>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>Upload a scanned copy of your utility bills or bank statement</Text>
-                         </View>
+        {/* ── Hero Banner ──────────────────────── */}
+        <LinearGradient
+          colors={['#10B981', '#059669']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroBanner}>
+          <View style={styles.heroCircle1} />
+          <View style={styles.heroCircle2} />
+          <View style={[styles.heroIconBox, { backgroundColor: 'rgba(255,255,255,0.95)' }]}>
+            <Ionicons name="home-outline" size={28} color="#10B981" />
+          </View>
+          <View style={styles.heroText}>
+            <Text style={styles.heroTitle}>Proof of Address</Text>
+            <Text style={styles.heroDesc}>
+              Upload a document that confirms your current residential address to complete your KYC verification.
+            </Text>
+          </View>
+        </LinearGradient>
 
-                        <Animatable.View 
-                           animation={'fadeIn'}
-                           delay={400}
-                           useNativeDriver={true}  
-                        style={styles.formPage}>
-                            
-                        
-                        <TouchableOpacity style={{ justifyContent:'center', alignItems:'center',
-                            marginBottom:25,
-                            borderColor: 'lightgrey',
-                            paddingLeft: 10,
-                            }}
-                            onPress={pickImage}
-                            >
-                        {!image && <Ionicons name='document-outline' size={80} color='#666' style={{marginRight:5, marginTop:15, opacity:0.4}} />}
-                        {image && <Image source={{ uri: image }} style={{ width: 200, height: 150, borderRadius:5, marginTop:20 }} />}
-                        {!image && <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.textSecColor}}>Tap to pick a file</Text> }
-                        </TouchableOpacity>
-                           
-                        </Animatable.View>
-                        
-                        <View style={{marginHorizontal:20, marginTop:30, borderBottomWidth:1, borderColor: '#dededc', marginBottom:5}}>
-                        </View>
+        {/* ── Step 1 — Proof Type ───────────────── */}
+        <View style={[styles.stepCard, { backgroundColor: colors.bgCard }]}>
+          <View style={styles.stepHeader}>
+            <View style={[styles.stepNum, { backgroundColor: '#10B981' }]}>
+              <Text style={styles.stepNumText}>1</Text>
+            </View>
+            <Text style={[styles.stepTitle, { color: colors.textBlack }]}>
+              Select Document Type
+            </Text>
+          </View>
+          <Text style={[styles.stepDesc, { color: colors.textSecColor }]}>
+            Choose the type of proof of address document you want to upload
+          </Text>
 
-                        <View style={{marginHorizontal:20, marginTop:10, borderColor: '#dededc', marginBottom:5}}>
-                            {/* <Text style={{fontFamily:'_regular', fontSize:14, color:colors.redColor}}>{'*'} Video file not supported</Text> */}
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>{'*'} PNG or JPG format only </Text>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>{'*'} 5MB maximum </Text>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>{'*'} Not older than three months </Text>
-                        
-                        </View>
-                    
-                            {/* custom button here */}
-                          <Animatable.View
-                            animation={'zoomIn'}
-                            delay={500}
-                            useNativeDriver={true}>
-                                <CustomButton 
-                                  buttonStyle={{borderRadius:10, marginHorizontal:10, backgroundColor:colors.primaryColor1, marginTop:60}}
-                                  viewStyle={{padding:10, alignItems:'center'}}
-                                  textStyle={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textColor}}
-                                  textLabel={'Upload'}
-                                  buttonAction={() => uploadPhoto()}
-                              />
-                            
-                              <View style={{justifyContent:'center', alignItems:'center', margin:20}}>
-                                  <TouchableOpacity style={{marginTop:5}} onPress={() => navigation.navigate('Home')}>
-                                  <Text style={[gs.loginPageDesc,{color:colors.textBlack}]}>Maybe Later</Text>
-                                  </TouchableOpacity>
-                              </View>
-                          </Animatable.View>
-                    <Verify2faSuccess 
-                        modalVisible={documentUploaded}
-                        actionButton2={() => closeModal()}
-                    />
-                    </ScrollView>
+          {PROOF_TYPES.map((proof) => (
+            <ProofTypeCard
+              key={proof.id}
+              proof={proof}
+              isSelected={selectedProofType?.id === proof.id}
+              onSelect={(p) => {
+                setSelectedProofType(p);
+                setSelectedImage(null);
+              }}
+              colors={colors}
+            />
+          ))}
+        </View>
+
+        {/* ── Step 2 — Upload Image ─────────────── */}
+        {selectedProofType && (
+          <View style={[styles.stepCard, { backgroundColor: colors.bgCard }]}>
+            <View style={styles.stepHeader}>
+              <View style={[styles.stepNum, { backgroundColor: '#10B981' }]}>
+                <Text style={styles.stepNumText}>2</Text>
+              </View>
+              <Text style={[styles.stepTitle, { color: colors.textBlack }]}>
+                Upload Document
+              </Text>
+            </View>
+            <Text style={[styles.stepDesc, { color: colors.textSecColor }]}>
+              Upload a clear photo or scan of your {selectedProofType.label}
+            </Text>
+
+            {selectedImage ? (
+              <View style={[styles.previewCard, {
+                backgroundColor: colors.bgCard,
+                borderColor: '#10B981',
+              }]}>
+                <Image
+                  source={{ uri: selectedImage.uri }}
+                  style={styles.previewImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.previewInfo}>
+                  <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                  <Text style={[styles.previewLabel, { color: colors.textBlack }]}>
+                    {selectedProofType.label} selected
+                  </Text>
                 </View>
-            
-        </SafeAreaView>
-    </View>
+                <TouchableOpacity
+                  style={[styles.previewRemove, { backgroundColor: colors.lightRed }]}
+                  onPress={() => setSelectedImage(null)}>
+                  <Ionicons name="close" size={16} color={colors.dangerColor} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.uploadOptionsRow}>
+                <TouchableOpacity
+                  style={[styles.uploadOptionBtn, {
+                    backgroundColor: colors.bgLight,
+                    borderColor: colors.dividerColor,
+                  }]}
+                  onPress={pickFromGallery}
+                  activeOpacity={0.85}>
+                  <Ionicons name="images-outline" size={24} color={colors.primaryColor1} />
+                  <Text style={[styles.uploadOptionText, { color: colors.textBlack }]}>
+                    Gallery
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.uploadOptionBtn, {
+                    backgroundColor: colors.bgLight,
+                    borderColor: colors.dividerColor,
+                  }]}
+                  onPress={takePhoto}
+                  activeOpacity={0.85}>
+                  <Ionicons name="camera-outline" size={24} color="#10B981" />
+                  <Text style={[styles.uploadOptionText, { color: colors.textBlack }]}>
+                    Camera
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* ── Requirements Card ─────────────────── */}
+        <View style={[styles.tipsCard, {
+          backgroundColor: colors.bgLight,
+          borderColor: colors.dividerColor,
+        }]}>
+          <View style={styles.tipsTitleRow}>
+            <Ionicons name="information-circle-outline" size={18} color="#10B981" />
+            <Text style={[styles.tipsTitle, { color: '#10B981' }]}>
+              Document Requirements
+            </Text>
+          </View>
+          {[
+            'Document must show your full name and current address',
+            'Must be issued within the last 3 months',
+            'All text must be clearly visible and readable',
+            'Document must not be altered or edited',
+            'Digital or physical documents are both accepted',
+          ].map((tip, i) => (
+            <View key={i} style={styles.tipRow}>
+              <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+              <Text style={[styles.tipText, { color: colors.textSecColor }]}>{tip}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* ── Submit Button ─────────────────────── */}
+        <TouchableOpacity
+          style={[
+            styles.submitBtn,
+            { backgroundColor: '#10B981' },
+            (!selectedProofType || !selectedImage || isUploading) && { opacity: 0.6 },
+          ]}
+          onPress={handleUpload}
+          disabled={!selectedProofType || !selectedImage || isUploading}
+          activeOpacity={0.85}>
+          {isUploading ? (
+            <ActivityIndicator color="#fff" size={22} />
+          ) : (
+            <>
+              <Ionicons name="cloud-upload-outline" size={22} color="#fff" />
+              <Text style={styles.submitBtnText}>Submit Proof of Address</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <View style={{ height: spacing.xxxl }} />
+      </ScrollView>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    formPage:{
-      borderRadius:10, 
-      marginHorizontal:10, 
-      backgroundColor:colors.textColor, 
-      marginTop:20,
-      shadowColor: '#000',
-      shadowOffset: { 
-      width: 0, 
-      height: 0.9 
-      },
-      shadowOpacity: 0.5,
-      shadowRadius: 0.6,
-      elevation: 1, 
-      },
-    settingTitle:{
-        color:colors.textColor,
-        fontSize:20,
-        marginLeft: -20,
-        fontFamily: '_semiBold',
-      },
-      accountVerify:{
-        position: "absolute", 
-        top: 30, 
-        right: +20, 
-        marginRight: 10, 
-        color:colors.greenColor,
-    },
-    dropdown: {
-      height: 50,
-      borderColor: 'gray',
-      //borderWidth: 0.5,
-      borderRadius: 8,
-      paddingHorizontal: 8,
-    },
-    icon: {
-      marginRight: 5,
-    },
-    label: {
-      position: 'absolute',
-      backgroundColor: 'white',
-      left: 22,
-      top: 8,
-      zIndex: 999,
-      paddingHorizontal: 8,
-      fontSize: 14,
-    },
-    placeholderStyle: {
-      fontSize: 16,
-      color:colors.textSecColor
-    },
-    selectedTextStyle: {
-      fontSize: 16,
-    },
-    iconStyle: {
-      width: 20,
-      height: 20,
-    },
-    inputSearchStyle: {
-      height: 40,
-      fontSize: 16,
-    },
-
+  container: { flex: 1 },
+  scrollContent: { paddingBottom: spacing.xxxl },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  headerTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+  },
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroBanner: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    ...shadows.lg,
+  },
+  heroCircle1: {
+    position: 'absolute',
+    right: -30,
+    top: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  heroCircle2: {
+    position: 'absolute',
+    left: -20,
+    bottom: -20,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  heroIconBox: {
+    width: 54,
+    height: 54,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.sm,
+  },
+  heroText: { flex: 1 },
+  heroTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+    color: '#fff',
+    marginBottom: 4,
+  },
+  heroDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 22,
+  },
+  stepCard: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+  stepHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  stepNum: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stepNumText: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    color: '#fff',
+  },
+  stepTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+  },
+  stepDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+    marginLeft: 46,
+  },
+  proofTypeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.xl,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1.5,
+    gap: spacing.md,
+  },
+  proofTypeIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  proofTypeInfo: { flex: 1 },
+  proofTypeLabel: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: 2,
+  },
+  proofTypeDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  proofRadio: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.full,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uploadOptionsRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  uploadOptionBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    borderWidth: 1.5,
+    gap: spacing.sm,
+  },
+  uploadOptionText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  previewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.lg,
+    padding: spacing.sm,
+    borderWidth: 1.5,
+    gap: spacing.md,
+  },
+  previewImage: {
+    width: 60,
+    height: 60,
+    borderRadius: radius.md,
+  },
+  previewInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  previewLabel: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  previewRemove: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tipsCard: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+  },
+  tipsTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  tipsTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  tipRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  tipText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    flex: 1,
+  },
+  submitBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 56,
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.xl,
+    gap: spacing.sm,
+    ...shadows.md,
+  },
+  submitBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    color: '#fff',
+  },
 });
 
 export default UploadProofAddress;

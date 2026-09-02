@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import moment from 'moment';
 
 import { gs, spacing, radius, typography, shadows } from '../styles';
-import useTheme from '../hooks/useTheme';
+import useThemeStyles from '../hooks/useThemeStyles';
 import { AuthContext } from '../contextAPI/authContext';
 import client from '../contextAPI/client';
 import MessageCard from '../components/MessageCard';
@@ -60,7 +60,7 @@ const EmptyState = ({ colors }) => (
 const InboxMessageScreen = () => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
-  const { colors, isDark } = useTheme();
+  const { colors, isDark } = useThemeStyles();
   const { userToken, userInfo } = useContext(AuthContext);
 
   const [messages, setMessages] = useState([]);
@@ -244,6 +244,7 @@ const styles = StyleSheet.create({
     fontFamily: '_bold',
     fontSize: typography.xs,
     lineHeight: 16,
+    color: '#fff',
   },
 
   // Summary Banner
@@ -269,19 +270,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  summaryLabel: {
+    summaryLabel: {
     fontFamily: '_regular',
     fontSize: typography.sm,
     lineHeight: 20,
+    color: 'rgba(255,255,255,0.8)',
   },
   summaryValue: {
     fontFamily: '_bold',
     fontSize: typography.lg,
     lineHeight: 24,
+    color: '#fff',
   },
   summaryDivider: {
     width: 1,
     marginHorizontal: spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.3)',
   },
 
   // List

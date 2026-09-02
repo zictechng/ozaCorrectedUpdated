@@ -27,62 +27,81 @@ import { windowWidth } from '../utils/Dimensions';
 const { width } = Dimensions.get('window');
 
 // ── Stat Card Component ───────────────────────────
-const StatCard = ({ label, value, icon, color, bgColor, isDollar }) => (
-  <View style={[styles.statCard, { borderLeftColor: color, borderLeftWidth: 3 }]}>
-    <View style={[styles.statIconBox, { backgroundColor: bgColor }]}>
-      <Ionicons name={icon} size={20} color={color} />
+const StatCard = ({ label, value, icon, color, bgColor, isDollar }) => {
+  const { colors } = useThemeStyles(); // ✅ FIX — was missing, caused ReferenceError
+  return (
+    <View style={[
+      styles.statCard,
+      {
+        backgroundColor: colors.bgCard,       // ✅ FIX — card was invisible in dark
+        borderLeftColor: color,
+        borderLeftWidth: 3,
+        borderWidth: 1,                        // ✅ ADD — subtle full border for depth
+        borderColor: colors.dividerColor,      // ✅ ADD — visible in dark mode
+      },
+    ]}>
+      <View style={[styles.statIconBox, { backgroundColor: bgColor }]}>
+        <Ionicons name={icon} size={20} color={color} />
+      </View>
+      <View style={styles.statInfo}>
+        <Text style={[styles.statLabel, { color: colors.textSecColor }]}>{label}</Text>
+        <Text style={[styles.statValue, { color }]}>
+          {isDollar
+            ? <NumberDollarValueFormat value={value || '0'} />
+            : <NumberValueFormat value={value || '0'} />}
+        </Text>
+      </View>
     </View>
-    <View style={styles.statInfo}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={[styles.statValue, { color }]}>
-        {isDollar
-          ? <NumberDollarValueFormat value={value || '0'} />
-          : <NumberValueFormat value={value || '0'} />}
-      </Text>
-    </View>
-  </View>
-);
+  );
+};
 
 // ── Transaction Item Component ────────────────────
 const WalletTransactionItem = ({ item }) => {
   const { colors } = useThemeStyles();
   return (
-  <View style={[styles.transactionItem, { backgroundColor: colors.bgCard }]}>
-    <View style={styles.transactionLeft}>
-      <View style={[styles.transactionIconBox, { backgroundColor: colors.bgLight }]}>
-        <Feather name="arrow-up-left" size={20} color={colors.successColor} />
+    <View style={[
+      styles.transactionItem,
+      {
+        backgroundColor: colors.bgCard,
+        borderWidth: 1,                        // ✅ ADD — card border in dark
+        borderColor: colors.dividerColor,
+      },
+    ]}>
+      <View style={styles.transactionLeft}>
+        <View style={[styles.transactionIconBox, { backgroundColor: colors.bgLight }]}>
+          <Feather name="arrow-up-left" size={20} color={colors.successColor} />
+        </View>
+        <View style={styles.transactionInfo}>
+          <Text style={[styles.transactionTitle, { color: colors.textBlack }]} numberOfLines={1}>
+            {item.fund_type}
+          </Text>
+          <Text style={[styles.transactionDate, { color: colors.textSecColor }]}>
+            {moment(item.creditOn).format('DD MMM YYYY • hh:mm A')}
+          </Text>
+        </View>
       </View>
-      <View style={styles.transactionInfo}>
-        <Text style={styles.transactionTitle} numberOfLines={1}>
-          {item.fund_type}
+      <View style={styles.transactionRight}>
+        <Text style={[styles.transactionAmount, { color: colors.textBlack }]}> {/* ✅ FIX — was hardcoded, invisible in dark */}
+          <NumberValueFormat value={item.amount} />
         </Text>
-        <Text style={styles.transactionDate}>
-          {moment(item.creditOn).format('DD MMM YYYY • hh:mm A')}
-        </Text>
-      </View>
-    </View>
-    <View style={styles.transactionRight}>
-      <Text style={styles.transactionAmount}>
-        <NumberValueFormat value={item.amount} />
-      </Text>
-      <View style={[
-        item.fund_status === 'Success'
-          ? gs.badgeSuccess
-          : gs.badgeWarning,
-        { marginTop: 4 }
-      ]}>
-        <Text style={
+        <View style={[
           item.fund_status === 'Success'
-            ? gs.badgeSuccessText
-            : gs.badgeWarningText
-        }>
-          {item.fund_status}
-        </Text>
+            ? gs.badgeSuccess
+            : gs.badgeWarning,
+          { marginTop: 4 }
+        ]}>
+          <Text style={
+            item.fund_status === 'Success'
+              ? gs.badgeSuccessText
+              : gs.badgeWarningText
+          }>
+            {item.fund_status}
+          </Text>
+        </View>
       </View>
     </View>
-  </View>
-    );
-  };
+  );
+};
 
 // ── Main Wallet Screen ────────────────────────────
 const WalletScreen = ({ navigation }) => {
@@ -117,7 +136,6 @@ const WalletScreen = ({ navigation }) => {
       title: 'Funding Balance',
       subtitle: 'Available to spend',
       icon: 'wallet-outline',
-      
       bgColor: colors.bgLight,
       amount: userInfo?.userData?.amount || '0.0',
       isDollar: false,
@@ -236,15 +254,15 @@ const WalletScreen = ({ navigation }) => {
 
   // ── Chart Data ────────────────────────────────
   const barChartData = [
-    { value: dataOption || 0, label: 'PayPal', frontcolor: '#4C5FD5' },
+    { value: dataOption || 0, label: 'PayPal', frontColor: '#4C5FD5' },
     { value: dataPayoneer || 0, label: 'Payoneer', frontColor: colors.accentGold },
     { value: dataBitcoin || 0, label: 'Bitcoin', frontColor: colors.accentGreen },
   ];
 
   const pieChartData = [
-    { value: weeklyData || 0,  label: 'Weekly' },
-    { value: monthlyData || 0, color: '#F0A500', label: 'Monthly' },
-    { value: yearlyData || 0, color: '#00C896', label: 'Yearly' },
+    { value: weeklyData || 0, color: colors.pieWeekly, label: 'Weekly' },
+    { value: monthlyData || 0, color: colors.pierMonthly, label: 'Monthly' },
+    { value: yearlyData || 0, color: colors.pieYearly, label: 'Yearly' },
   ];
 
   // ── Wallet Card Renderer ──────────────────────
@@ -259,13 +277,13 @@ const WalletScreen = ({ navigation }) => {
       end={{ x: 1, y: 1 }}
       style={styles.walletCard}>
 
-      {/* Decorative circles */}
-      <View style={styles.cardCircleLarge} />
-      <View style={styles.cardCircleSmall} />
+      {/* Decorative circles — using rgba so they're subtle overlays, not theme-dependent */}
+      <View style={[styles.cardCircleLarge, { backgroundColor: 'rgba(255,255,255,0.07)' }]} />
+      <View style={[styles.cardCircleSmall, { backgroundColor: 'rgba(255,255,255,0.05)' }]} />
 
       {/* Card Header */}
       <View style={styles.cardHeader}>
-        <View style={styles.cardIconBox}>
+        <View style={[styles.cardIconBox, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
           <Ionicons name={item.icon} size={20} color="#fff" />
         </View>
         <PaymentIcon type="master" width={36} />
@@ -284,7 +302,7 @@ const WalletScreen = ({ navigation }) => {
 
       {/* Action Button */}
       <TouchableOpacity
-        style={styles.cardActionBtn}
+        style={[styles.cardActionBtn, { borderColor: 'rgba(255,255,255,0.4)' }]}
         onPress={() => redirectionButton(index)}
         activeOpacity={0.85}>
         <Ionicons name={item.actionIcon} size={16} color="#fff" />
@@ -302,15 +320,15 @@ const WalletScreen = ({ navigation }) => {
       />
 
       {/* ── Header ─────────────────────────────── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
         <TouchableOpacity
-          style={gs.homeSideMenu}
+          style={[gs.homeSideMenu, { backgroundColor: colors.bgLight }]}
           onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Wallet</Text>
+        <Text style={[styles.headerTitle, { color: colors.textBlack }]}>My Wallet</Text>
         <TouchableOpacity
-          style={gs.homeSideMenu}
+          style={[gs.homeSideMenu, { backgroundColor: colors.bgLight }]}
           onPress={handleRefresh}>
           <Ionicons name="refresh-outline" size={22} color={colors.primaryColor1} />
         </TouchableOpacity>
@@ -346,7 +364,11 @@ const WalletScreen = ({ navigation }) => {
                 key={index}
                 style={[
                   styles.dot,
-                  activeIndex === index && styles.dotActive,
+                  { backgroundColor: colors.dividerColor },              // ✅ FIX — was invisible
+                  activeIndex === index && {
+                    backgroundColor: colors.primaryColor1,               // ✅ FIX — active dot
+                    width: 20,
+                  },
                 ]}
               />
             ))}
@@ -356,25 +378,25 @@ const WalletScreen = ({ navigation }) => {
         {/* ── Quick Action Buttons ────────────── */}
         <View style={styles.quickActions}>
           <TouchableOpacity
-            style={[styles.quickActionBtn, { backgroundcolor: '#4C5FD5' }]}
+            style={[styles.quickActionBtn, { backgroundColor: colors.primaryColor1 }]}  // ✅ FIX — was typo 'backgroundcolor'
             onPress={() => navigation.navigate('Add-fund')}
             activeOpacity={0.85}>
             <Ionicons name="add-circle-outline" size={18} color="#fff" />
-            <Text style={styles.quickActionText}>Fund Account</Text>
+            <Text style={[styles.quickActionText, { color: '#fff' }]}>Fund Account</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.quickActionBtn, { backgroundColor: colors.accentGreen }]}
             onPress={() => navigation.navigate('withdraw-fund')}
             activeOpacity={0.85}>
             <Ionicons name="arrow-down-circle-outline" size={18} color="#fff" />
-            <Text style={styles.quickActionText}>Withdraw</Text>
+            <Text style={[styles.quickActionText, { color: '#fff' }]}>Withdraw</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.quickActionBtn, { backgroundColor: colors.accentGold }]}
             onPress={() => navigation.navigate('SendFund')}
             activeOpacity={0.85}>
             <Ionicons name="send-outline" size={18} color="#fff" />
-            <Text style={styles.quickActionText}>Send</Text>
+            <Text style={[styles.quickActionText, { color: '#fff' }]}>Send</Text>
           </TouchableOpacity>
         </View>
 
@@ -388,7 +410,7 @@ const WalletScreen = ({ navigation }) => {
             value={bonusTotalBalance}
             icon="gift-outline"
             color={colors.accentGold}
-            bgColor="#FFF3CD"
+            bgColor={isDark ? '#2D2810' : '#FFF3CD'}
             isDollar={true}
           />
           <StatCard
@@ -410,27 +432,30 @@ const WalletScreen = ({ navigation }) => {
         </View>
 
         {/* ── Tabs ────────────────────────────── */}
-        <View style={styles.tabsRow}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'transactions' && styles.tabActive]}
-            onPress={() => setActiveTab('transactions')}>
-            <Text style={[
-              styles.tabText,
-              activeTab === 'transactions' && styles.tabTextActive,
-            ]}>
-              Transactions
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'analytics' && styles.tabActive]}
-            onPress={() => setActiveTab('analytics')}>
-            <Text style={[
-              styles.tabText,
-              activeTab === 'analytics' && styles.tabTextActive,
-            ]}>
-              Analytics
-            </Text>
-          </TouchableOpacity>
+        <View style={[styles.tabsRow, { backgroundColor: colors.bgCard, borderColor: colors.dividerColor, borderWidth: 1 }]}>
+          {['transactions', 'analytics'].map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <TouchableOpacity
+                key={tab}
+                style={[
+                  styles.tab,
+                  isActive && {                                         // ✅ FIX — tabActive was empty
+                    backgroundColor: colors.primaryColor1,
+                    borderRadius: radius.md,
+                  },
+                ]}
+                onPress={() => setActiveTab(tab)}>
+                <Text style={[
+                  styles.tabText,
+                  { color: colors.textSecColor },                      // ✅ FIX — was unstyled
+                  isActive && { color: '#fff' },                       // ✅ FIX — active tab text
+                ]}>
+                  {tab === 'transactions' ? 'Transactions' : 'Analytics'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* ── Transactions Tab ─────────────────── */}
@@ -463,9 +488,16 @@ const WalletScreen = ({ navigation }) => {
           <View style={styles.tabContent}>
 
             {/* Bar Chart */}
-            <View style={styles.chartCard}>
+            <View style={[
+              styles.chartCard,
+              {
+                backgroundColor: colors.bgCard,
+                borderWidth: 1,                                        // ✅ ADD — card border
+                borderColor: colors.dividerColor,
+              },
+            ]}>
               <View style={gs.sectionHeader}>
-                <Text style={gs.sectionTitle}>Transaction Flow</Text>
+                <Text style={[gs.sectionTitle, { color: colors.textBlack }]}>Transaction Flow</Text>
                 <TouchableOpacity onPress={() => setIsCollapsed(!isCollapsed)}>
                   <Ionicons
                     name={isCollapsed ? 'stats-chart' : 'stats-chart-outline'}
@@ -491,16 +523,23 @@ const WalletScreen = ({ navigation }) => {
                     animationDuration={800}
                     barWidth={45}
                     data={barChartData}
-                    xAxisLabelTextStyle={styles.chartLabel}
-                    yAxisTextStyle={styles.chartLabel}
+                    xAxisLabelTextStyle={[styles.chartLabel, { color: colors.textSecColor }]}
+                    yAxisTextStyle={[styles.chartLabel, { color: colors.textSecColor }]}
                   />
                 )}
               </Collapsible>
             </View>
 
             {/* Pie Chart */}
-            <View style={styles.chartCard}>
-              <Text style={[gs.sectionTitle, { marginBottom: spacing.lg }]}>
+            <View style={[
+              styles.chartCard,
+              {
+                backgroundColor: colors.bgCard,
+                borderWidth: 1,                                        // ✅ ADD — card border
+                borderColor: colors.dividerColor,
+              },
+            ]}>
+              <Text style={[gs.sectionTitle, { color: colors.textBlack, marginBottom: spacing.lg }]}>
                 Period Breakdown
               </Text>
               {chartDataLoading ? (
@@ -524,8 +563,8 @@ const WalletScreen = ({ navigation }) => {
                       <View key={index} style={styles.legendRow}>
                         <View style={[styles.legendDot, { backgroundColor: item.color }]} />
                         <View>
-                          <Text style={styles.legendLabel}>{item.label}</Text>
-                          <Text style={styles.legendValue}>
+                          <Text style={[styles.legendLabel, { color: colors.textBlack }]}>{item.label}</Text>
+                          <Text style={[styles.legendValue, { color: colors.textSecColor }]}>
                             {Number(item.value).toLocaleString()}
                           </Text>
                         </View>
@@ -548,7 +587,7 @@ const WalletScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    },
+  },
   scrollContent: {
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xxxl,
@@ -561,12 +600,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
-    
   },
   headerTitle: {
     fontFamily: '_bold',
     fontSize: typography.xl,
-    
   },
 
   // Carousel
@@ -575,7 +612,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
 
-  // Wallet Card
+  // Wallet Card — always on gradient, so colors are hardcoded white
   walletCard: {
     borderRadius: radius.xl,
     padding: isSmallPhone ? spacing.lg : spacing.xl,
@@ -618,16 +655,19 @@ const styles = StyleSheet.create({
   cardBalanceLabel: {
     fontFamily: '_regular',
     fontSize: typography.sm,
+    color: 'rgba(255,255,255,0.75)',
     marginBottom: 4,
   },
   cardBalanceAmount: {
     fontFamily: '_bold',
     fontSize: typography.huge,
+    color: '#fff',
     marginBottom: 2,
   },
   cardSubtitle: {
     fontFamily: '_regular',
     fontSize: typography.xs,
+    color: 'rgba(255,255,255,0.6)',
   },
   cardActionBtn: {
     flexDirection: 'row',
@@ -641,6 +681,7 @@ const styles = StyleSheet.create({
   cardActionText: {
     fontFamily: '_semiBold',
     fontSize: typography.sm,
+    color: '#fff',
     marginLeft: 6,
   },
 
@@ -655,9 +696,7 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     marginHorizontal: 3,
-  },
-  dotActive: {
-    width: 20,
+    // color applied inline via colors token
   },
 
   // Quick Actions
@@ -691,7 +730,6 @@ const styles = StyleSheet.create({
   statCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    
     borderRadius: radius.lg,
     padding: spacing.md,
     ...shadows.sm,
@@ -710,7 +748,6 @@ const styles = StyleSheet.create({
   statLabel: {
     fontFamily: '_regular',
     fontSize: typography.sm,
-    
     marginBottom: 2,
   },
   statValue: {
@@ -721,7 +758,6 @@ const styles = StyleSheet.create({
   // Tabs
   tabsRow: {
     flexDirection: 'row',
-    
     borderRadius: radius.lg,
     padding: 4,
     marginBottom: spacing.lg,
@@ -733,14 +769,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: radius.md,
   },
-  tabActive: {
-  },
   tabText: {
     fontFamily: '_semiBold',
     fontSize: typography.sm,
-    
-  },
-  tabTextActive: {
   },
   tabContent: {
     marginBottom: spacing.lg,
@@ -751,7 +782,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
@@ -776,12 +806,10 @@ const styles = StyleSheet.create({
   transactionTitle: {
     fontFamily: '_semiBold',
     fontSize: typography.base,
-    
   },
   transactionDate: {
     fontFamily: '_regular',
     fontSize: typography.xs,
-    
     marginTop: 2,
   },
   transactionRight: {
@@ -790,12 +818,11 @@ const styles = StyleSheet.create({
   transactionAmount: {
     fontFamily: '_bold',
     fontSize: typography.base,
-    
+    // color applied inline via colors.textBlack
   },
 
   // Charts
   chartCard: {
-    
     borderRadius: radius.xl,
     padding: spacing.lg,
     marginBottom: spacing.lg,
@@ -804,7 +831,6 @@ const styles = StyleSheet.create({
   chartLabel: {
     fontFamily: '_regular',
     fontSize: typography.xs,
-    
   },
   pieChartRow: {
     flexDirection: 'row',
@@ -834,12 +860,10 @@ const styles = StyleSheet.create({
   legendLabel: {
     fontFamily: '_semiBold',
     fontSize: typography.sm,
-    
   },
   legendValue: {
     fontFamily: '_regular',
     fontSize: typography.xs,
-    
   },
 });
 

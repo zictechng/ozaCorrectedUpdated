@@ -52,11 +52,20 @@ const TransactionItem = ({ item, onPress }) => {
       : { name: 'arrow-down-outline', color: '#10B981', bg: '#D1FAE5' };
   };
 
+  // ── Add this helper above TransactionItem ─────────────────
+const formatAmount = (item) => {
+  const num = Number(item.amount || 0);
+  if (item.currency_level === '2') {
+    return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `₦${num.toLocaleString('en-NG')}`;
+};
+
   const iconInfo = getTransactionIcon();
 
   return (
     <TouchableOpacity
-      style={styles.transactionItem}
+      style={[styles.transactionItem, { backgroundColor: colors.bgCard }]}
       onPress={onPress}
       activeOpacity={0.7}>
 
@@ -67,10 +76,10 @@ const TransactionItem = ({ item, onPress }) => {
 
       {/* Info */}
       <View style={styles.transactionInfo}>
-        <Text style={styles.transactionNature} numberOfLines={1}>
+        <Text style={[styles.transactionNature, { color: colors.textBlack }]} numberOfLines={1}>
           {item.transac_nature || 'Transaction'}
         </Text>
-        <Text style={styles.transactionDate}>
+        <Text style={[styles.transactionDate, { color: colors.textSecColor }]}>
           {moment(item.creditOn).format('DD MMM YYYY • hh:mm A')}
         </Text>
         <View style={styles.transactionStatusRow}>
@@ -97,7 +106,7 @@ const TransactionItem = ({ item, onPress }) => {
               {item.transaction_status || 'Processing'}
             </Text>
           </View>
-          <Text style={styles.transactionType}>
+          <Text style={[styles.transactionType, { color: colors.textSecColor }]}>
             {item.tran_type}
           </Text>
         </View>
@@ -106,13 +115,10 @@ const TransactionItem = ({ item, onPress }) => {
       {/* Amount */}
       <View style={styles.transactionAmountCol}>
         <Text style={[
-          styles.transactionAmount,
-          { color: isDebit ? colors.dangerColor : colors.successColor },
-        ]}>
-          {isDebit ? '−' : '+'}
-          {item.currency_level === '2'
-            ? <NumberDollarValueFormat value={item.amount} />
-            : <NumberValueFormat value={item.amount} />}
+            styles.transactionAmount,
+            { color: isDebit ? colors.dangerColor : colors.successColor },
+          ]}>
+          {isDebit ? '−' : '+'}{formatAmount(item)}
         </Text>
         <Ionicons
           name="chevron-forward"
@@ -134,7 +140,7 @@ const EmptyState = ({ tab, colors  }) => (
       <Ionicons name="receipt-outline" size={48} color={colors.textSecColor2} />
     </View>
     <Text style={[styles.emptyTitle, { color: colors.textBlack }]}>No Transactions Yet</Text>
-    <Text style={styles.emptyDesc}>
+    <Text style={[styles.emptyDesc, { color: colors.textSecColor }]}>
       {tab === 1
         ? 'Your transaction history will appear here once you make a transaction'
         : `No ${TABS.find(t => t.id === tab)?.label} transactions found`}
@@ -151,15 +157,15 @@ const ListFooter = ({ isLoading, isEnd }) => {
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size={24} color={colors.primaryColor1} />
-        <Text style={styles.footerText}>Loading more...</Text>
+        <Text style={[styles.footerText, { color: colors.textSecColor }]}>Loading more...</Text>
       </View>
     );
   }
   if (isEnd) {
     return (
       <View style={styles.footerEnd}>
-        <View style={styles.footerEndLine} />
-        <Text style={styles.footerEndText}>All transactions loaded</Text>
+        <View style={[styles.footerEndLine, { backgroundColor: colors.dividerColor }]} />
+        <Text style={[styles.footerEndText, { color: colors.textSecColor }]}>All transactions loaded</Text>
         <View style={styles.footerEndLine} />
       </View>
     );
@@ -204,101 +210,133 @@ const HistoryScreen = ({ navigation }) => {
   const [billsEnd, setBillsEnd] = useState(false);
 
   // ── Fetch All Transactions ────────────────────
-  const loadAll = async (reset = false) => {
-    if (allLoading || (allEnd && !reset)) return;
-    setAllLoading(true);
-    const page = reset ? 1 : allPage;
-    try {
-      const res = await client.get(
-        `api/all_historyMobile/${userInfo.userData._id}?page=${page}`,
-        { headers: { 'Authorization': 'Bearer ' + userToken } }
-      );
-      if (res.data.length > 0) {
-        setAllData(prev => reset ? res.data : [...prev, ...res.data]);
-        setAllPage(page + 1);
-        setAllEnd(false);
-      } else {
-        setAllEnd(true);
-      }
-    } catch (error) {
-      console.log('All history error:', error.message);
-    } finally {
-      setAllLoading(false);
+const loadAll = async (reset = false) => {
+  if (allLoading || (allEnd && !reset)) return;
+  setAllLoading(true);
+  const page = reset ? 1 : allPage;
+  try {
+    const res = await client.get(
+      `api/all_historyMobile/${userInfo.userData._id}?page=${page}`,
+      { headers: { 'Authorization': 'Bearer ' + userToken } }
+    );
+    if (res.data.length > 0) {
+      setAllData(prev => {
+        const combined = reset ? res.data : [...prev, ...res.data];
+        const seen = new Set();                                    // ✅ deduplicate
+        return combined.filter(item => {
+          if (seen.has(item._id)) return false;
+          seen.add(item._id);
+          return true;
+        });
+      });
+      setAllPage(page + 1);
+      setAllEnd(false);
+    } else {
+      setAllEnd(true);
     }
-  };
+  } catch (error) {
+    console.log('All history error:', error.message);
+  } finally {
+    setAllLoading(false);
+  }
+};
 
-  // ── Fetch PayPal Transactions ─────────────────
-  const loadPaypal = async (reset = false) => {
-    if (paypalLoading || (paypalEnd && !reset)) return;
-    setPaypalLoading(true);
-    const page = reset ? 1 : paypalPage;
-    try {
-      const res = await client.get(
-        `api/all_historyMobilePapay/${userInfo.userData._id}?page=${page}`,
-        { headers: { 'Authorization': 'Bearer ' + userToken } }
-      );
-      if (res.data.length > 0) {
-        setPaypalData(prev => reset ? res.data : [...prev, ...res.data]);
-        setPaypalPage(page + 1);
-        setPaypalEnd(false);
-      } else {
-        setPaypalEnd(true);
-      }
-    } catch (error) {
-      console.log('PayPal history error:', error.message);
-    } finally {
-      setPaypalLoading(false);
+// ── Fetch PayPal Transactions ─────────────────
+const loadPaypal = async (reset = false) => {
+  if (paypalLoading || (paypalEnd && !reset)) return;
+  setPaypalLoading(true);
+  const page = reset ? 1 : paypalPage;
+  try {
+    const res = await client.get(
+      `api/all_historyMobilePapay/${userInfo.userData._id}?page=${page}`,
+      { headers: { 'Authorization': 'Bearer ' + userToken } }
+    );
+    if (res.data.length > 0) {
+      setPaypalData(prev => {
+        const combined = reset ? res.data : [...prev, ...res.data];
+        const seen = new Set();                                    // ✅ deduplicate
+        return combined.filter(item => {
+          if (seen.has(item._id)) return false;
+          seen.add(item._id);
+          return true;
+        });
+      });
+      setPaypalPage(page + 1);
+      setPaypalEnd(false);
+    } else {
+      setPaypalEnd(true);
     }
-  };
+  } catch (error) {
+    console.log('PayPal history error:', error.message);
+  } finally {
+    setPaypalLoading(false);
+  }
+};
 
-  // ── Fetch Payoneer Transactions ───────────────
-  const loadPayoneer = async (reset = false) => {
-    if (payoneerLoading || (payoneerEnd && !reset)) return;
-    setPayoneerLoading(true);
-    const page = reset ? 1 : payoneerPage;
-    try {
-      const res = await client.get(
-        `api/all_historyMobilePayooner/${userInfo.userData._id}?page=${page}`,
-        { headers: { 'Authorization': 'Bearer ' + userToken } }
-      );
-      if (res.data.length > 0) {
-        setPayoneerData(prev => reset ? res.data : [...prev, ...res.data]);
-        setPayoneerPage(page + 1);
-        setPayoneerEnd(false);
-      } else {
-        setPayoneerEnd(true);
-      }
-    } catch (error) {
-      console.log('Payoneer history error:', error.message);
-    } finally {
-      setPayoneerLoading(false);
+// ── Fetch Payoneer Transactions ───────────────
+const loadPayoneer = async (reset = false) => {
+  if (payoneerLoading || (payoneerEnd && !reset)) return;
+  setPayoneerLoading(true);
+  const page = reset ? 1 : payoneerPage;
+  try {
+    const res = await client.get(
+      `api/all_historyMobilePayooner/${userInfo.userData._id}?page=${page}`,
+      { headers: { 'Authorization': 'Bearer ' + userToken } }
+    );
+    if (res.data.length > 0) {
+      setPayoneerData(prev => {
+        const combined = reset ? res.data : [...prev, ...res.data];
+        const seen = new Set();                                    // ✅ deduplicate
+        return combined.filter(item => {
+          if (seen.has(item._id)) return false;
+          seen.add(item._id);
+          return true;
+        });
+      });
+      setPayoneerPage(page + 1);
+      setPayoneerEnd(false);
+    } else {
+      setPayoneerEnd(true);
     }
-  };
+  } catch (error) {
+    console.log('Payoneer history error:', error.message);
+  } finally {
+    setPayoneerLoading(false);
+  }
+};
 
-  // ── Fetch Bills Transactions ──────────────────
-  const loadBills = async (reset = false) => {
-    if (billsLoading || (billsEnd && !reset)) return;
-    setBillsLoading(true);
-    const page = reset ? 1 : billsPage;
-    try {
-      const res = await client.get(
-        `api/bills/history/${userInfo.userData._id}?page=${page}`,
-        { headers: { 'Authorization': 'Bearer ' + userToken } }
-      );
-      if (res.data?.data?.length > 0) {
-        setBillsData(prev => reset ? res.data.data : [...prev, ...res.data.data]);
-        setBillsPage(page + 1);
-        setBillsEnd(false);
-      } else {
-        setBillsEnd(true);
-      }
-    } catch (error) {
-      console.log('Bills history error:', error.message);
+// ── Fetch Bills Transactions ──────────────────
+const loadBills = async (reset = false) => {
+  if (billsLoading || (billsEnd && !reset)) return;
+  setBillsLoading(true);
+  const page = reset ? 1 : billsPage;
+  try {
+    const res = await client.get(
+      `api/bills/history/${userInfo.userData._id}?page=${page}`,
+      { headers: { 'Authorization': 'Bearer ' + userToken } }
+    );
+    if (res.data?.data?.length > 0) {
+      setBillsData(prev => {
+        const combined = reset ? res.data.data : [...prev, ...res.data.data];
+        const seen = new Set();                                    // ✅ deduplicate
+        return combined.filter(item => {
+          if (seen.has(item._id)) return false;
+          seen.add(item._id);
+          return true;
+        });
+      });
+      setBillsPage(page + 1);
+      setBillsEnd(false);
+    } else {
       setBillsEnd(true);
-    } finally {
-      setBillsLoading(false);
     }
-  };
+  } catch (error) {
+    console.log('Bills history error:', error.message);
+    setBillsEnd(true);
+  } finally {
+    setBillsLoading(false);
+  }
+};
 
   // ── Tab Change Handler ─────────────────────────
   const handleTabChange = (tabId) => {
@@ -367,7 +405,7 @@ const HistoryScreen = ({ navigation }) => {
           onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Transaction History</Text>
+        <Text style={[styles.headerTitle, { color: colors.textBlack }]}>Transaction History</Text>
         <TouchableOpacity
           style={gs.homeSideMenu}
           onPress={handleRefresh}>
@@ -386,26 +424,34 @@ const HistoryScreen = ({ navigation }) => {
 
         <View style={styles.summaryItem}>
           <Ionicons name="arrow-down-circle-outline" size={20} color="rgba(255,255,255,0.8)" />
-          <Text style={styles.summaryLabel}>Total In</Text>
-          <Text style={styles.summaryValue}>
+          <Text style={[styles.summaryLabel, { color: 'rgba(255,255,255,0.75)' }]}>
+            Total In
+          </Text>
+          <Text style={[styles.summaryValue, { color: '#fff' }]}>
             ₦{totalCredit.toLocaleString()}
           </Text>
         </View>
 
-        <View style={styles.summaryDivider} />
+        <View style={[styles.summaryDivider, { backgroundColor: 'rgba(255,255,255,0.25)' }]} />
 
         <View style={styles.summaryItem}>
           <Ionicons name="receipt-outline" size={20} color="rgba(255,255,255,0.8)" />
-          <Text style={styles.summaryLabel}>Transactions</Text>
-          <Text style={styles.summaryValue}>{allData.length}+</Text>
+          <Text style={[styles.summaryLabel, { color: 'rgba(255,255,255,0.75)' }]}>
+            Transactions
+          </Text>
+          <Text style={[styles.summaryValue, { color: '#fff' }]}>
+            {allData.length}+
+          </Text>
         </View>
 
-        <View style={styles.summaryDivider} />
+        <View style={[styles.summaryDivider, { backgroundColor: 'rgba(255,255,255,0.25)' }]} />
 
         <View style={styles.summaryItem}>
           <Ionicons name="arrow-up-circle-outline" size={20} color="rgba(255,255,255,0.8)" />
-          <Text style={styles.summaryLabel}>Total Out</Text>
-          <Text style={styles.summaryValue}>
+          <Text style={[styles.summaryLabel, { color: 'rgba(255,255,255,0.75)' }]}>
+            Total Out
+          </Text>
+          <Text style={[styles.summaryValue, { color: '#fff' }]}>
             ₦{totalDebit.toLocaleString()}
           </Text>
         </View>
@@ -417,11 +463,12 @@ const HistoryScreen = ({ navigation }) => {
           const isActive = activeTab === tab.id;
           return (
             <TouchableOpacity
-              key={tab.id}
+              key={tab.id.toString()}
               style={[
-                styles.tab,
-                isActive && { backgroundColor: tab.color, borderColor: tab.color },
-              ]}
+                  styles.tab,
+                  { borderColor: colors.dividerColor },
+                  isActive && { backgroundColor: tab.color, borderColor: tab.color },
+                ]}
               onPress={() => handleTabChange(tab.id)}
               activeOpacity={0.8}>
               <Ionicons
@@ -430,9 +477,10 @@ const HistoryScreen = ({ navigation }) => {
                 color={isActive ? '#fff' : colors.textSecColor}
               />
               <Text style={[
-                styles.tabText,
-                isActive && { color: '#fff' },
-              ]}>
+                  styles.tabText,
+                  { color: colors.textSecColor },
+                  isActive && { color: '#fff' },
+                ]}>
                 {tab.label}
               </Text>
             </TouchableOpacity>
@@ -443,7 +491,7 @@ const HistoryScreen = ({ navigation }) => {
       {/* ── Transaction List ──────────────────────── */}
       <FlatList
         data={data}
-        keyExtractor={(item, index) => item._id || index.toString()}
+        keyExtractor={(item, index) => `${item._id?.toString() ?? 'item'}-${index}`}
         renderItem={({ item }) => (
           <TransactionItem
             item={item}

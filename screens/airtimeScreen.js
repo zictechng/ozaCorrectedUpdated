@@ -47,31 +47,31 @@ const RewardsTipsCard = ({ serviceType, serviceName, minAmount }) => {
   }, []);
 
   return (
-    <View style={styles.tipsCard}>
+    <View style={[styles.tipsCard, { backgroundColor: colors.bgLight }]}>
       <View style={styles.tipsTitleRow}>
         <Ionicons name="information-circle-outline" size={18} color={colors.primaryColor1} />
-        <Text style={styles.tipsTitle}>Quick Tips</Text>
+        <Text style={[styles.tipsTitle, { color: colors.primaryColor1 }]}>Quick Tips</Text>
       </View>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Airtime is delivered instantly to the phone number provided
       </Text>
       {rewardRate && (
-        <Text style={styles.tipText}>
+        <Text style={[styles.tipText, { color: colors.textSecColor }]}>
           • You earn <Text style={styles.tipHighlight}>{rewardRate}% in coins</Text> on every {serviceName}
         </Text>
       )}
       {coinValue && (
-        <Text style={styles.tipText}>
+        <Text style={[styles.tipText, { color: colors.textSecColor }]}>
           • 🪙 1 coin = <Text style={styles.tipHighlight}>₦{coinValue} NGN</Text> — redeemable as bonus
         </Text>
       )}
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Minimum {serviceName} amount is {minAmount}
       </Text>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Your wallet must have sufficient balance to proceed
       </Text>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Top users earn quarterly & annual gift rewards 🎁
       </Text>
     </View>
@@ -84,7 +84,7 @@ const PhoneInput = ({ value, onChangeText, onUseMine }) => {
   const [isFocused, setIsFocused] = useState(false);
   return (
     <View style={styles.inputGroup}>
-      <Text style={styles.inputLabel}>Phone Number</Text>
+      <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>Phone Number</Text>
       <View style={[
         styles.inputContainer,
         isFocused && styles.inputContainerFocused,
@@ -96,7 +96,7 @@ const PhoneInput = ({ value, onChangeText, onUseMine }) => {
           style={styles.inputIcon}
         />
         <TextInput
-          style={styles.inputField}
+          style={[styles.inputField, { color: colors.textBlack }]}
           value={value}
           onChangeText={(text) => onChangeText(text.replace(/[^0-9]/g, ''))}
           placeholder="e.g. 08012345678"
@@ -106,11 +106,11 @@ const PhoneInput = ({ value, onChangeText, onUseMine }) => {
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
         />
-        <TouchableOpacity onPress={onUseMine} style={styles.useMineBtn}>
-          <Text style={styles.useMineBtnText}>Use Mine</Text>
+        <TouchableOpacity onPress={onUseMine} style={[styles.useMineBtn, { backgroundColor: colors.bgLight }]}>
+          <Text style={[styles.useMineBtnText, { color: colors.primaryColor1 }]}>Use Mine</Text>
         </TouchableOpacity>
       </View>
-      <Text style={styles.inputHint}>Enter 11-digit Nigerian mobile number</Text>
+      <Text style={[styles.inputHint, { color: colors.textSecColor }]}>Enter 11-digit Nigerian mobile number</Text>
     </View>
   );
 };
@@ -274,7 +274,7 @@ const AirtimeScreen = ({ navigation }) => {
 
             {/* ── Form Section ─────────────────── */}
             {serviceStatus !== 'paused' && (
-              <View style={styles.formCard}>
+              <View style={[styles.formCard, { backgroundColor: colors.bgCard }]}>
 
                 {/* Network Selector — Reusable */}
                 <NetworkSelector
@@ -329,9 +329,9 @@ const AirtimeScreen = ({ navigation }) => {
 
             {/* ── Order Summary ────────────────── */}
             {showSummary && serviceStatus !== 'paused' && (
-              <View style={styles.summaryCard}>
-                <Text style={styles.summaryTitle}>Order Summary</Text>
-                <View style={styles.summaryDivider} />
+              <View style={[styles.summaryCard, { backgroundColor: colors.bgCard }]}>
+                <Text style={[styles.summaryTitle, { color: colors.textBlack }]}>Order Summary</Text>
+                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
                 <SummaryRow label="Network" value={selectedNetwork} />
                 <SummaryRow label="Phone Number" value={phoneNumber} />
                 <SummaryRow
@@ -339,7 +339,7 @@ const AirtimeScreen = ({ navigation }) => {
                   value={`₦${Number(amount).toLocaleString()}`}
                 />
                 <SummaryRow label="Service Fee" value="₦0.00" />
-                <View style={styles.summaryDivider} />
+                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
                 <SummaryRow
                   label="Total"
                   value={`₦${Number(amount).toLocaleString()}`}
@@ -373,7 +373,7 @@ const AirtimeScreen = ({ navigation }) => {
                 <TouchableOpacity
                   style={styles.editBtn}
                   onPress={() => setShowSummary(false)}>
-                  <Text style={styles.editBtnText}>Edit Order</Text>
+                  <Text style={[styles.editBtnText, { color: colors.textSecColor }]}>Edit Order</Text>
                 </TouchableOpacity>
               </View>
             )}

@@ -40,15 +40,16 @@ const ServiceCard = ({ service, onPress }) => {
 
   return (
     <TouchableOpacity
-      style={[styles.serviceCard, isDisabled && styles.serviceCardDisabled]}
+      style={[
+        styles.serviceCard,
+        { backgroundColor: colors.bgCard },       
+        isDisabled && styles.serviceCardDisabled,
+      ]}
       onPress={isDisabled ? null : onPress}
       activeOpacity={0.85}>
 
-      {/* Icon */}
       <LinearGradient
-        colors={isDisabled
-          ? ['#E5E7EB', '#D1D5DB']
-          : service.gradientColors}
+        colors={isDisabled ? ['#E5E7EB', '#D1D5DB'] : service.gradientColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.serviceIconBox}>
@@ -59,18 +60,18 @@ const ServiceCard = ({ service, onPress }) => {
         />
       </LinearGradient>
 
-      {/* Info */}
       <View style={styles.serviceInfo}>
         <View style={styles.serviceTopRow}>
           <Text style={[
             styles.serviceTitle,
+            { color: colors.textBlack },              
             isDisabled && { color: colors.textSecColor },
           ]}>
             {service.title}
           </Text>
           <ServiceBadge status={service.status} />
         </View>
-        <Text style={styles.serviceDesc} numberOfLines={2}>
+        <Text style={[styles.serviceDesc, { color: colors.textSecColor }]} numberOfLines={2}>
           {isDisabled
             ? 'This service is temporarily under maintenance'
             : service.desc}
@@ -78,55 +79,73 @@ const ServiceCard = ({ service, onPress }) => {
         {service.providers && !isDisabled && (
           <View style={styles.providersRow}>
             {service.providers.map((p, i) => (
-              <View key={i} style={styles.providerChip}>
-                <Text style={styles.providerChipText}>{p}</Text>
+              <View key={i} style={[
+                styles.providerChip,
+                { backgroundColor: colors.bgLight },  
+              ]}>
+                <Text style={[
+                  styles.providerChipText,
+                  { color: colors.primaryColor1 },    
+                ]}>
+                  {p}
+                </Text>
               </View>
             ))}
           </View>
         )}
       </View>
 
-      {/* Arrow */}
       {!isDisabled && (
-        <Ionicons
-          name="chevron-forward"
-          size={20}
-          color={colors.textSecColor}
-        />
+        <Ionicons name="chevron-forward" size={20} color={colors.textSecColor} />
       )}
       {isDisabled && (
-        <Ionicons
-          name="time-outline"
-          size={20}
-          color={colors.warningColor}
-        />
+        <Ionicons name="time-outline" size={20} color={colors.warningColor} />
       )}
     </TouchableOpacity>
   );
 };
 
 // ── Recent Bill Transaction Item ──────────────────
-const RecentBillItem = ({ item }) => (
-  <View style={styles.recentItem}>
-    <View style={[styles.recentIconBox, { backgroundColor: item.bgColor }]}>
-      <MaterialCommunityIcons name={item.icon} size={18} color={item.color} />
-    </View>
-    <View style={styles.recentInfo}>
-      <Text style={styles.recentTitle}>{item.title}</Text>
-      <Text style={styles.recentDate}>{item.date}</Text>
-    </View>
-    <View style={styles.recentRight}>
-      <Text style={styles.recentAmount}>{item.amount}</Text>
-      <View style={item.success ? gs.badgeSuccess : gs.badgeDanger}>
-        <Text style={item.success
-          ? gs.badgeSuccessText
-          : gs.badgeDangerText}>
-          {item.status}
+const RecentBillItem = ({ item }) => {
+  const { colors } = useThemeStyles();                 hook
+  return (
+    <View style={[
+      styles.recentItem,
+      { backgroundColor: colors.bgCard },             
+    ]}>
+      <View style={[styles.recentIconBox, { backgroundColor: item.bgColor }]}>
+        <MaterialCommunityIcons name={item.icon} size={18} color={item.color} />
+      </View>
+      <View style={styles.recentInfo}>
+        <Text style={[
+          styles.recentTitle,
+          { color: colors.textBlack },                
+        ]}>
+          {item.title}
+        </Text>
+        <Text style={[
+          styles.recentDate,
+          { color: colors.textSecColor },             
+        ]}>
+          {item.date}
         </Text>
       </View>
+      <View style={styles.recentRight}>
+        <Text style={[
+          styles.recentAmount,
+          { color: colors.textBlack },                
+        ]}>
+          {item.amount}
+        </Text>
+        <View style={item.success ? gs.badgeSuccess : gs.badgeDanger}>
+          <Text style={item.success ? gs.badgeSuccessText : gs.badgeDangerText}>
+            {item.status}
+          </Text>
+        </View>
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 // ── Main Bills Home Screen ────────────────────────
 const BillsHomeScreen = ({ navigation }) => {
@@ -300,7 +319,7 @@ const BillsHomeScreen = ({ navigation }) => {
           onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Bill Payments</Text>
+        <Text style={[styles.headerTitle, { color: colors.textBlack }]}>Bill Payments</Text>
         <TouchableOpacity
           style={gs.homeSideMenu}
           onPress={handleRefresh}>
@@ -329,25 +348,30 @@ const BillsHomeScreen = ({ navigation }) => {
           <View style={styles.heroBannerCircle1} />
           <View style={styles.heroBannerCircle2} />
           <View>
-            <Text style={styles.heroTitle}>Pay Bills Instantly</Text>
-            <Text style={styles.heroDesc}>
+            <Text style={[styles.heroTitle, { color: '#fff' }]}>   
+              Pay Bills Instantly
+            </Text>
+            <Text style={[styles.heroDesc, { color: 'rgba(255,255,255,0.85)' }]}>  
               Fast, secure & reliable bill payments
             </Text>
           </View>
-          <View style={styles.heroStats}>
+          <View style={[
+            styles.heroStats,
+            { backgroundColor: 'rgba(255,255,255,0.15)' },         
+          ]}>
             <View style={styles.heroStatItem}>
-              <Text style={styles.heroStatNumber}>{activeCount}</Text>
-              <Text style={styles.heroStatLabel}>Active</Text>
+              <Text style={[styles.heroStatNumber, { color: '#fff' }]}>{activeCount}</Text>    
+              <Text style={[styles.heroStatLabel, { color: 'rgba(255,255,255,0.8)' }]}>Active</Text>  
             </View>
-            <View style={styles.heroStatDivider} />
+            <View style={[styles.heroStatDivider, { backgroundColor: 'rgba(255,255,255,0.3)' }]} />  
             <View style={styles.heroStatItem}>
-              <Text style={styles.heroStatNumber}>{maintenanceCount}</Text>
-              <Text style={styles.heroStatLabel}>Maintenance</Text>
+              <Text style={[styles.heroStatNumber, { color: '#fff' }]}>{maintenanceCount}</Text>
+              <Text style={[styles.heroStatLabel, { color: 'rgba(255,255,255,0.8)' }]}>Maintenance</Text>
             </View>
-            <View style={styles.heroStatDivider} />
+            <View style={[styles.heroStatDivider, { backgroundColor: 'rgba(255,255,255,0.3)' }]} />
             <View style={styles.heroStatItem}>
-              <Text style={styles.heroStatNumber}>{services.length}</Text>
-              <Text style={styles.heroStatLabel}>Services</Text>
+              <Text style={[styles.heroStatNumber, { color: '#fff' }]}>{services.length}</Text>
+              <Text style={[styles.heroStatLabel, { color: 'rgba(255,255,255,0.8)' }]}>Services</Text>
             </View>
           </View>
         </LinearGradient>
@@ -355,7 +379,7 @@ const BillsHomeScreen = ({ navigation }) => {
         {/* ── Services List ─────────────────────── */}
         <View style={gs.sectionHeader}>
           <Text style={gs.sectionTitle}>Available Services</Text>
-          <Text style={styles.serviceCount}>
+          <Text style={[styles.serviceCount, { color: colors.textSecColor }]}>
             {activeCount} of {services.length} active
           </Text>
         </View>
@@ -384,14 +408,20 @@ const BillsHomeScreen = ({ navigation }) => {
         )}
 
         {/* ── Info Notice ───────────────────────── */}
-        <View style={styles.infoCard}>
+        <View style={[
+              styles.infoCard,
+              {
+                backgroundColor: colors.bgLight,
+                borderColor: colors.dividerColor,   
+              },
+            ]}>
           <Ionicons
             name="information-circle-outline"
             size={20}
             color={colors.primaryColor1}
           />
-          <Text style={styles.infoText}>
-            Services marked as <Text style={styles.infoHighlight}>Maintenance</Text> are
+          <Text style={[styles.infoText, { color: colors.textSecColor }]}>
+            Services marked as <Text style={[styles.infoHighlight, { color: colors.warningColor }]}>Maintenance</Text> are
             temporarily unavailable. Check back soon or contact support for assistance.
           </Text>
         </View>

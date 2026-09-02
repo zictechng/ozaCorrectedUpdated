@@ -66,6 +66,15 @@ const StatusBadge = ({ status }) => {
   return null;
 };
 
+// ── Add this helper above HomeScreen ──────────────
+const formatTranAmount = (item) => {
+  const num = Number(item.amount || 0);
+  if (item.currency_level === '2') {
+    return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `₦${num.toLocaleString('en-NG')}`;
+};
+
 // ── Bill Service Card Component ───────────────────
 const BillServiceCard = ({ icon, label, color, bgColor, onPress, status, colors }) => {
   const isDisabled = status === 'paused';
@@ -92,18 +101,28 @@ const BillServiceCard = ({ icon, label, color, bgColor, onPress, status, colors 
 
 // ── Transaction Item Component ────────────────────
 const TransactionItem = ({ item, onPress, colors }) => (
-  <TouchableOpacity style={[styles.transactionItem, { backgroundColor: colors.bgCard }]} onPress={onPress} activeOpacity={0.8}>
+  <TouchableOpacity
+    style={[styles.transactionItem, { backgroundColor: colors.bgCard }]}
+    onPress={onPress}
+    activeOpacity={0.8}>
     <View style={styles.transactionLeft}>
-      <View style={[styles.transactionIconBox, { backgroundColor: colors.bgLight }]}>
+      <View style={[
+        styles.transactionIconBox,
+        {
+          backgroundColor: item.tran_type === 'Credit'  
+            ? '#D1FAE5'
+            : '#FEE2E2',
+        },
+      ]}>
         <Ionicons
-          name={item.transac_nature === 'Credit' ? 'arrow-down' : 'arrow-up'}
+          name={item.tran_type === 'Credit' ? 'arrow-down' : 'arrow-up'}
           size={18}
-          color={item.transac_nature === 'Credit' ? colors.successColor : colors.dangerColor}
+          color={item.tran_type === 'Credit' ? colors.successColor : colors.dangerColor}
         />
       </View>
       <View style={styles.transactionInfo}>
         <Text style={[styles.transactionTitle, { color: colors.textBlack }]} numberOfLines={1}>
-          {item.transac_nature} {item.transaction_status}
+          {item.transac_nature}
         </Text>
         <Text style={[styles.transactionDate, { color: colors.textSecColor }]}>
           {moment(item.creditOn).format('DD MMM YYYY • hh:mm A')}
@@ -113,11 +132,9 @@ const TransactionItem = ({ item, onPress, colors }) => (
     <View style={styles.transactionRight}>
       <Text style={[
         styles.transactionAmount,
-        { color: item.transac_nature === 'Credit' ? colors.successColor : colors.dangerColor }
+        { color: item.tran_type === 'Credit' ? colors.successColor : colors.dangerColor },
       ]}>
-        {item.currency_level === '2'
-          ? <NumberDollarValueFormat value={item.amount} />
-          : <NumberValueFormat value={item.amount} />}
+        {item.tran_type === 'Credit' ? '+' : '−'}{formatTranAmount(item)}
       </Text>
       <Ionicons name="chevron-forward" size={16} color={colors.textSecColor} />
     </View>
@@ -352,32 +369,34 @@ const [sliderData] = useState([
 
   // ── Carousel Banner Renderer ────────────────────
     const renderBanner = ({ item }) => (
-    <LinearGradient
-      colors={item.color}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.bannerSlide}>
+  <LinearGradient
+    colors={item.color}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 1 }}
+    style={styles.bannerSlide}>
+    <View style={styles.bannerCircleLarge} />
+    <View style={styles.bannerCircleSmall} />
 
-      {/* Decorative background circles */}
-      <View style={styles.bannerCircleLarge} />
-      <View style={styles.bannerCircleSmall} />
-
-      {/* Left content */}
-      <View style={styles.bannerContent}>
-        <View style={styles.bannerIconBox}>
-          <Ionicons name={item.icon} size={16} color="#fff" />
-        </View>
-        <Text style={styles.bannerTitle}>{item.title}</Text>
-        <Text style={styles.bannerDesc}>{item.desc}</Text>
+    <View style={styles.bannerContent}>
+      <View style={[
+        styles.bannerIconBox,
+        { backgroundColor: 'rgba(255,255,255,0.2)' }, 
+      ]}>
+        <Ionicons name={item.icon} size={16} color="#fff" />
       </View>
+      <Text style={[styles.bannerTitle, { color: '#fff' }]}>
+        {item.title}
+      </Text>
+      <Text style={[styles.bannerDesc, { color: 'rgba(255,255,255,0.85)' }]}>
+        {item.desc}
+      </Text>
+    </View>
 
-      {/* Right overlay image */}
-      <View style={styles.bannerImageContainer}>
-        <item.BannerIcon />
-      </View>
-
-    </LinearGradient>
-    );
+    <View style={styles.bannerImageContainer}>
+      <item.BannerIcon />
+    </View>
+  </LinearGradient>
+  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
@@ -443,28 +462,38 @@ const [sliderData] = useState([
               />
               <View style={styles.balanceRow}>
                 <View>
-                  <Text style={styles.balanceLabel}>Available Balance</Text>
-                  <Text style={styles.balanceAmount}>
-                    <NumberDollarValueFormat value={userInfo?.userData?.tran_account} />
+                  <Text style={[styles.balanceLabel, { color: 'rgba(255,255,255,0.8)' }]}>
+                    Available Balance
+                  </Text>
+                  <Text style={[styles.balanceAmount, { color: '#fff' }]}>                
+                    ₦{Number(userInfo?.userData?.tran_account || 0).toLocaleString('en-NG')}
                   </Text>
                 </View>
                 <TouchableOpacity
-                  style={styles.moreBtn}
+                  style={[styles.moreBtn, { backgroundColor: 'rgba(255,255,255,0.15)' }]}
                   onPress={() => refMoreRBSheet.current.open()}>
                   <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.rewardsRow}>
+              <View style={[
+                styles.rewardsRow,
+                { backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: radius.lg, padding: spacing.md }, 
+              ]}>
                 <View>
-                  <Text style={styles.rewardsLabel}>Rewards Balance</Text>
-                  <Text style={styles.rewardsAmount}>
-                    <NumberDollarValueFormat value={userInfo?.userData?.signup_account} />
+                  <Text style={[styles.rewardsLabel, { color: 'rgba(255,255,255,0.75)' }]}> 
+                    Rewards Balance
+                  </Text>
+                  <Text style={[styles.rewardsAmount, { color: '#fff' }]}>                  
+                    ₦{Number(userInfo?.userData?.signup_account || 0).toLocaleString('en-NG')}
                   </Text>
                 </View>
-                <View style={styles.balanceBadge}>
+                <View style={[
+                  styles.balanceBadge,
+                  { backgroundColor: 'rgba(255,255,255,0.15)' },                            
+                ]}>
                   <Ionicons name="gift-outline" size={16} color={colors.accentGold} />
-                  <Text style={styles.balanceBadgeText}>Bonus</Text>
+                  <Text style={[styles.balanceBadgeText, { color: '#fff' }]}>Bonus</Text>    
                 </View>
               </View>
             </LinearGradient>
@@ -608,25 +637,36 @@ const [sliderData] = useState([
 
             {/* ── Incomplete Registration Banner ─ */}
             {completeRegData && (
-              <View style={[styles.incompleteCard, { backgroundColor: colors.bgCard }]}>
+              <View style={[
+                styles.incompleteCard,
+                {
+                  backgroundColor: colors.bgCard,
+                  borderColor: colors.warningColor,             
+                },
+              ]}>
                 <View style={styles.incompleteHeader}>
                   <View style={styles.incompleteIconRow}>
                     <Ionicons name="information-circle" size={22} color={colors.warningColor} />
-                  <Text style={[styles.incompleteTitle, { color: colors.textBlack }]}>
-                  Incomplete Profile
-                </Text>
+                    <Text style={[styles.incompleteTitle, { color: colors.textBlack }]}>
+                      Incomplete Profile
+                    </Text>
                   </View>
                   <TouchableOpacity onPress={closeIncompleteRegistration}>
                     <Ionicons name="close-circle" size={22} color={colors.textSecColor} />
                   </TouchableOpacity>
                 </View>
                 <Text style={[styles.incompleteDesc, { color: colors.textSecColor }]}>
-                Complete your account registration to remove restrictions.
-              </Text>
+                  Complete your account registration to remove restrictions.
+                </Text>
                 <TouchableOpacity
-                  style={styles.incompleteBtn}
+                  style={[
+                    styles.incompleteBtn,
+                    { backgroundColor: colors.primaryColor1 },
+                  ]}
                   onPress={() => navigation.navigate('SignupSteps')}>
-                  <Text style={styles.incompleteBtnText}>Complete Now</Text>
+                  <Text style={[styles.incompleteBtnText, { color: '#fff' }]}>
+                    Complete Now
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -651,15 +691,15 @@ const [sliderData] = useState([
             closeOnPressMask={true}
             openDuration={300}
             closeDuration={250}
-            height={320}
+            height={370}
             closeOnPressBack={true}
             customStyles={{
-              container: {  borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl },
+              container: {  borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.bgCard, },
               draggableIcon: { backgroundColor: colors.dividerColor },
             }}>
             <SellBottomSheet
               titleText="Sell"
-              titleStyle={styles.bottomSheetTitle}
+              titleStyle={[styles.bottomSheetTitle, { color: colors.textBlack }]}
               buttonStyle={gs.bottomSheetButton}
               imageIconPaypal={paypalImage}
               imageIconPayooner={payoonerImage}
@@ -682,15 +722,15 @@ const [sliderData] = useState([
             closeOnPressMask={true}
             openDuration={300}
             closeDuration={250}
-            height={320}
+            height={370}
             closeOnPressBack={true}
             customStyles={{
-              container: {  borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl },
+              container: {  borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.bgCard, },
               draggableIcon: { backgroundColor: colors.dividerColor },
             }}>
             <BuyBottomSheet
               titleText="Buy"
-              titleStyle={styles.bottomSheetTitle}
+              titleStyle={[styles.bottomSheetTitle, { color: colors.textBlack }]}
               buttonStyle={gs.bottomSheetButton}
               imageIconPaypal={paypalImage}
               imageIconPayooner={payoonerImage}
@@ -713,15 +753,15 @@ const [sliderData] = useState([
             closeOnPressMask={true}
             openDuration={300}
             closeDuration={250}
-            height={320}
+            height={370}
             closeOnPressBack={true}
             customStyles={{
-              container: {  borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl },
+              container: {  borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.bgCard, },
               draggableIcon: { backgroundColor: colors.dividerColor },
             }}>
             <MoreBottomSheet
               titleText="More Options"
-              titleStyle={styles.bottomSheetTitle}
+              titleStyle={[styles.bottomSheetTitle, { color: colors.textBlack }]}
               buttonStyle={gs.bottomSheetButton}
               iconType1={<Feather name="plus-circle" size={20} color={colors.primaryColor1} />}
               iconType2={<Feather name="minus-circle" size={20} color={colors.primaryColor1} />}

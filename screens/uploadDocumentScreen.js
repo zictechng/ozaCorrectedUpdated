@@ -1,565 +1,718 @@
-﻿import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Platform, Alert, Button, Linking } from 'react-native';
+﻿import React, { useState, useContext } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  StatusBar, ActivityIndicator, Image, Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useIsFocused } from '@react-navigation/native';
-import { Ionicons} from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
-import { File } from 'expo-file-system';
-import * as Animatable from 'react-native-animatable'
-import { gs,colors } from '../styles';
-import { StatusBar } from 'expo-status-bar';
-import { Dropdown } from 'react-native-element-dropdown';
-import CustomButton from '../components/customButton';
+import { ALERT_TYPE, Toast, Dialog } from 'react-native-alert-notification';
+
+import { spacing, radius, typography, shadows } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
 import { AuthContext } from '../contextAPI/authContext';
 import { noticeData } from '../components/errorNotice';
-import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
-import LoaderIndicator from '../components/loaderIndicator';
 import client from '../contextAPI/client';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DocumentName } from '../model/data';
-import {CLOUDINARY_ACCOUNT_NAME, CLOUDINARY_PRESET_NAME} from '@env'
 
-const UploadDocumentScreen = ({navigation}) => {
-      const isFocused = useIsFocused();
-      const MAX_FILE_SIZE_MB = 5;
-      const {userInfo, setUserInfo, userToken} = useContext(AuthContext)
+// ── Document types accepted ───────────────────────
+const DOC_TYPES = [
+  {
+    id: 'national_id',
+    label: 'National ID Card',
+    icon: 'card-outline',
+    iconBg: '#EEF2FF',
+    iconColor: '#4C5FD5',
+    desc: 'Your NIMC national identity card (front and back)',
+  },
+  {
+    id: 'voters_card',
+    label: "Voter's Card",
+    icon: 'checkmark-circle-outline',
+    iconBg: '#D1FAE5',
+    iconColor: '#10B981',
+    desc: 'Your INEC permanent voter\'s card',
+  },
+  {
+    id: 'drivers_license',
+    label: "Driver's Licence",
+    icon: 'car-outline',
+    iconBg: '#FEF3C7',
+    iconColor: '#F59E0B',
+    desc: 'Your valid Nigerian driver\'s licence',
+  },
+  {
+    id: 'intl_passport',
+    label: 'International Passport',
+    icon: 'airplane-outline',
+    iconBg: '#DBEAFE',
+    iconColor: '#3B82F6',
+    desc: 'Your valid international passport (data page)',
+  },
+];
 
-      const [value, setValue] = useState(null);
-      const [isFocus, setIsFocus] = useState(false);
+// ── Document Type Selector ────────────────────────
+const DocTypeCard = ({ doc, isSelected, onSelect, colors }) => (
+  <TouchableOpacity
+    style={[
+      styles.docTypeCard,
+      {
+        backgroundColor: colors.bgCard,
+        borderColor: isSelected ? colors.primaryColor1 : colors.dividerColor,
+      },
+      isSelected && { backgroundColor: colors.bgLight },
+    ]}
+    onPress={() => onSelect(doc)}
+    activeOpacity={0.85}>
+    <View style={[styles.docTypeIcon, { backgroundColor: doc.iconBg }]}>
+      <Ionicons name={doc.icon} size={22} color={doc.iconColor} />
+    </View>
+    <View style={styles.docTypeInfo}>
+      <Text style={[styles.docTypeLabel, { color: colors.textBlack }]}>{doc.label}</Text>
+      <Text style={[styles.docTypeDesc, { color: colors.textSecColor }]}>{doc.desc}</Text>
+    </View>
+    <View style={[
+      styles.docTypeRadio,
+      {
+        borderColor: isSelected ? colors.primaryColor1 : colors.dividerColor,
+        backgroundColor: isSelected ? colors.primaryColor1 : 'transparent',
+      },
+    ]}>
+      {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+    </View>
+  </TouchableOpacity>
+);
 
-      const [image, setImage] = useState(null);
-      const [loading, setLoading] = useState(false);
-      const [loading2, setLoading2] = useState(false);
-      const [imageValue, setImageValue] = useState('');
-      let myId = userInfo.userData._id; // get logged in user ID
+// ── Image Preview Card ────────────────────────────
+const ImagePreviewCard = ({ image, label, onRemove, colors }) => (
+  <View style={[styles.previewCard, { backgroundColor: colors.bgCard, borderColor: colors.successColor }]}>
+    <Image source={{ uri: image.uri }} style={styles.previewImage} resizeMode="cover" />
+    <View style={styles.previewInfo}>
+      <Ionicons name="checkmark-circle" size={18} color={colors.successColor} />
+      <Text style={[styles.previewLabel, { color: colors.textBlack }]}>{label}</Text>
+    </View>
+    <TouchableOpacity
+      style={[styles.previewRemove, { backgroundColor: colors.lightRed }]}
+      onPress={onRemove}>
+      <Ionicons name="close" size={16} color={colors.dangerColor} />
+    </TouchableOpacity>
+  </View>
+);
 
-      useEffect(() => {
-        if(isFocused){
-       // console.log("navigation changed ", userInfo?.userData )
-        if(userInfo?.userData.reg_stage4 =="Yes"){
-            navigation.navigate('Home');
-            //console.log("navigation Stage ", userInfo?.userData.reg_stage2 )
-          }
-          // if(userInfo?.userData.reg_stage2 !="Yes"){
-          //     navigation.navigate('CompleteSignup');
-          //   }
-          // else if(userInfo?.userData.reg_stage3 !="Yes"){
-          //   navigation.navigate('UploadProfile_image');
-          // }
-          
-        }
-         
-         }, [isFocused]);
-      //console.log('Selected value: ' + value )
+// ── Main Upload Document Screen ───────────────────
+const UploadDocumentScreen = ({ navigation }) => {
+  const { colors, isDark } = useThemeStyles();
+  const { userToken, userInfo } = useContext(AuthContext);
 
-       // delete method here
-       const deleteImageId = async(data) =>{
-        const sendData = {
-          'userId': myId,
-          'delete_url': data
-        }
-          try {
-              const res = await client.post('/api/deleteUploaded_image', sendData,{
-                headers: {
-                  'Authorization': 'Bearer '+userToken,
-              }
-          })
-          if(res.data.msg == '201'){
-             let userInfo = await AsyncStorage.getItem('userInfo');
-             userInfo = JSON.parse(userInfo)
-            setUserInfo(userInfo)
-           }
-          else if(res.data.status == '401'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Failed',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return
-          }
-          else if(res.data.status == '402'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: 'You need to login and try again.',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return
-          }
-          else if(res.data.status == '500'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return
-          }
-        } catch (error) {
-          console.log(error.message)
-        }
-      }
+  const [selectedDocType, setSelectedDocType] = useState(null);
+  const [frontImage, setFrontImage] = useState(null);
+  const [backImage, setBackImage] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-      const renderLabel = () => {
-        if (value || isFocus) {
-          return (
-            <Text style={[styles.label, isFocus && { color: colors.primaryColor1 }]}>
-             
-            </Text>
-          );
-        }
-        return null;
-      };
+  const needsBack = selectedDocType?.id === 'national_id' ||
+    selectedDocType?.id === 'drivers_license';
 
-      const checkPermissions = async () => {
-              // First request permission (may show prompt if undetermined)
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          
-            if (status === 'granted') {
-              return true;
-            }
-          
-            if (status === 'denied') {
-              Alert.alert(
-                'Permission required',
-                Platform.OS === 'ios'
-                  ? 'Please enable full photo access in your device settings and reopen the app.'
-                  : 'Please enable media library access in your device settings.',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Open Settings', onPress: () => Linking.openSettings() },
-                ]
-              );
-              return false;
-              }
-            const { status: newStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-              return newStatus === 'granted';
-            };
-
-
-      const pickImage = async () => {
-      const hasPermission = await checkPermissions();
-        if (!hasPermission) return;
-
-        let result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.All,
-          aspect: [4, 3],
-          quality: 1,
-        });
-        // check file type here
-        if(result.assets[0].type !== 'image') {
-          Toast.show({
-              type: ALERT_TYPE.WARNING,
-              title:'Error',
-              textBody: 'Files type not supported',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            result.canceled = true
-            setImage(null)
-            return
-          }
-          
-        if (!result.canceled) {
-          const file = new File(result.assets[0].uri);
-          const fileInfo = await file.info({ size: true });
-        
-          if (!fileInfo.exists || fileInfo.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-            Toast.show({
-              type: ALERT_TYPE.WARNING,
-              title:'Error',
-              textBody: `File size must be smaller than ${MAX_FILE_SIZE_MB}MB`,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-              });
-            return;
-          }
-          // File is valid, use it
-          setImage(result.assets[0].uri);
-          
-        }
-      };
-
-   // Get user details from local storage after every request/operation into the database
-   const FetchLocalStorage = async()=>{
-    setLoading(true)
+  // ── Pick image ────────────────────────────────
+  const pickImage = async (side) => {
     try {
-      let userInfoDetails = await AsyncStorage.getItem('userInfo');
-            userInfoDetails = JSON.parse(userInfoDetails)
-        if(userInfoDetails){
-          setUserInfo(userInfoDetails);
-         //console.log('User Details fetch local storage ', userInfoDetails)
-        }
-       
-    } catch (error) {
-      console.log(`Fetch local storage error ${error}`);
-      
-    }
-    finally{
-      setLoading(false);
-    }
-  }
-
-      // function to upload photo here
-      const uploadDocument = async() => {
-        if(!image) {
-          Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title:'Error',
-            textBody: 'Please select a document to upload',
-            titleStyle: noticeData[0].errorTitleStyle,
-            textBodyStyle: noticeData[0].errorMessageStyle,
-          })
-          return
-        }
-        if(value === undefined || value ==='' || value===null) {
-          Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title:'Error',
-            textBody: 'Please select document type',
-            titleStyle: noticeData[0].errorTitleStyle,
-            textBodyStyle: noticeData[0].errorMessageStyle,
-          })
-          return
-        }
-        setLoading(true)
-
-          let newfile = {
-            uri: image,
-            type:`document2FA/${image.split(".")[1]}`,
-            name:`document2FA.${image.split(".")[1]}`,
-          }
-          const data = new FormData()
-          data.append('file', newfile)
-          data.append('upload_preset', CLOUDINARY_PRESET_NAME)
-          data.append('upload_name', CLOUDINARY_ACCOUNT_NAME)
-          try {
-              const response = await fetch("https://api.cloudinary.com/v1_1/ddm1owlon/image/upload", 
-              {
-                method: 'POST',
-                body: data
-              }
-            );
-
-              const result = await response.json(); // Parse JSON
-              const secureUrl = result.secure_url;
-                setImageValue(result.public_id);
-            
-                if (secureUrl) {
-                  uploadPhotoURL(secureUrl);
-                  setLoading(false);
-                }
-              } catch (error) {
-                deleteImageId(imageValue)
-                console.log(error.message)
-                setLoading(false)
-              }
-          }
-
-      const uploadPhotoURL = async(data) => {
-        setLoading2(true)
-        const sendData = {
-          'userId': myId,
-          'image_url': data,
-          'document_name': value
-        }
-          try {
-              const res = await client.post('/api/user_uploadDocument', sendData,{
-                headers: {
-                  'Authorization': 'Bearer '+userToken,
-              }
-          })
-          if(res.data.msg == '201'){
-              Toast.show({
-              type: ALERT_TYPE.SUCCESS,
-              title:'Success',
-              textBody: 'Document successfully uploaded',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            let userInfoReturn = res.data;
-            AsyncStorage.setItem('userInfo', JSON.stringify(userInfoReturn));
-            
-            FetchLocalStorage()
-            let userInfo = await AsyncStorage.getItem('userInfo');
-                userInfo = JSON.parse(userInfo)
-                setUserInfo(userInfo)
-             setImage(null)
-            navigation.navigate('Verify2faces')
-          }
-          else if(res.data.status == '401'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Failed',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return deleteImageId(imageValue)
-            
-          }
-          else if(res.data.status == '400'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: 'File too large',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return deleteImageId(imageValue)
-          }
-          else if(res.data.status == '404'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Failed',
-              textBody: 'You need to have an account',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return deleteImageId(imageValue)
-           }
-          else if(res.data.status == '402'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: 'You need to login and try again.',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            deleteImageId(imageValue)
-            return
-          }
-          else if(res.data.status == '500'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return deleteImageId(imageValue)
-          }
-          
-         } catch (error) {
-          deleteImageId(imageValue)
-          console.log(error.message)
-        }
-        finally{
-          setLoading2(false)
-        }
-          
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please allow access to your photo library to upload documents.',
+          [{ text: 'OK' }]
+        );
+        return;
       }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.9,
+      });
+      if (!result.canceled && result.assets?.length > 0) {
+        if (side === 'front') setFrontImage(result.assets[0]);
+        else setBackImage(result.assets[0]);
+      }
+    } catch (error) {
+      console.log('Pick image error:', error.message);
+    }
+  };
+
+  // ── Take photo ────────────────────────────────
+  const takePhoto = async (side) => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please allow camera access to take document photos.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: false,
+        quality: 0.9,
+      });
+      if (!result.canceled && result.assets?.length > 0) {
+        if (side === 'front') setFrontImage(result.assets[0]);
+        else setBackImage(result.assets[0]);
+      }
+    } catch (error) {
+      console.log('Camera error:', error.message);
+    }
+  };
+
+  // ── Validate ──────────────────────────────────
+  const validate = () => {
+    if (!selectedDocType) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Select Document Type', textBody: 'Please select the type of document you are uploading.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      return false;
+    }
+    if (!frontImage) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Front Image Required', textBody: 'Please upload the front side of your document.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      return false;
+    }
+    if (needsBack && !backImage) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Back Image Required', textBody: 'This document type requires both front and back images.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      return false;
+    }
+    return true;
+  };
+
+  // ── Upload ────────────────────────────────────
+  const handleUpload = async () => {
+    if (!validate()) return;
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+
+      const frontFilename = frontImage.uri.split('/').pop();
+      const frontExt = frontFilename.split('.').pop()?.toLowerCase();
+      formData.append('front_image', {
+        uri: frontImage.uri,
+        name: frontFilename,
+        type: frontExt === 'jpg' || frontExt === 'jpeg' ? 'image/jpeg' : 'image/png',
+      });
+
+      if (backImage) {
+        const backFilename = backImage.uri.split('/').pop();
+        const backExt = backFilename.split('.').pop()?.toLowerCase();
+        formData.append('back_image', {
+          uri: backImage.uri,
+          name: backFilename,
+          type: backExt === 'jpg' || backExt === 'jpeg' ? 'image/jpeg' : 'image/png',
+        });
+      }
+
+      formData.append('doc_type', selectedDocType.id);
+      formData.append('doc_label', selectedDocType.label);
+      formData.append('userId', userInfo?.userData?._id);
+
+      const res = await client.post(
+        '/api/uploadKYCDocument_mobile',
+        formData,
+        {
+          headers: {
+            'Authorization': 'Bearer ' + userToken,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (res.data.msg === '200') {
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Documents Uploaded!',
+          textBody: 'Your KYC documents have been submitted. We will review and verify them within 24 hours.',
+          button: 'Done',
+          titleStyle: noticeData[0].errorTitleStyle,
+          textBodyStyle: noticeData[0].errorMessageStyle,
+          onHide: () => navigation.goBack(),
+        });
+      } else {
+        Toast.show({ type: ALERT_TYPE.DANGER, title: 'Upload Failed', textBody: res.data.message || 'Could not upload documents. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      }
+    } catch (error) {
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Something went wrong. Please check your connection and try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
-    <View style={{flex:1, backgroundColor:colors.bgColor}}>
-        <SafeAreaView style={{flex:1}}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.bgColor}
+      />
 
-            <StatusBar style='dark' />
+      {/* ── Header ──────────────────────────────── */}
+      <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
+        <TouchableOpacity
+          style={[styles.backBtn, { backgroundColor: colors.bgLight }]}
+          onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.textBlack }]}>
+          Upload Documents
+        </Text>
+        <View style={styles.backBtn} />
+      </View>
 
-                <View style={gs.homeHeaderRow}>
-                    <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                      <Text></Text>
-                        <TouchableOpacity onPress={() => navigation.goBack()}>
-                            <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                            <Ionicons name='close-outline' size={23} color={colors.blackColor1}/>
-                          </View>
-                        </TouchableOpacity>
-                        
-                    </View>
-                    <View style={{marginBottom:30}}></View>
-                    
-                 </View>
-                  {/* show loader when processing request */}
-                        {loading && <LoaderIndicator 
-                        loader={loading}
-                        textInfo={'  Processing...'}
-                        />}
-                        {loading2 && <LoaderIndicator 
-                        loader={loading2}
-                        textInfo={'  Updating...'}
-                        />}
-                 <View style={{flex:1, backgroundColor:colors.bgColor}}>
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Documents Upload</Text>
-                        </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
 
-                        <View style={{marginHorizontal:20, marginTop:10}}>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textBlack}}>Upload your document to verified your account</Text>
-                            
-                        </View>
+        {/* ── Hero Banner ──────────────────────── */}
+        <LinearGradient
+          colors={[colors.primaryColor1, colors.primaryColor1b]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroBanner}>
+          <View style={styles.heroCircle1} />
+          <View style={styles.heroCircle2} />
+          <View style={[styles.heroIconBox, { backgroundColor: 'rgba(255,255,255,0.95)' }]}>
+            <Ionicons name="shield-checkmark-outline" size={28} color={colors.primaryColor1} />
+          </View>
+          <View style={styles.heroText}>
+            <Text style={styles.heroTitle}>KYC Verification</Text>
+            <Text style={styles.heroDesc}>
+              Upload a valid government-issued ID to verify your identity and unlock all platform features.
+            </Text>
+          </View>
+        </LinearGradient>
 
-                        <Animatable.View 
-                          animation={'fadeIn'}
-                          delay={200}
-                          useNativeDriver={true}
-                          style={styles.formPage}>
-                            <View style={{marginBottom:10, marginHorizontal:10, borderWidth: 1, borderRadius: 10,
-                                borderColor: 'lightgrey', marginTop:20}}>
-                                
-                                <Dropdown
-                                style={[styles.dropdown, isFocus && { borderColor: colors.primaryColor1 }]}
-                                placeholderStyle={styles.placeholderStyle}
-                                selectedTextStyle={styles.selectedTextStyle}
-                                inputSearchStyle={styles.inputSearchStyle}
-                                iconStyle={styles.iconStyle}
-                                data={DocumentName}
-                                maxHeight={300}
-                                labelField="label"
-                                valueField="value"
-                                placeholder={!isFocus ? 'Select Type' : '...'}
-                                value={value}
-                                onFocus={() => setIsFocus(true)}
-                                onBlur={() => setIsFocus(false)}
-                                onChange={item => {
-                                    setValue(item.value);
-                                    setIsFocus(false);
-                                }}
-                                renderLeftIcon={() => (
-                                    <Ionicons
-                                    style={styles.icon}
-                                    color={isFocus ? colors.textSecColor : colors.primaryColor1}
-                                    name="document-text"
-                                    size={20}
-                                    />
-                                )}
-                                />
-                            </View>
-                        
-                        <TouchableOpacity style={{ justifyContent:'center', alignItems:'center',
-                            marginBottom:25,
-                            borderColor: 'lightgrey',
-                            paddingLeft: 10,
-                            }}
-                            onPress={pickImage}
-                            >
-                        {!image && <Ionicons name='document' size={80} color='#666' style={{marginRight:5, marginTop:15, opacity:0.4}} />}
-                        {image && <Image source={{ uri: image }} style={{ width: 300, height: 150, borderRadius:5 }} />}
-                          <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.textSecColor}}>Tap to pick a file</Text>
-                        </TouchableOpacity>
-                           
-                        </Animatable.View>
-                        
-                        <Animatable.View animation={'fadeIn'}
-                          delay={500}
-                          useNativeDriver={true} style={{marginHorizontal:20, marginTop:10, borderBottomWidth:1, borderColor: '#dededc', marginBottom:5}}>
-                            <Text style={{fontFamily:'_semiBold', fontSize:14, color:colors.textBlack, marginTop:10}}>Any of the document below is accepted</Text>
-                        </Animatable.View>
+        {/* ── Step 1 — Document Type ────────────── */}
+        <View style={[styles.stepCard, { backgroundColor: colors.bgCard }]}>
+          <View style={styles.stepHeader}>
+            <View style={[styles.stepNum, { backgroundColor: colors.primaryColor1 }]}>
+              <Text style={styles.stepNumText}>1</Text>
+            </View>
+            <Text style={[styles.stepTitle, { color: colors.textBlack }]}>
+              Select Document Type
+            </Text>
+          </View>
+          <Text style={[styles.stepDesc, { color: colors.textSecColor }]}>
+            Choose the type of government-issued ID you want to upload
+          </Text>
 
-                        <Animatable.View animation={'fadeIn'}
-                          delay={500}
-                          useNativeDriver={true} style={{marginHorizontal:20, marginTop:10, borderColor: '#dededc', marginBottom:5}}>
-                            <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textSecColor}}>{'*'} International Passport</Text>
-                            <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textSecColor}}>{'*'} Government Official ID <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textBlack}}>('NIN')</Text></Text>
-                            <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textSecColor}}>{'*'} Driving License</Text>
-                            <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textSecColor}}>{'*'} Bank Statement <Text style={{fontFamily:'_regular', fontSize:16, color:colors.textBlack}}>('Three months old')</Text></Text>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor, marginTop: 10}}>{ } accepted file types are PNG and JPEG only</Text>
-                        
-                        </Animatable.View>
-                            
-                          <Animatable.View
-                            animation={'zoomIn'}
-                            delay={1000}
-                            useNativeDriver={true}
-                            >
-                              <CustomButton 
-                                  buttonStyle={{borderRadius:10, marginHorizontal:10, backgroundColor:colors.primaryColor1, marginTop:60}}
-                                  viewStyle={{padding:10, alignItems:'center'}}
-                                  textStyle={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textColor}}
-                                  textLabel={'Upload Document'}
-                                  buttonAction={() => uploadDocument()}
-                              />
-                              <View style={{justifyContent:'center', alignItems:'center', margin:20}}>
-                                  <TouchableOpacity style={{marginTop:5}} onPress={() => navigation.navigate('Home') }>
-                                  <Text style={[gs.loginPageDesc,{color:colors.textBlack}]}>Maybe Later</Text>
-                                  </TouchableOpacity>
-                              </View>
-                            </Animatable.View>
-                            {/* custom button here */}
-                            
-                           
-                    </ScrollView>
-                </View>
-            
-        </SafeAreaView>
-    </View>
+          {DOC_TYPES.map((doc) => (
+            <DocTypeCard
+              key={doc.id}
+              doc={doc}
+              isSelected={selectedDocType?.id === doc.id}
+              onSelect={(d) => {
+                setSelectedDocType(d);
+                setFrontImage(null);
+                setBackImage(null);
+              }}
+              colors={colors}
+            />
+          ))}
+        </View>
+
+        {/* ── Step 2 — Upload Images ────────────── */}
+        {selectedDocType && (
+          <View style={[styles.stepCard, { backgroundColor: colors.bgCard }]}>
+            <View style={styles.stepHeader}>
+              <View style={[styles.stepNum, { backgroundColor: colors.primaryColor1 }]}>
+                <Text style={styles.stepNumText}>2</Text>
+              </View>
+              <Text style={[styles.stepTitle, { color: colors.textBlack }]}>
+                Upload Document Images
+              </Text>
+            </View>
+            <Text style={[styles.stepDesc, { color: colors.textSecColor }]}>
+              Upload clear, well-lit photos of your {selectedDocType.label}.
+              {needsBack ? ' Both front and back are required.' : ''}
+            </Text>
+
+            {/* Front Image */}
+            <Text style={[styles.imageLabel, { color: colors.textSecColor }]}>
+              Front Side {needsBack ? '(Required)' : ''}
+            </Text>
+            {frontImage ? (
+              <ImagePreviewCard
+                image={frontImage}
+                label="Front image selected"
+                onRemove={() => setFrontImage(null)}
+                colors={colors}
+              />
+            ) : (
+              <View style={styles.uploadOptionsRow}>
+                <TouchableOpacity
+                  style={[styles.uploadOptionBtn, {
+                    backgroundColor: colors.bgLight,
+                    borderColor: colors.dividerColor,
+                  }]}
+                  onPress={() => pickImage('front')}
+                  activeOpacity={0.85}>
+                  <Ionicons name="images-outline" size={22} color={colors.primaryColor1} />
+                  <Text style={[styles.uploadOptionText, { color: colors.textBlack }]}>
+                    Gallery
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.uploadOptionBtn, {
+                    backgroundColor: colors.bgLight,
+                    borderColor: colors.dividerColor,
+                  }]}
+                  onPress={() => takePhoto('front')}
+                  activeOpacity={0.85}>
+                  <Ionicons name="camera-outline" size={22} color={colors.successColor} />
+                  <Text style={[styles.uploadOptionText, { color: colors.textBlack }]}>
+                    Camera
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Back Image */}
+            {needsBack && (
+              <>
+                <Text style={[styles.imageLabel, { color: colors.textSecColor }]}>
+                  Back Side (Required)
+                </Text>
+                {backImage ? (
+                  <ImagePreviewCard
+                    image={backImage}
+                    label="Back image selected"
+                    onRemove={() => setBackImage(null)}
+                    colors={colors}
+                  />
+                ) : (
+                  <View style={styles.uploadOptionsRow}>
+                    <TouchableOpacity
+                      style={[styles.uploadOptionBtn, {
+                        backgroundColor: colors.bgLight,
+                        borderColor: colors.dividerColor,
+                      }]}
+                      onPress={() => pickImage('back')}
+                      activeOpacity={0.85}>
+                      <Ionicons name="images-outline" size={22} color={colors.primaryColor1} />
+                      <Text style={[styles.uploadOptionText, { color: colors.textBlack }]}>
+                        Gallery
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.uploadOptionBtn, {
+                        backgroundColor: colors.bgLight,
+                        borderColor: colors.dividerColor,
+                      }]}
+                      onPress={() => takePhoto('back')}
+                      activeOpacity={0.85}>
+                      <Ionicons name="camera-outline" size={22} color={colors.successColor} />
+                      <Text style={[styles.uploadOptionText, { color: colors.textBlack }]}>
+                        Camera
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        )}
+
+        {/* ── Tips Card ─────────────────────────── */}
+        <View style={[styles.tipsCard, {
+          backgroundColor: colors.bgLight,
+          borderColor: colors.dividerColor,
+        }]}>
+          <View style={styles.tipsTitleRow}>
+            <Ionicons name="information-circle-outline" size={18} color={colors.primaryColor1} />
+            <Text style={[styles.tipsTitle, { color: colors.primaryColor1 }]}>
+              Document Tips
+            </Text>
+          </View>
+          {[
+            'Ensure the document is valid and not expired',
+            'All text on the document must be clearly visible',
+            'Take photos in good lighting — avoid shadows and glare',
+            'Documents are reviewed within 24 hours',
+            'Your documents are encrypted and stored securely',
+          ].map((tip, i) => (
+            <View key={i} style={styles.tipRow}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.successColor} />
+              <Text style={[styles.tipText, { color: colors.textSecColor }]}>{tip}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* ── Submit Button ─────────────────────── */}
+        <TouchableOpacity
+          style={[
+            styles.submitBtn,
+            { backgroundColor: colors.primaryColor1 },
+            (!selectedDocType || !frontImage || (needsBack && !backImage) || isUploading) && { opacity: 0.6 },
+          ]}
+          onPress={handleUpload}
+          disabled={!selectedDocType || !frontImage || (needsBack && !backImage) || isUploading}
+          activeOpacity={0.85}>
+          {isUploading ? (
+            <ActivityIndicator color="#fff" size={22} />
+          ) : (
+            <>
+              <Ionicons name="cloud-upload-outline" size={22} color="#fff" />
+              <Text style={styles.submitBtnText}>Submit Documents</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <View style={{ height: spacing.xxxl }} />
+      </ScrollView>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    settingTitle:{
-        color:colors.textColor,
-        fontSize:20,
-        marginLeft: -20,
-        fontFamily: '_semiBold',
-      },
-      accountVerify:{
-        position: "absolute", 
-        top: 30, 
-        right: +20, 
-        marginRight: 10, 
-        color:colors.greenColor,
-    },
-    dropdown: {
-      height: 50,
-      borderColor: 'gray',
-      //borderWidth: 0.5,
-      borderRadius: 8,
-      paddingHorizontal: 8,
-    },
-    formPage:{
-      borderRadius:10, 
-      marginHorizontal:10, 
-      backgroundColor:colors.textColor, 
-      marginTop:20,
-      shadowColor: '#000',
-      shadowOffset: { 
-      width: 0, 
-      height: 2 
-      },
-      shadowOpacity: 0.5,
-      shadowRadius: 2,
-      elevation: 1, 
-      },
-    icon: {
-      marginRight: 5,
-    },
-    label: {
-      position: 'absolute',
-      backgroundColor: 'white',
-      left: 22,
-      top: 8,
-      zIndex: 999,
-      paddingHorizontal: 8,
-      fontSize: 14,
-    },
-    placeholderStyle: {
-      fontSize: 16,
-      color:colors.textSecColor
-    },
-    selectedTextStyle: {
-      fontSize: 16,
-    },
-    iconStyle: {
-      width: 20,
-      height: 20,
-    },
-    inputSearchStyle: {
-      height: 40,
-      fontSize: 16,
-    },
+  container: { flex: 1 },
+  scrollContent: { paddingBottom: spacing.xxxl },
 
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  headerTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+  },
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroBanner: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    ...shadows.lg,
+  },
+  heroCircle1: {
+    position: 'absolute',
+    right: -30,
+    top: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  heroCircle2: {
+    position: 'absolute',
+    left: -20,
+    bottom: -20,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  heroIconBox: {
+    width: 54,
+    height: 54,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.sm,
+  },
+  heroText: { flex: 1 },
+  heroTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+    color: '#fff',
+    marginBottom: 4,
+  },
+  heroDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 22,
+  },
+  stepCard: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+  stepHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  stepNum: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stepNumText: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    color: '#fff',
+    lineHeight: 22,
+  },
+  stepTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+  },
+  stepDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+    marginLeft: 46,
+  },
+  docTypeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.xl,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1.5,
+    gap: spacing.md,
+  },
+  docTypeIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  docTypeInfo: { flex: 1 },
+  docTypeLabel: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: 2,
+  },
+  docTypeDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  docTypeRadio: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.full,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageLabel: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  uploadOptionsRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  uploadOptionBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    borderWidth: 1.5,
+    gap: spacing.sm,
+  },
+  uploadOptionText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  previewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.lg,
+    padding: spacing.sm,
+    marginBottom: spacing.lg,
+    borderWidth: 1.5,
+    gap: spacing.md,
+  },
+  previewImage: {
+    width: 60,
+    height: 60,
+    borderRadius: radius.md,
+  },
+  previewInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  previewLabel: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  previewRemove: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tipsCard: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+  },
+  tipsTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  tipsTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  tipRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  tipText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    flex: 1,
+  },
+  submitBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 56,
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.xl,
+    gap: spacing.sm,
+    ...shadows.md,
+  },
+  submitBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    color: '#fff',
+  },
 });
 
 export default UploadDocumentScreen;

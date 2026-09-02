@@ -638,7 +638,7 @@ const useThemeStyles = () => {
     },
     statValue: {
       fontFamily: '_bold',
-      fontSize: typography.lg,
+      fontSize: typography.md,
       color: colors.primaryColor1,
       lineHeight: 24,
     },

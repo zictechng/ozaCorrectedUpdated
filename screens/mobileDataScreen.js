@@ -24,43 +24,55 @@ import { NETWORKS } from '../constants/networkList';
 import { DATA_PLANS, getDataPlans } from '../constants/dataPlansList';
 
 // ── Data Plan Card ────────────────────────────────
-const DataPlanCard = ({ plan, isSelected, onSelect, networkColor }) => (
-  <TouchableOpacity
-    style={[
-      styles.planCard,
-      isSelected && {
-        borderColor: networkColor,
-        borderWidth: 2,
-        backgroundColor: `${networkColor}10`,
-      },
-    ]}
-    onPress={() => onSelect(plan)}
-    activeOpacity={0.8}>
+const DataPlanCard = ({ plan, isSelected, onSelect, networkColor }) => {
+  const { colors } = useThemeStyles();
 
-    {isSelected && (
-      <View style={[styles.planCheck, { backgroundColor: networkColor }]}>
-        <Text style={styles.planCheckText}>✓</Text>
-      </View>
-    )}
+  return (
+    <TouchableOpacity
+      style={[
+        styles.planCard,
+        {
+          borderColor: colors.dividerColor,
+          backgroundColor: colors.bgCard,
+        },
+        isSelected && {
+          borderColor: networkColor,
+          borderWidth: 2,
+          backgroundColor: `${networkColor}10`,
+        },
+      ]}
+      onPress={() => onSelect(plan)}
+      activeOpacity={0.8}>
 
-    <Text style={[
-      styles.planSize,
-      isSelected && { color: networkColor },
-    ]}>
-      {plan.label}
-    </Text>
+      {isSelected && (
+        <View style={[styles.planCheck, { backgroundColor: networkColor }]}>
+          <Text style={styles.planCheckText}>✓</Text>
+        </View>
+      )}
 
-    <Text style={styles.planValidity}>{plan.validity}</Text>
+      <Text style={[
+        styles.planSize,
+        { color: colors.textBlack },
+        isSelected && { color: networkColor },
+      ]}>
+        {plan.label}
+      </Text>
 
-    <Text style={[
-      styles.planPrice,
-      isSelected && { color: networkColor },
-    ]}>
-      ₦{Number(plan.price).toLocaleString()}
-    </Text>
+      <Text style={[styles.planValidity, { color: colors.textSecColor }]}>
+        {plan.validity}
+      </Text>
 
-  </TouchableOpacity>
-);
+      <Text style={[
+        styles.planPrice,
+        { color: colors.textSecColor },
+        isSelected && { color: networkColor },
+      ]}>
+        ₦{Number(plan.price).toLocaleString()}
+      </Text>
+
+    </TouchableOpacity>
+  );
+};
 
 // ── Phone Number Input ────────────────────────────
 const PhoneInput = ({ value, onChangeText, onUseMine }) => {
@@ -68,7 +80,7 @@ const PhoneInput = ({ value, onChangeText, onUseMine }) => {
   const [isFocused, setIsFocused] = useState(false);
   return (
     <View style={styles.inputGroup}>
-      <Text style={styles.inputLabel}>Phone Number</Text>
+      <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>Phone Number</Text>
       <View style={[
         styles.inputContainer,
         isFocused && styles.inputContainerFocused,
@@ -80,7 +92,7 @@ const PhoneInput = ({ value, onChangeText, onUseMine }) => {
           style={styles.inputIcon}
         />
         <TextInput
-          style={styles.inputField}
+          style={[styles.inputField, { color: colors.textBlack }]}
           value={value}
           onChangeText={(text) => onChangeText(text.replace(/[^0-9]/g, ''))}
           placeholder="e.g. 08012345678"
@@ -92,11 +104,11 @@ const PhoneInput = ({ value, onChangeText, onUseMine }) => {
         />
         <TouchableOpacity
           onPress={onUseMine}
-          style={styles.useMineBtn}>
-          <Text style={styles.useMineBtnText}>Use Mine</Text>
+          style={[styles.useMineBtn, { backgroundColor: colors.bgLight }]}>
+          <Text style={[styles.useMineBtnText, { color: colors.primaryColor1 }]}>Use Mine</Text>
         </TouchableOpacity>
       </View>
-      <Text style={styles.inputHint}>
+      <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
         Enter the 11-digit Nigerian mobile number to recharge
       </Text>
     </View>
@@ -141,31 +153,31 @@ const RewardsTipsCard = () => {
   }, []);
 
   return (
-    <View style={styles.tipsCard}>
+    <View style={[styles.tipsCard, { backgroundColor: colors.bgLight }]}>
       <View style={styles.tipsTitleRow}>
         <Ionicons name="information-circle-outline" size={18} color={colors.primaryColor1} />
-        <Text style={styles.tipsTitle}>Quick Tips</Text>
+        <Text style={[styles.tipsTitle, { color: colors.primaryColor1 }]}>Quick Tips</Text>
       </View>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Data is activated on the number within seconds of payment
       </Text>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • We offer the cheapest data rates in Nigeria
       </Text>
       {rewardRate && (
-        <Text style={styles.tipText}>
+        <Text style={[styles.tipText, { color: colors.textSecColor }]}>
           • You earn <Text style={styles.tipHighlight}>{rewardRate}% in coins</Text> on every data purchase
         </Text>
       )}
       {coinValue && (
-        <Text style={styles.tipText}>
+        <Text style={[styles.tipText, { color: colors.textSecColor }]}>
           • 🪙 1 coin = <Text style={styles.tipHighlight}>₦{coinValue} NGN</Text> — redeemable as bonus
         </Text>
       )}
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Your wallet must have sufficient balance to proceed
       </Text>
-      <Text style={styles.tipText}>
+      <Text style={[styles.tipText, { color: colors.textSecColor }]}>
         • Top users earn quarterly & annual gift rewards 🎁
       </Text>
     </View>
@@ -356,7 +368,7 @@ const MobileDataScreen = ({ navigation }) => {
             />
 
             {serviceStatus !== 'paused' && (
-              <View style={styles.formCard}>
+              <View style={[styles.formCard, { backgroundColor: colors.bgCard }]}>
 
                 {/* Network Selector — Reusable */}
                 <NetworkSelector
@@ -370,8 +382,8 @@ const MobileDataScreen = ({ navigation }) => {
                 {/* Data Plans Grid */}
                 {selectedNetwork !== '' && (
                   <View style={styles.plansSection}>
-                    <Text style={styles.inputLabel}>Select Data Plan</Text>
-                    <Text style={styles.inputHint}>
+                    <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>Select Data Plan</Text>
+                    <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
                       Choose a plan that suits your data needs
                     </Text>
 
@@ -411,20 +423,23 @@ const MobileDataScreen = ({ navigation }) => {
 
                 {/* Selected Plan Summary Strip */}
                 {selectedPlan && (
-                  <View style={[
-                    styles.selectedPlanStrip,
-                    { borderLeftColor: networkColor },
-                  ]}>
+                    <View style={[
+                      styles.selectedPlanStrip,
+                      {
+                        borderLeftColor: networkColor,
+                        backgroundColor: colors.bgLight, // ✅ ADD — invisible in dark without this
+                      },
+                    ]}>
                     <MaterialCommunityIcons
                       name="wifi"
                       size={20}
                       color={networkColor}
                     />
                     <View style={styles.selectedPlanInfo}>
-                      <Text style={styles.selectedPlanLabel}>
+                      <Text style={[styles.selectedPlanLabel, { color: colors.textBlack }]}>
                         {selectedNetwork} — {selectedPlan.label}
                       </Text>
-                      <Text style={styles.selectedPlanSub}>
+                      <Text style={[styles.selectedPlanSub, { color: colors.textSecColor }]}>
                         {selectedPlan.validity} validity
                       </Text>
                     </View>
@@ -467,9 +482,9 @@ const MobileDataScreen = ({ navigation }) => {
 
             {/* ── Order Summary ────────────────── */}
             {showSummary && serviceStatus !== 'paused' && (
-              <View style={styles.summaryCard}>
-                <Text style={styles.summaryTitle}>Order Summary</Text>
-                <View style={styles.summaryDivider} />
+              <View style={[styles.summaryCard, { backgroundColor: colors.bgCard }]}>
+                <Text style={[styles.summaryTitle, { color: colors.textBlack }]}>Order Summary</Text>
+                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
 
                 <SummaryRow label="Network" value={selectedNetwork} />
                 <SummaryRow
@@ -490,7 +505,7 @@ const MobileDataScreen = ({ navigation }) => {
                 />
                 <SummaryRow label="Service Fee" value="₦0.00" />
 
-                <View style={styles.summaryDivider} />
+                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
 
                 <SummaryRow
                   label="Total"
@@ -500,7 +515,7 @@ const MobileDataScreen = ({ navigation }) => {
                 />
 
                 {/* Wallet Balance Check */}
-                <View style={styles.balanceCheckRow}>
+                <View style={[styles.balanceCheckRow, { backgroundColor: colors.bgLight }]}>
                   <Ionicons
                     name={
                       Number(selectedPlan?.price) <= Number(walletBalance)
@@ -514,7 +529,7 @@ const MobileDataScreen = ({ navigation }) => {
                         : colors.dangerColor
                     }
                   />
-                  <Text style={styles.balanceCheckText}>
+                  <Text style={[styles.balanceCheckText, { color: colors.textBlack }]}>
                     Wallet Balance: ₦{Number(walletBalance).toLocaleString()}
                   </Text>
                 </View>
@@ -549,7 +564,7 @@ const MobileDataScreen = ({ navigation }) => {
                 <TouchableOpacity
                   style={styles.editBtn}
                   onPress={() => setShowSummary(false)}>
-                  <Text style={styles.editBtnText}>Edit Order</Text>
+                  <Text style={[styles.editBtnText, { color: colors.textSecColor }]}>Edit Order</Text>
                 </TouchableOpacity>
               </View>
             )}

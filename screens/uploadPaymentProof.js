@@ -1,517 +1,672 @@
-﻿import React, { useContext, useState, useEffect} from 'react';
-import { useIsFocused } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Animatable from 'react-native-animatable'
-import { View, Button, Text, TextInput, StyleSheet, TouchableOpacity, Image, ScrollView , ToastAndroid, Platform} from 'react-native';
+﻿import React, { useState, useContext } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  StatusBar, ActivityIndicator, Image, Alert, TextInput,
+  KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons} from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import { gs,colors } from '../styles';
-import { StatusBar } from 'expo-status-bar';
-import CustomButton from '../components/customButton';
-import client from '../contextAPI/client';
+import { ALERT_TYPE, Toast, Dialog } from 'react-native-alert-notification';
+
+import { spacing, radius, typography, shadows } from '../styles';
+import useThemeStyles from '../hooks/useThemeStyles';
 import { AuthContext } from '../contextAPI/authContext';
-import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import { noticeData } from '../components/errorNotice';
-import LoaderIndicator from '../components/loaderIndicator';
-import {CLOUDINARY_ACCOUNT_NAME, CLOUDINARY_PRESET_NAME} from '@env'
-import * as DocumentPicker from 'expo-document-picker';
+import client from '../contextAPI/client';
 
-const UploadPaymentProof = ({route, navigation}) => {
-      const isFocused = useIsFocused();
-      let trackPayId = route.params?.track_id;
-      const [image, setImage] = useState(null);
-      const {userInfo, setUserInfo, userToken} = useContext(AuthContext)
-      const [loading, setLoading] = useState(false);
-      const [loading2, setLoading2] = useState(false);
-      const [loading3, setLoading3] = useState(false);
-      const [imageValue, setImageValue] = useState('');
-      const [fileUploadType, setFileUploadType] = useState();
+const UploadPaymentProof = ({ route, navigation }) => {
+  const { colors, isDark } = useThemeStyles();
+  const { userToken, userInfo } = useContext(AuthContext);
 
-      const [selectedFile, setSelectedFile] = React.useState(null);
-      
-      let myId = userInfo.userData._id; // get logged in user ID
+  const trackId = route.params?.track_id;
 
-      useEffect(() => {
-        if(isFocused){
-       // console.log("navigation changed ", userInfo?.userData )
-            }
-          
-         }, [isFocused]);
-      // Get user details from local storage after every request/operation into the database
-      const FetchLocalStorage = async()=>{
-        setLoading3(true)
-        try {
-          let userInfoDetails = await AsyncStorage.getItem('userInfo');
-                userInfoDetails = JSON.parse(userInfoDetails)
-            if(userInfoDetails){
-              setUserInfo(userInfoDetails);
-             //console.log('User Details fetch local storage ', userInfoDetails)
-            }
-           
-        } catch (error) {
-          console.log(`Fetch local storage error ${error}`);
-          
-        }
-        finally{
-          setLoading3(false);
-        }
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [senderName, setSenderName] = useState('');
+  const [senderBank, setSenderBank] = useState('');
+  const [note, setNote] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [nameFocused, setNameFocused] = useState(false);
+  const [bankFocused, setBankFocused] = useState(false);
+  const [noteFocused, setNoteFocused] = useState(false);
+
+  // ── Pick from gallery ─────────────────────────
+  const pickFromGallery = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow access to your photo library.', [{ text: 'OK' }]);
+        return;
       }
-
-      // delete method here
-      const deleteImageId = async(data) =>{
-        const sendData = {
-          'userId': myId,
-          'delete_url': data
-        }
-          try {
-              const res = await client.post('/api/deleteUploaded_image', sendData,{
-                headers: {
-                  'Authorization': 'Bearer '+userToken,
-              }
-          })
-          if(res.data.msg == '201'){
-             let userInfo = await AsyncStorage.getItem('userInfo');
-             userInfo = JSON.parse(userInfo)
-            setUserInfo(userInfo)
-           }
-          else if(res.data.status == '401'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Failed',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return
-          }
-          else if(res.data.status == '402'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: 'You need to login and try again.',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return
-          }
-          else if(res.data.status == '500'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return
-          }
-        } catch (error) {
-          console.log(error.message)
-        }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.9,
+      });
+      if (!result.canceled && result.assets?.length > 0) {
+        setSelectedImage(result.assets[0]);
       }
+    } catch (error) {
+      console.log('Gallery error:', error.message);
+    }
+  };
 
-      // function to upload file to cloudinary here
-      const uploadPaymentProofDocument = async() => {
-        if(!image) {
-          Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title:'Error',
-            textBody: 'Please select a photo',
-            titleStyle: noticeData[0].errorTitleStyle,
-            textBodyStyle: noticeData[0].errorMessageStyle,
-          })
-          return
-        }
-        setLoading(true)
-       let newfile = {
-          uri: image,
-          type:`payment_proof/${image.split(".")[1]}`,
-          name:`payment_proof.${image.split(".")[1]}`,
-        }
-        const data = new FormData()
-        data.append('file', newfile)
-        data.append('upload_preset', CLOUDINARY_PRESET_NAME)
-        data.append('upload_name', CLOUDINARY_ACCOUNT_NAME)
-          try {
-            const response = await fetch("https://api.cloudinary.com/v1_1/ddm1owlon/image/upload", {
-                method: 'POST',
-                body: data
-              });
-
-              const result = await response.json(); // Parse JSON
-              const secureUrl = result.secure_url;
-              setImageValue(result.public_id);
-            
-                if (secureUrl) {
-                  uploadDocumentUrl(secureUrl);
-                  setLoading(false);
-                }
-              } catch (error) {
-                deleteImageId(imageValue)
-                console.log(error.message)
-                setLoading(false)
-              }
-            }
-
-      //function to save uploaded file details to database
-      const uploadDocumentUrl = async(data) => {
-        setLoading2(true)
-        const sendData = {
-          'userId': myId,
-          'image_url': data,
-          'trackId': trackPayId,
-          'fileType': fileUploadType,
-          'public_id': imageValue
-        }
-          try {
-              const res = await client.post('/api/user_uploadPaymentProof', sendData,{
-                headers: {
-                  'Authorization': 'Bearer '+userToken,
-                    }
-             })
-          if(res.data.msg == '201'){
-            Toast.show({
-              type: ALERT_TYPE.SUCCESS,
-              title:'Success',
-              textBody: 'Proof of payment uploaded successfully',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-             setImage(null)
-             setFileUploadType('')
-             navigation.navigate('Home')
-             
-             }
-          else if(res.data.status == '401'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Failed',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return deleteImageId(imageValue)
-            
-          }
-          else if(res.data.status == '400'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: 'File too large',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return deleteImageId(imageValue)
-          }
-          else if(res.data.status == '404'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Failed',
-              textBody: 'You need to have an account',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return deleteImageId(imageValue)
-           }
-          else if(res.data.status == '402'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: 'You need to login and try again.',
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            deleteImageId(imageValue)
-            return
-          }
-          else if(res.data.status == '500'){
-            Toast.show({
-              type: ALERT_TYPE.DANGER,
-              title:'Error',
-              textBody: res.data.message,
-              titleStyle: noticeData[0].errorTitleStyle,
-              textBodyStyle: noticeData[0].errorMessageStyle,
-            })
-            return deleteImageId(imageValue)
-          }
-          
-         } catch (error) {
-          deleteImageId(imageValue)
-          console.log(error.message)
-        }
-        finally{
-          setLoading2(false)
-        }
-          
+  // ── Take photo ────────────────────────────────
+  const takePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow camera access.', [{ text: 'OK' }]);
+        return;
       }
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: false,
+        quality: 0.9,
+      });
+      if (!result.canceled && result.assets?.length > 0) {
+        setSelectedImage(result.assets[0]);
+      }
+    } catch (error) {
+      console.log('Camera error:', error.message);
+    }
+  };
 
-      
-      useEffect(() =>{
-        if(isFocused){
-          FetchLocalStorage()
-          //console.log(userInfo.userData.reg_stage2)
-          }
-          FetchLocalStorage()
-          
-        }, [isFocused])
+  // ── Upload proof ──────────────────────────────
+  const handleUpload = async () => {
+    Keyboard.dismiss();
+    if (!selectedImage) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'No Proof Selected', textBody: 'Please upload a screenshot or photo of your payment receipt.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      return;
+    }
+    if (!senderName.trim()) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Sender Name Required', textBody: 'Please enter the name on the sending account.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      return;
+    }
+    if (!senderBank.trim()) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Bank Name Required', textBody: 'Please enter the name of the bank you sent from.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      const filename = selectedImage.uri.split('/').pop();
+      const ext = filename.split('.').pop()?.toLowerCase();
+      formData.append('payment_proof', {
+        uri: selectedImage.uri,
+        name: filename,
+        type: ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png',
+      });
+      formData.append('track_id', trackId);
+      formData.append('sender_name', senderName.trim());
+      formData.append('sender_bank', senderBank.trim());
+      formData.append('note', note.trim());
+      formData.append('userId', userInfo?.userData?._id);
 
+      const res = await client.post(
+        '/api/uploadPaymentProof_mobile',
+        formData,
+        {
+          headers: {
+            'Authorization': 'Bearer ' + userToken,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
 
-        // function to pick files
-        const pickPaymentProof = async () => {
-           try {
-              const result = await DocumentPicker.getDocumentAsync({
-                type: ["image/*", "application/pdf"], 
-                copyToCacheDirectory: true,
-              });
-          
-              if (result.type === 'cancel') return;
-          
-              const file = result.assets[0]; // get the first selected file
-              const { name, uri, mimeType } = file;
+      if (res.data.msg === '200') {
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Proof Submitted!',
+          textBody: 'Your payment proof has been submitted. We will verify and credit your wallet within 30 minutes to 24 hours.',
+          button: 'Done',
+          titleStyle: noticeData[0].errorTitleStyle,
+          textBodyStyle: noticeData[0].errorMessageStyle,
+          onHide: () => navigation.replace('Home'),
+        });
+      } else {
+        Toast.show({ type: ALERT_TYPE.DANGER, title: 'Upload Failed', textBody: res.data.message || 'Could not upload proof. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      }
+    } catch (error) {
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Something went wrong. Please check your connection.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
-              // fallback if name or mimeType missing
-              const fileName = name || uri.split('/').pop();
-              const fileMime = mimeType || getMimeTypeFromFileName(fileName);
-
-              const fileType = isImageOrPdf(fileMime);
-          
-              if (fileType === 'unknown') {
-                const message = 'Unsupported file type. Please select an image or PDF.';
-                Platform.OS === 'android'
-                  ? ToastAndroid.show(message, ToastAndroid.SHORT)
-                  : alert(message);
-                return;
-              }
-          
-              // Save selected file
-              setFileUploadType(fileType);
-              setSelectedFile(uri, name);
-              setImage(uri);
-          
-            } catch (error) {
-              console.log('Error picking document:', error);
-            }
-              };
-
-          // Helper for mime type fallback
-          const getMimeTypeFromFileName = (filename) => {
-            if (!filename) return 'unknown';
-            const ext = filename.split('.').pop().toLowerCase();
-            if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff'].includes(ext))
-              return `image/${ext === 'jpg' ? 'jpeg' : ext}`;
-            if (ext === 'pdf') return 'application/pdf';
-            return 'unknown';
-          };
-
-        // function to check file mime type
-          const isImageOrPdf = (mimeType) => 
-          {
-            const imageMimeTypes = [
-              'image/jpeg',
-              'image/png',
-              'image/gif',
-              'image/bmp',
-              'image/webp',
-              'image/tiff',
-            ];
-            if (imageMimeTypes.includes(mimeType)) return 'image';
-            if (mimeType === 'application/pdf') return 'pdf';
-            return 'unknown';
-          };
-        
   return (
-    <View style={{flex:1, backgroundColor:colors.bgColor}}>
-        <SafeAreaView style={{flex:1}}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.bgColor}
+      />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled">
 
-            <StatusBar style='dark' />
+            {/* ── Header ──────────────────────── */}
+            <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
+              <TouchableOpacity
+                style={[styles.backBtn, { backgroundColor: colors.bgLight }]}
+                onPress={() => navigation.goBack()}>
+                <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
+              </TouchableOpacity>
+              <Text style={[styles.headerTitle, { color: colors.textBlack }]}>
+                Payment Proof
+              </Text>
+              <View style={styles.backBtn} />
+            </View>
 
-                <View style={gs.homeHeaderRow}>
-                    <View style={{justifyContent:'space-between', flexDirection:'row'}}>
-                        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
-                          <View style={[gs.homeSideMenu, {borderWidth: 0}]}>
-                          <Ionicons name='close-outline' size={23} color={colors.blackColor1}/>
-                          </View>
-                           
-                        </TouchableOpacity>
-                        <Text></Text>
-                        
+            {/* ── Hero Banner ──────────────────── */}
+            <LinearGradient
+              colors={[colors.primaryColor1, colors.primaryColor1b]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.heroBanner}>
+              <View style={styles.heroCircle1} />
+              <View style={styles.heroCircle2} />
+              <View style={[styles.heroIconBox, { backgroundColor: 'rgba(255,255,255,0.95)' }]}>
+                <Ionicons name="receipt-outline" size={28} color={colors.primaryColor1} />
+              </View>
+              <View style={styles.heroText}>
+                <Text style={styles.heroTitle}>Upload Payment Proof</Text>
+                <Text style={styles.heroDesc}>
+                  Upload your bank receipt or transfer screenshot to confirm your payment and get your wallet credited.
+                </Text>
+              </View>
+            </LinearGradient>
 
-                        {/* <Text style={styles.settingTitle}>Settings</Text> */}
-                        
-                        {/* <TouchableOpacity style={gs.homeSideMenu}>
-                            <Feather name='bell' size={20} color={colors.textColor}/>
-                            
-                        </TouchableOpacity> */}
-                    </View>
-                    <View style={{marginBottom:30}}></View>
-                    
-                 </View>
-                        {/* show loader when processing request */}
-                        {loading && <LoaderIndicator 
-                        loader={loading}
-                        textInfo={'  Processing...'}
-                        />}
-                        {loading2 && <LoaderIndicator 
-                        loader={loading2}
-                        textInfo={'  Uploading...'}
-                        />}
-                 <View style={{flex:1, backgroundColor:colors.bgColor}}>
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        <View style={{marginHorizontal:10, marginTop:10}}>
-                            <Text style={{fontFamily:'_bold', fontSize:20, color:colors.textBlack}}>Upload Payment Proof</Text>
-                        </View>
-
-                        <View style={{marginHorizontal:20, marginTop:10}}>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>It's highly recommended to upload proof of payment when you choose manual payment method to fast track your transaction approval.</Text>
-                         </View>
-
-                        <Animatable.View 
-                           animation={'fadeIn'}
-                           delay={400}
-                           useNativeDriver={true}  
-                        style={styles.formPage}>
-                            
-                        
-                        <TouchableOpacity style={{ justifyContent:'center', alignItems:'center',
-                            marginBottom:25,
-                            borderColor: 'lightgrey',
-                            paddingLeft: 10,
-                            }}
-                            onPress={pickPaymentProof}
-                            >
-                        {!image && <Ionicons name='document-outline' size={80} color='#666' style={{marginRight:5, marginTop:15, opacity:0.4}} />}
-                        {fileUploadType =='image' && <Image source={{ uri: image }} style={{ width: 200, height: 150, borderRadius:5, marginTop:20 }} />}
-                        
-                        {fileUploadType == 'pdf' && <Ionicons name='attach' size={80} color='#666' style={{marginRight:5, marginTop:15, opacity:0.4}} />}
-
-                        {!image && <Text style={{fontFamily:'_semiBold', fontSize:12, color:colors.textSecColor}}>Tap to pick a file</Text> }
-                        {fileUploadType =='pdf' && <Text style={{fontFamily:'_semiBold', fontSize:18, color:colors.textSecColor}}>File Attached</Text>}
-                        </TouchableOpacity>
-                        {fileUploadType =='pdf' &&<Text style={{fontFamily:'_semiBold', alignSelf:'center', fontSize:12, color:colors.textSecColor, marginBottom:10}}>You can upload now</Text>}
-                        </Animatable.View>
-
-                        
-                        <View style={{marginHorizontal:20, marginTop:30, borderBottomWidth:1, borderColor: '#dededc', marginBottom:5}}>
-                        </View>
-
-                        <View style={{marginHorizontal:20, marginTop:10, borderColor: '#dededc', marginBottom:5}}>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.redColor, marginBottom:10}}>{'*'} Video file not supported</Text>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>{'*'} PNG, JPG and PDF format only</Text>
-                            <Text style={{fontFamily:'_regular', fontSize:14, color:colors.textSecColor}}>{'*'} 5MB maximum {fileUploadType}</Text>
-                        
-                        </View>
-
-                            {/* custom button here */}
-                          <Animatable.View
-                            animation={'zoomIn'}
-                            delay={1200}
-                            useNativeDriver={true}>
-                                <CustomButton 
-                                  buttonStyle={{borderRadius:10, marginHorizontal:10, backgroundColor:colors.primaryColor1, marginTop:60}}
-                                  viewStyle={{padding:10, alignItems:'center'}}
-                                  textStyle={{fontFamily:'_semiBold', fontSize:17, marginLeft:15, color:colors.textColor}}
-                                  textLabel={'Upload'}
-                                  buttonAction={() => uploadPaymentProofDocument()}
-                              />
-                            
-                              <View style={{justifyContent:'center', alignItems:'center', margin:20}}>
-                                  <TouchableOpacity style={{marginTop:5}} onPress={() => navigation.navigate('Home')}>
-                                  <Text style={[gs.loginPageDesc,{color:colors.textBlack}]}>Maybe Later</Text>
-                                  </TouchableOpacity>
-                              </View>
-                          </Animatable.View>
-                            
-                    </ScrollView>
+            {/* ── Track ID Card ─────────────────── */}
+            {trackId && (
+              <View style={[styles.trackCard, {
+                backgroundColor: colors.bgCard,
+                borderColor: colors.dividerColor,
+              }]}>
+                <View style={[styles.trackIconBox, { backgroundColor: colors.bgLight }]}>
+                  <Ionicons name="pricetag-outline" size={18} color={colors.primaryColor1} />
                 </View>
-            
-        </SafeAreaView>
-    </View>
+                <View style={styles.trackInfo}>
+                  <Text style={[styles.trackLabel, { color: colors.textSecColor }]}>
+                    Transaction Reference
+                  </Text>
+                  <Text style={[styles.trackValue, { color: colors.primaryColor1 }]}>
+                    {trackId}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* ── Upload Section ────────────────── */}
+            <View style={[styles.sectionCard, { backgroundColor: colors.bgCard }]}>
+              <Text style={[styles.sectionTitle, { color: colors.textBlack }]}>
+                Payment Receipt
+              </Text>
+              <Text style={[styles.sectionDesc, { color: colors.textSecColor }]}>
+                Upload a clear screenshot or photo of your bank transfer receipt
+              </Text>
+
+              {selectedImage ? (
+                <View style={[styles.previewCard, {
+                  backgroundColor: colors.bgLight,
+                  borderColor: colors.successColor,
+                }]}>
+                  <Image
+                    source={{ uri: selectedImage.uri }}
+                    style={styles.previewImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.previewOverlay}>
+                    <View style={[styles.previewBadge, { backgroundColor: colors.successColor }]}>
+                      <Ionicons name="checkmark-circle" size={16} color="#fff" />
+                      <Text style={styles.previewBadgeText}>Receipt Selected</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={[styles.previewChangeBtn, { backgroundColor: colors.bgCard }]}
+                      onPress={() => setSelectedImage(null)}>
+                      <Ionicons name="refresh-outline" size={16} color={colors.primaryColor1} />
+                      <Text style={[styles.previewChangeBtnText, { color: colors.primaryColor1 }]}>
+                        Change
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.uploadRow}>
+                  <TouchableOpacity
+                    style={[styles.uploadBtn, {
+                      backgroundColor: colors.bgLight,
+                      borderColor: colors.dividerColor,
+                    }]}
+                    onPress={pickFromGallery}
+                    activeOpacity={0.85}>
+                    <Ionicons name="images-outline" size={26} color={colors.primaryColor1} />
+                    <Text style={[styles.uploadBtnTitle, { color: colors.textBlack }]}>Gallery</Text>
+                    <Text style={[styles.uploadBtnSub, { color: colors.textSecColor }]}>
+                      Pick screenshot
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.uploadBtn, {
+                      backgroundColor: colors.bgLight,
+                      borderColor: colors.dividerColor,
+                    }]}
+                    onPress={takePhoto}
+                    activeOpacity={0.85}>
+                    <Ionicons name="camera-outline" size={26} color={colors.successColor} />
+                    <Text style={[styles.uploadBtnTitle, { color: colors.textBlack }]}>Camera</Text>
+                    <Text style={[styles.uploadBtnSub, { color: colors.textSecColor }]}>
+                      Take photo
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
+            {/* ── Payment Details Form ──────────── */}
+            <View style={[styles.sectionCard, { backgroundColor: colors.bgCard }]}>
+              <Text style={[styles.sectionTitle, { color: colors.textBlack }]}>
+                Payment Details
+              </Text>
+              <Text style={[styles.sectionDesc, { color: colors.textSecColor }]}>
+                Provide details of the account you sent the payment from
+              </Text>
+
+              {/* Sender Name */}
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>
+                  Sender Account Name
+                </Text>
+                <View style={[
+                  styles.inputContainer,
+                  {
+                    borderColor: nameFocused ? colors.primaryColor1 : colors.dividerColor,
+                    backgroundColor: nameFocused ? colors.primaryColor1 + '10' : colors.bgLight,
+                  },
+                ]}>
+                  <Ionicons
+                    name="person-outline"
+                    size={20}
+                    color={nameFocused ? colors.primaryColor1 : colors.textSecColor}
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={[styles.inputField, { color: colors.textBlack }]}
+                    placeholder="Enter name on sending account"
+                    placeholderTextColor={colors.textSecColor2}
+                    value={senderName}
+                    onChangeText={setSenderName}
+                    autoCapitalize="words"
+                    onFocus={() => setNameFocused(true)}
+                    onBlur={() => setNameFocused(false)}
+                  />
+                </View>
+                <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
+                  Must match the name on your bank account
+                </Text>
+              </View>
+
+              {/* Sender Bank */}
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>
+                  Sending Bank Name
+                </Text>
+                <View style={[
+                  styles.inputContainer,
+                  {
+                    borderColor: bankFocused ? colors.primaryColor1 : colors.dividerColor,
+                    backgroundColor: bankFocused ? colors.primaryColor1 + '10' : colors.bgLight,
+                  },
+                ]}>
+                  <Ionicons
+                    name="business-outline"
+                    size={20}
+                    color={bankFocused ? colors.primaryColor1 : colors.textSecColor}
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={[styles.inputField, { color: colors.textBlack }]}
+                    placeholder="e.g. GTBank, First Bank, Opay..."
+                    placeholderTextColor={colors.textSecColor2}
+                    value={senderBank}
+                    onChangeText={setSenderBank}
+                    autoCapitalize="words"
+                    onFocus={() => setBankFocused(true)}
+                    onBlur={() => setBankFocused(false)}
+                  />
+                </View>
+              </View>
+
+              {/* Note */}
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>
+                  Additional Note <Text style={{ color: colors.textSecColor }}>(Optional)</Text>
+                </Text>
+                <View style={[
+                  styles.noteContainer,
+                  {
+                    borderColor: noteFocused ? colors.primaryColor1 : colors.dividerColor,
+                    backgroundColor: noteFocused ? colors.primaryColor1 + '10' : colors.bgLight,
+                  },
+                ]}>
+                  <TextInput
+                    style={[styles.noteField, { color: colors.textBlack }]}
+                    placeholder="Any additional information about your payment..."
+                    placeholderTextColor={colors.textSecColor2}
+                    value={note}
+                    onChangeText={setNote}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                    maxLength={300}
+                    onFocus={() => setNoteFocused(true)}
+                    onBlur={() => setNoteFocused(false)}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* ── Notice Card ───────────────────── */}
+            <View style={[styles.noticeCard, {
+              backgroundColor: colors.bgLight,
+              borderColor: colors.dividerColor,
+            }]}>
+              <Ionicons name="information-circle-outline" size={18} color={colors.primaryColor1} />
+              <Text style={[styles.noticeText, { color: colors.textSecColor }]}>
+                Your wallet will be credited within 30 minutes to 24 hours after verification. Keep your transaction reference number for follow-up.
+              </Text>
+            </View>
+
+            {/* ── Submit Button ─────────────────── */}
+            <TouchableOpacity
+              style={[
+                styles.submitBtn,
+                { backgroundColor: colors.primaryColor1 },
+                (!selectedImage || !senderName || !senderBank || isUploading) && { opacity: 0.6 },
+              ]}
+              onPress={handleUpload}
+              disabled={!selectedImage || !senderName || !senderBank || isUploading}
+              activeOpacity={0.85}>
+              {isUploading ? (
+                <ActivityIndicator color="#fff" size={22} />
+              ) : (
+                <>
+                  <Ionicons name="cloud-upload-outline" size={22} color="#fff" />
+                  <Text style={styles.submitBtnText}>Submit Payment Proof</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <View style={{ height: spacing.xxxl }} />
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    formPage:{
-      borderRadius:10, 
-      marginHorizontal:10, 
-      backgroundColor:colors.textColor, 
-      marginTop:20,
-      shadowColor: '#000',
-      shadowOffset: { 
-      width: 0, 
-      height: 0.9 
-      },
-      shadowOpacity: 0.5,
-      shadowRadius: 0.6,
-      elevation: 1, 
-      },
-    settingTitle:{
-        color:colors.textColor,
-        fontSize:20,
-        marginLeft: -20,
-        fontFamily: '_semiBold',
-      },
-      accountVerify:{
-        position: "absolute", 
-        top: 30, 
-        right: +20, 
-        marginRight: 10, 
-        color:colors.greenColor,
-    },
-    dropdown: {
-      height: 50,
-      borderColor: 'gray',
-      //borderWidth: 0.5,
-      borderRadius: 8,
-      paddingHorizontal: 8,
-    },
-    icon: {
-      marginRight: 5,
-    },
-    label: {
-      position: 'absolute',
-      backgroundColor: 'white',
-      left: 22,
-      top: 8,
-      zIndex: 999,
-      paddingHorizontal: 8,
-      fontSize: 14,
-    },
-    placeholderStyle: {
-      fontSize: 16,
-      color:colors.textSecColor
-    },
-    selectedTextStyle: {
-      fontSize: 16,
-    },
-    iconStyle: {
-      width: 20,
-      height: 20,
-    },
-    inputSearchStyle: {
-      height: 40,
-      fontSize: 16,
-    },
-
-    image: {
-        marginTop: 20,
-        width: '100%',
-        height: 300,
-      },
-      pdfContainer: {
-        marginTop: 20,
-        padding: 10,
-        backgroundColor: '#f2f2f2',
-        borderRadius: 5,
-      },
-      pdfText: {
-        fontSize: 16,
-      },
+  container: { flex: 1 },
+  scrollContent: { paddingBottom: spacing.xxxl },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  headerTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+  },
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroBanner: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    ...shadows.lg,
+  },
+  heroCircle1: {
+    position: 'absolute',
+    right: -30,
+    top: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  heroCircle2: {
+    position: 'absolute',
+    left: -20,
+    bottom: -20,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  heroIconBox: {
+    width: 54,
+    height: 54,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.sm,
+  },
+  heroText: { flex: 1 },
+  heroTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+    color: '#fff',
+    marginBottom: 4,
+  },
+  heroDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 22,
+  },
+  trackCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    gap: spacing.md,
+    ...shadows.card,
+  },
+  trackIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  trackInfo: { flex: 1 },
+  trackLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: 2,
+  },
+  trackValue: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    lineHeight: 22,
+    letterSpacing: 0.5,
+  },
+  sectionCard: {
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+  sectionTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    marginBottom: 4,
+  },
+  sectionDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+  },
+  uploadRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  uploadBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    borderWidth: 1.5,
+    gap: spacing.xs,
+  },
+  uploadBtnTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  uploadBtnSub: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  previewCard: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+  },
+  previewImage: {
+    width: '100%',
+    height: 200,
+  },
+  previewOverlay: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  previewBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    gap: 4,
+  },
+  previewBadgeText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    color: '#fff',
+    lineHeight: 22,
+  },
+  previewChangeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    gap: 4,
+    ...shadows.sm,
+  },
+  previewChangeBtnText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
+  inputGroup: { marginBottom: spacing.lg },
+  inputLabel: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    marginBottom: spacing.sm,
+    lineHeight: 22,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    height: 56,
+  },
+  inputIcon: { marginRight: spacing.sm },
+  inputField: {
+    flex: 1,
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    paddingVertical: 0,
+  },
+  inputHint: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginTop: spacing.xs,
+  },
+  noteContainer: {
+    borderWidth: 1.5,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    minHeight: 90,
+  },
+  noteField: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    textAlignVertical: 'top',
+  },
+  noticeCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    gap: spacing.sm,
+  },
+  noticeText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    flex: 1,
+  },
+  submitBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 56,
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.xl,
+    gap: spacing.sm,
+    ...shadows.md,
+  },
+  submitBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    color: '#fff',
+  },
 });
 
 export default UploadPaymentProof;
