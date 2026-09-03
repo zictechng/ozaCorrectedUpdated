@@ -98,7 +98,6 @@ const BuyScreen = ({ navigation }) => {
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [amount, setAmount] = useState('');
   const [accountDetail, setAccountDetail] = useState('');
-  const [rates, setRates] = useState([]);
   const [selectedRate, setSelectedRate] = useState(null);
   const [isLoadingRates, setIsLoadingRates] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -113,18 +112,28 @@ const BuyScreen = ({ navigation }) => {
     fetchRates(selectedAsset.id);
   }, [selectedAsset]);
 
-  const fetchRates = async (assetId) => {
+    const fetchRates = async (assetId) => {
     setIsLoadingRates(true);
-    setRates([]);
     setSelectedRate(null);
     try {
-      const res = await client.get(`/api/fetchRate/${assetId}`, {
+      const res = await client.get('/api/fetchRate', {
         headers: { 'Authorization': 'Bearer ' + userToken },
       });
       if (res.data.msg === '200') {
-        setRates(res.data.rateData || []);
-        if (res.data.rateData?.length > 0) {
-          setSelectedRate(res.data.rateData[0]);
+        const rateData = res.data.infoData;
+        // Map asset id to the correct selling rate field
+        let rate = null;
+        if (assetId === 'paypal') {
+          rate = rateData?.paypal_selling;
+        } else if (assetId === 'payoneer') {
+          rate = rateData?.payoneer_selling;
+        } else if (assetId === 'bitcoin') {
+          rate = rateData?.btc_selling;
+        }
+        if (rate) {
+          setSelectedRate({ rate, _id: assetId });
+        } else {
+          setSelectedRate(null);
         }
       }
     } catch (error) {
@@ -166,22 +175,46 @@ const BuyScreen = ({ navigation }) => {
   };
 
   // ── Proceed to checkout ───────────────────────
-  const handleProceed = async () => {
+    const handleProceed = async () => {
     Keyboard.dismiss();
     if (!validate()) return;
     setIsProcessing(true);
     try {
-      navigation.navigate('PaypalPayment', {
-        asset: selectedAsset.id,
-        assetLabel: selectedAsset.label,
-        ngnAmount: amount,
-        usdAmount: usdEquivalent(),
-        rate: selectedRate.rate,
-        rateId: selectedRate._id,
+      const manualData = {
+        tag_id: userInfo?.userData?.tag_id,
+        myId: userInfo?.userData?._id,
+        buy_amt: amount,
+        serviceName: selectedAsset.label,
+        serviceCategory: 'Exchange',
+        method: 'Manual Checkout',
+        total_money: (Number(amount) / Number(selectedRate.rate)).toFixed(2),
+        serviceType: selectedAsset.id,
         accountDetail: accountDetail.trim(),
         currency: selectedAsset.currency,
-        userId: userInfo?.userData?._id,
-      });
+      };
+
+      const res = await client.post(
+        '/api/fundBuy_funding',
+        manualData,
+        { headers: { 'Authorization': 'Bearer ' + userToken } }
+      );
+
+      if (res.data.msg === '200') {
+        navigation.navigate('CheckManual', {
+          asset: selectedAsset.id,
+          assetLabel: selectedAsset.label,
+          amount: usdEquivalent(),
+          rate: selectedRate.rate,
+          ngnAmount: amount,
+          rateId: selectedRate._id,
+          currency: selectedAsset.currency,
+          userId: userInfo?.userData?._id,
+        });
+        setAmount('');
+        setAccountDetail('');
+      } else {
+        Toast.show({ type: ALERT_TYPE.DANGER, title: 'Failed', textBody: res.data.message || 'Something went wrong. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      }
     } catch (error) {
       Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Something went wrong. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
     } finally {
@@ -350,9 +383,7 @@ const BuyScreen = ({ navigation }) => {
                       borderColor: amountFocused
                         ? selectedAsset.color
                         : colors.dividerColor,
-                      backgroundColor: amountFocused
-                        ? selectedAsset.bgColor
-                        : colors.bgLight,
+                        backgroundColor: colors.bgLight,
                     },
                   ]}>
                     <Ionicons

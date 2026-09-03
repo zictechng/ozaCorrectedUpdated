@@ -358,7 +358,7 @@ const FundAccountScreen = ({ navigation }) => {
         closeOnPressMask
         openDuration={400}
         closeDuration={300}
-        height={300}
+        height={380}
         closeOnPressBack
         customStyles={{
           container: {

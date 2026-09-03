@@ -102,11 +102,10 @@ const SellingScreen = ({ navigation }) => {
   const { colors, isDark } = useThemeStyles();
   const { userToken, userInfo } = useContext(AuthContext);
 
-  const refRateSheet = useRef();
+  const refRateSheet = useRef(null);
 
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [amount, setAmount] = useState('');
-  const [rates, setRates] = useState([]);
   const [selectedRate, setSelectedRate] = useState(null);
   const [isLoadingRates, setIsLoadingRates] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -120,18 +119,28 @@ const SellingScreen = ({ navigation }) => {
     fetchRates(selectedAsset.id);
   }, [selectedAsset]);
 
-  const fetchRates = async (assetId) => {
+    const fetchRates = async (assetId) => {
     setIsLoadingRates(true);
-    setRates([]);
     setSelectedRate(null);
     try {
-      const res = await client.get(`/api/fetchRate/${assetId}`, {
+      const res = await client.get('/api/fetchRate', {
         headers: { 'Authorization': 'Bearer ' + userToken },
       });
       if (res.data.msg === '200') {
-        setRates(res.data.rateData || []);
-        if (res.data.rateData?.length > 0) {
-          setSelectedRate(res.data.rateData[0]);
+        const rateData = res.data.infoData;
+        // Map asset id to the correct rate field
+        let rate = null;
+        if (assetId === 'paypal') {
+          rate = rateData?.paypal_buying;
+        } else if (assetId === 'payoneer') {
+          rate = rateData?.payoneer_buying;
+        } else if (assetId === 'bitcoin') {
+          rate = rateData?.btc_buying;
+        }
+        if (rate) {
+          setSelectedRate({ rate, _id: assetId });
+        } else {
+          setSelectedRate(null);
         }
       }
     } catch (error) {
@@ -212,11 +221,7 @@ const SellingScreen = ({ navigation }) => {
               <Text style={[styles.headerTitle, { color: colors.textBlack }]}>
                 Sell Assets
               </Text>
-              <TouchableOpacity
-                style={[styles.rateBtn, { backgroundColor: colors.bgLight }]}
-                onPress={() => refRateSheet.current.open()}>
-                <Ionicons name="trending-up-outline" size={18} color={colors.primaryColor1} />
-              </TouchableOpacity>
+                <View style={styles.rateBtn} />
             </View>
 
             {/* ── Hero Banner ──────────────────── */}
@@ -349,9 +354,7 @@ const SellingScreen = ({ navigation }) => {
                     borderColor: amountFocused
                       ? selectedAsset.color
                       : colors.dividerColor,
-                    backgroundColor: amountFocused
-                      ? selectedAsset.bgColor
-                      : colors.bgLight,
+                    backgroundColor: colors.bgLight,
                   },
                 ]}>
                   <Image
@@ -368,6 +371,8 @@ const SellingScreen = ({ navigation }) => {
                     onChangeText={(v) => setAmount(v.replace(/[^0-9.]/g, ''))}
                     onFocus={() => setAmountFocused(true)}
                     onBlur={() => setAmountFocused(false)}
+                    selectionColor={colors.primaryColor1}
+                    underlineColorAndroid="transparent"
                   />
                   {amount.length > 0 && (
                     <TouchableOpacity onPress={() => setAmount('')}>
@@ -719,6 +724,7 @@ const styles = StyleSheet.create({
     fontFamily: '_semiBold',
     fontSize: typography.lg,
     paddingVertical: 0,
+    includeFontPadding: false,
   },
   inputHint: {
     fontFamily: '_regular',

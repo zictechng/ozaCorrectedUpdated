@@ -28,6 +28,9 @@ const SendFundScreen = ({ navigation }) => {
   const [tagFocused, setTagFocused] = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);
   const [noteFocused, setNoteFocused] = useState(false);
+  const [pin, setPin] = useState('');
+  const [pinFocused, setPinFocused] = useState(false);
+  const [pinSecure, setPinSecure] = useState(true);
 
   const walletBalance = Number(userInfo?.userData?.tran_account || 0);
 
@@ -42,14 +45,20 @@ const SendFundScreen = ({ navigation }) => {
     setRecipientData(null);
     try {
       const res = await client.post(
-        '/api/searchUser_tagId',
-        { tag_id: tagId.trim() },
+        '/api/fetch_AccountDetailsMobile',
+        { data: tagId.trim() },
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (res.data.msg === '200') {
-        setRecipientData(res.data.userData);
+        const userData = res.data.userData;
+        if (typeof userData === 'string') {
+          setRecipientData({ display_name: userData, tag_id: tagId.trim() });
+        } else {
+          setRecipientData(userData);
+        }
       } else if (res.data.status === '404') {
-        Toast.show({ type: ALERT_TYPE.DANGER, title: 'User Not Found', textBody: 'No user found with that Tag ID. Please check and try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+        setRecipientData(null);
+        Toast.show({ type: ALERT_TYPE.WARNING, title: 'User Not Found', textBody: 'No user found with that Tag ID. Please check and try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       } else {
         Toast.show({ type: ALERT_TYPE.DANGER, title: 'Search Failed', textBody: 'Could not find user. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       }
@@ -70,8 +79,12 @@ const SendFundScreen = ({ navigation }) => {
       Toast.show({ type: ALERT_TYPE.WARNING, title: 'Invalid Amount', textBody: 'Please enter a valid amount to send.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       return false;
     }
-    if (Number(amount) > walletBalance) {
+        if (Number(amount) > walletBalance) {
       Toast.show({ type: ALERT_TYPE.DANGER, title: 'Insufficient Balance', textBody: `Your wallet balance is ₦${walletBalance.toLocaleString()}. You cannot send more than your balance.`, titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      return false;
+    }
+    if (!pin || pin.length < 4) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'PIN Required', textBody: 'Please enter your 4-digit transaction PIN to authorise this transfer.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       return false;
     }
     return true;
@@ -84,13 +97,14 @@ const SendFundScreen = ({ navigation }) => {
     setIsSending(true);
     try {
       const res = await client.post(
-        '/api/sendFund_userMobile',
+        '/api/userSending_funding',
         {
-          sender_id: userInfo?.userData?._id,
-          receiver_tag: tagId.trim(),
-          amount,
+          tagId: tagId.trim(),
+          amt: amount,
           note,
           userId: userInfo?.userData?._id,
+          account_source: '1',
+          acctPin: pin,
         },
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
@@ -243,7 +257,7 @@ const SendFundScreen = ({ navigation }) => {
               {/* Recipient Card */}
               {recipientData && (
                 <View style={[styles.recipientCard, {
-                  backgroundColor: colors.bgLight,
+                  backgroundColor: colors.bgCard,
                   borderColor: colors.successColor,
                 }]}>
                   <View style={[styles.recipientAvatar, { backgroundColor: colors.primaryColor1 }]}>
@@ -336,15 +350,62 @@ const SendFundScreen = ({ navigation }) => {
                 </View>
               </View>
 
+                            {/* PIN Input */}
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>
+                  Transaction PIN
+                </Text>
+                <View style={[
+                  styles.inputContainer,
+                  {
+                    borderColor: pinFocused ? colors.primaryColor1 : colors.dividerColor,
+                    backgroundColor: pinFocused ? colors.primaryColor1 + '10' : colors.bgLight,
+                  },
+                ]}>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={20}
+                    color={pinFocused ? colors.primaryColor1 : colors.textSecColor}
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={[styles.inputField, { color: colors.textBlack }]}
+                    placeholder="Enter your 4-digit PIN"
+                    placeholderTextColor={colors.textSecColor2}
+                    keyboardType="numeric"
+                    secureTextEntry={pinSecure}
+                    maxLength={4}
+                    value={pin}
+                    onChangeText={setPin}
+                    onFocus={() => setPinFocused(true)}
+                    onBlur={() => setPinFocused(false)}
+                    selectionColor={colors.primaryColor1}
+                    underlineColorAndroid="transparent"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setPinSecure(!pinSecure)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Ionicons
+                      name={pinSecure ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color={colors.textSecColor}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
+                  Enter your 4-digit transaction PIN to authorise this transfer
+                </Text>
+              </View>
+
               {/* Send Button */}
               <TouchableOpacity
                 style={[
                   styles.sendBtn,
                   { backgroundColor: colors.primaryColor1 },
-                  (!recipientData || !amount || isSending) && { opacity: 0.6 },
+                  (!recipientData || !amount || !pin || isSending) && { opacity: 0.6 },
                 ]}
                 onPress={handleSend}
-                disabled={!recipientData || !amount || isSending}
+                disabled={!recipientData || !amount || !pin || isSending}
                 activeOpacity={0.85}>
                 {isSending ? (
                   <ActivityIndicator color="#fff" size={22} />

@@ -58,16 +58,28 @@ const UserProvider = ({children}) =>{
       })
         //console.log(res.data);
     if(res.data.msg =='200'){ 
-      //console.log('App Setting ' ,res.data.appData);
       let userInfo = res.data;
       let appSettingDetails = res.data.appData;
         setUserInfo(userInfo)
         setUserToken(userInfo.token)
-
         setAppSettingDetails(appSettingDetails)
         AsyncStorage.setItem('userToken', userInfo.token);
-        AsyncStorage.setItem('AppSettingData',  JSON.stringify( appSettingDetails));
-        AsyncStorage.setItem('userInfo', JSON.stringify( userInfo));
+        AsyncStorage.setItem('AppSettingData', JSON.stringify(appSettingDetails));
+        AsyncStorage.setItem('userInfo', JSON.stringify(userInfo));
+
+        // ── Fetch fresh profile immediately after login ──
+        try {
+          const profileRes = await client.get(
+            '/api/userProfileMobile/' + userInfo.userData._id,
+            { headers: { 'Authorization': 'Bearer ' + userInfo.token } }
+          );
+          if (profileRes.data.msg === '200') {
+            setUserInfo(profileRes.data);
+            AsyncStorage.setItem('userInfo', JSON.stringify(profileRes.data));
+          }
+        } catch (profileError) {
+          console.log('Profile refresh error:', profileError.message);
+        }
         }
       else if(res.data.status == '401') {
           Toast.show({
@@ -173,9 +185,26 @@ const UserProvider = ({children}) =>{
         }
       };
 
-    const navigateContact = ()=>{
+        const navigateContact = ()=>{
       setContactNavigation(true);
     }
+
+    // ── Refresh user profile from API ─────────────
+    const refreshUserProfile = async () => {
+      try {
+        if (!userToken || !userInfo?.userData?._id) return;
+        const res = await client.get(
+          '/api/userProfileMobile/' + userInfo.userData._id,
+          { headers: { 'Authorization': 'Bearer ' + userToken } }
+        );
+        if (res.data.msg === '200') {
+          setUserInfo(res.data);
+          await AsyncStorage.setItem('userInfo', JSON.stringify(res.data));
+        }
+      } catch (error) {
+        console.log('Refresh profile error:', error.message);
+      }
+    };
 
     const pageInfo = async() =>{
       try{
@@ -276,7 +305,8 @@ const UserProvider = ({children}) =>{
           homeChartDisplay, setHomeChartDisplay,
           appBaseUrl, setAppBaseUrl,
           otpStatus, setOtpStatus,
-          logoutModal, setLogoutModal}}
+          logoutModal, setLogoutModal,
+          refreshUserProfile}}
           >
             {children}
         </AuthContext.Provider>

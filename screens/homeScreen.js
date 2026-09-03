@@ -150,6 +150,7 @@ const HomeScreen = ({ navigation }) => {
     appSettingDetails, setAppSettingDetails,
     completeRegData, setCompleteRegData,
     logoutModal, setLogoutModal,
+    refreshUserProfile,
   } = useContext(AuthContext);
 
   const refSellRBSheet = useRef();
@@ -181,7 +182,11 @@ const [sliderData] = useState([
   { id: 5, title: 'Earn Rewards', desc: 'Refer friends and earn bonus on every signup', color: ['#EF4444', '#DC2626'], icon: 'gift', BannerIcon: RewardsIcon },
 ]);
 
-  const myName = userInfo?.userData?.fullname?.split(' ')[0] || 'User';
+    const myName = 
+    userInfo?.userData?.display_name?.split(' ')[0] || 
+    userInfo?.userData?.fullname?.split(' ')[0] || 
+    userInfo?.userData?.name?.split(' ')[0] || 
+    'User';
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -227,6 +232,8 @@ const [sliderData] = useState([
         headers: { 'Authorization': 'Bearer ' + userToken },
       });
       if (res.data.msg === '200') {
+        // Log to see actual field names from API
+        console.log('USER DATA FIELDS:', JSON.stringify(res.data.userData, null, 2));
         AsyncStorage.setItem('userInfo', JSON.stringify(res.data));
         setUserInfo(res.data);
       }
@@ -262,6 +269,7 @@ const [sliderData] = useState([
     if (isFocused) {
       latestTransaction();
       fetchBillServicesStatus();
+      refreshUserProfile();
     }
   }, [isFocused]);
 
@@ -466,7 +474,7 @@ const [sliderData] = useState([
                     Available Balance
                   </Text>
                   <Text style={[styles.balanceAmount, { color: '#fff' }]}>                
-                    ₦{Number(userInfo?.userData?.tran_account || 0).toLocaleString('en-NG')}
+                    ₦{Number(userInfo?.userData?.amount || 0).toLocaleString('en-NG')}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -485,7 +493,7 @@ const [sliderData] = useState([
                     Rewards Balance
                   </Text>
                   <Text style={[styles.rewardsAmount, { color: '#fff' }]}>                  
-                    ₦{Number(userInfo?.userData?.signup_account || 0).toLocaleString('en-NG')}
+                    ₦{Number(userInfo?.userData?.all_bonus_acct || 0).toLocaleString('en-NG')}
                   </Text>
                 </View>
                 <View style={[
