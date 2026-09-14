@@ -277,9 +277,10 @@ const AirtimeScreen = ({ navigation }) => {
               <View style={[styles.formCard, { backgroundColor: colors.bgCard }]}>
 
                 {/* Network Selector — Reusable */}
-                <NetworkSelector
+                 <NetworkSelector
                   selectedNetwork={selectedNetwork}
-                  onSelect={setSelectedNetwork}
+                  serviceType="airtime"
+                  onSelect={(networkId) => setSelectedNetwork(networkId)}
                 />
 
                 {/* Phone Number */}

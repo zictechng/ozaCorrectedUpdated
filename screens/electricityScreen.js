@@ -23,7 +23,7 @@ import useBillService from '../hooks/useBillService';
 import client from '../contextAPI/client';
 
 // ── DISCO List ────────────────────────────────────
-import { DISCOS } from '../constants/discoList';
+import { DISCO_LIST as DISCOS } from '../constants/discoList';
 // ── Meter Type Selector ───────────────────────────
 const MeterTypeSelector = ({ selectedType, onSelect }) => {
   const { colors } = useThemeStyles();

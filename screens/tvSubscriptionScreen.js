@@ -311,11 +311,18 @@ const TVSubscriptionScreen = ({ navigation }) => {
     setSelectedBouquet(null);
     try {
         const res = await client.get(
-        `/api/bills/plans/tv/${providerId}`,
+        `/api/bills/plans/tv_subscription/${providerId}`,
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
-      if (res.data.msg === '200' && res.data.bouquets?.length > 0) {
-        setBouquets(res.data.bouquets);
+      if (res.data.msg === '200' && res.data.plans?.length > 0) {
+        // Map to expected shape
+        setBouquets(res.data.plans.map(p => ({
+          id:       p.id || p.code,
+          label:    p.name || p.label,
+          price:    String(p.price || p.amount || '0'),
+          validity: p.validity || p.duration || '1 Month',
+          apiCode:  p.code || p.id,
+        })));
       } else {
         setBouquets(getBouquets(providerId));
       }

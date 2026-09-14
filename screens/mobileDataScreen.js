@@ -223,17 +223,22 @@ const MobileDataScreen = ({ navigation }) => {
     setSelectedPlan(null);
     try {
       // Try fetching live plans from backend first
-      const res = await client.get(`/api/bills/data_plans/${network}`, {
+        const res = await client.get(`/api/bills/plans/data/${network}`, {
         headers: { 'Authorization': 'Bearer ' + userToken },
       });
       if (res.data.msg === '200' && res.data.plans?.length > 0) {
-        setDataPlans(res.data.plans);
+        // Map backend response to expected shape
+        setDataPlans(res.data.plans.map(p => ({
+          id:       p.id || p.plan_id || p.code,
+          label:    p.name || p.label,
+          validity: p.validity || p.duration || '',
+          price:    String(p.price || p.amount || '0'),
+          apiCode:  p.code || p.plan_code || p.id,
+        })));
       } else {
-        // Fallback to local constants if API not ready
         setDataPlans(getDataPlans(network));
       }
     } catch (error) {
-      // Fallback to local constants
       setDataPlans(getDataPlans(network));
     } finally {
       setIsLoadingPlans(false);
@@ -373,8 +378,9 @@ const MobileDataScreen = ({ navigation }) => {
                 {/* Network Selector — Reusable */}
                 <NetworkSelector
                   selectedNetwork={selectedNetwork}
-                  onSelect={(network) => {
-                    setSelectedNetwork(network);
+                  serviceType="data"
+                  onSelect={(networkId) => {
+                    setSelectedNetwork(networkId);
                     setShowSummary(false);
                   }}
                 />

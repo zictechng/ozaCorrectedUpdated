@@ -350,8 +350,31 @@ const ExamCardsScreen = ({ navigation, route }) => {
   }, [isFocused]);
 
   // ── Calculate Total ────────────────────────────
-  const unitPrice = Number(selectedExam?.buyPrice || 0);
+  
   const totalPrice = unitPrice * quantity;
+  const [livePrice, setLivePrice] = useState(null);
+
+  // Fetch live price from backend when exam type changes
+  useEffect(() => {
+    if (!selectedExam) return;
+    const fetchPrice = async () => {
+      try {
+        const res = await client.get(`/api/bills/exam_price/${selectedExam.apiCode}`, {
+          headers: { 'Authorization': 'Bearer ' + userToken },
+        });
+        if (res.data.msg === '200' && res.data.price) {
+          setLivePrice(String(res.data.price));
+        } else {
+          setLivePrice(selectedExam.buyPrice);
+        }
+      } catch {
+        setLivePrice(selectedExam.buyPrice);
+      }
+    };
+    fetchPrice();
+  }, [selectedExam]);
+
+  const unitPrice = Number(livePrice || selectedExam?.buyPrice || 0);
 
   // ── Quantity Handlers ─────────────────────────
   const handleIncrease = () => {
@@ -431,7 +454,7 @@ const ExamCardsScreen = ({ navigation, route }) => {
         quantity,
         phoneNumber,
         email,
-        unitPrice: selectedExam.buyPrice,
+        unitPrice: String(unitPrice),
         amount: totalPrice.toString(),
         fee: '0',
         totalAmount: totalPrice.toString(),

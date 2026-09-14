@@ -113,6 +113,7 @@ const styles = StyleSheet.create({
     width: 130,
     height: 130,
     borderRadius: 65,
+    backgroundColor: 'rgba(255,255,255,0.10)',
   },
   circleBottomLeft: {
     position: 'absolute',
@@ -121,6 +122,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.07)',
   },
   heroContent: {
     flexDirection: 'row',
@@ -131,6 +133,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: radius.lg,
+    backgroundColor: 'rgba(255,255,255,0.20)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
@@ -141,24 +144,29 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontFamily: '_bold',
     fontSize: typography.xl,
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   heroDesc: {
     fontFamily: '_regular',
     fontSize: typography.base,
+    color: 'rgba(255,255,255,0.85)',
     lineHeight: 22,
   },
   maintenanceBanner: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.20)',
     borderRadius: radius.md,
     padding: spacing.md,
     marginTop: spacing.sm,
     borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.20)',
   },
   maintenanceText: {
     fontFamily: '_semiBold',
     fontSize: typography.base,
+    color: '#FFF',
     marginLeft: spacing.sm,
     lineHeight: 22,
   },
@@ -166,6 +174,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   balanceBox: {
+    backgroundColor: 'rgba(0,0,0,0.18)',
     borderRadius: radius.md,
     padding: spacing.md,
     alignSelf: 'flex-start',
@@ -173,11 +182,13 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontFamily: '_regular',
     fontSize: typography.sm,
+    color: 'rgba(255,255,255,0.75)',
     marginBottom: 2,
   },
   balanceAmount: {
     fontFamily: '_bold',
     fontSize: typography.xl,
+    color: '#FFFFFF',
   },
 });
 
