@@ -315,15 +315,15 @@ const TVSubscriptionScreen = ({ navigation }) => {
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (res.data.msg === '200' && res.data.plans?.length > 0) {
-        // Map to expected shape
         setBouquets(res.data.plans.map(p => ({
           id:       p.id || p.code,
           label:    p.name || p.label,
           price:    String(p.price || p.amount || '0'),
           validity: p.validity || p.duration || '1 Month',
-          apiCode:  p.code || p.id,
+          apiCode:  p.code || p.plan_code || p.id,
         })));
       } else {
+        // Fallback to local constants if API returns nothing
         setBouquets(getBouquets(providerId));
       }
     } catch (error) {
@@ -379,25 +379,28 @@ const TVSubscriptionScreen = ({ navigation }) => {
     setIsProcessing(true);
     try {
       navigation.navigate('BillsConfirm', {
-        serviceType: 'tv_subscription',
-        serviceTitle: 'TV Subscription',
-        provider: selectedProvider.id,
-        bouquetApiCode: selectedBouquet.apiCode,
-        smartCardNumber,
-        customerName: verifiedName,
-        amount: selectedBouquet.price,
-        fee: '0',
-        totalAmount: selectedBouquet.price,
+        serviceType:    'tv_subscription',
+        serviceTitle:   'TV Subscription',
+        service_id:     selectedProvider.apiCode,
+        provider_name:  selectedProvider.label,
+        plan_code:      selectedBouquet.apiCode,
+        plan_name:      selectedBouquet.label,
+        smartcard_number: smartCardNumber,
+        phone:          userInfo?.userData?.phone || '08000000000',
+        customer_name:  verifiedName,
+        amount:         selectedBouquet.price,
+        fee:            '0',
+        totalAmount:    selectedBouquet.price,
         gradientColors: [selectedProvider.color, selectedProvider.color + 'CC'],
-        icon: 'tv-outline',
+        icon:           'tv-outline',
         summaryItems: [
-          { label: 'Provider', value: selectedProvider.label },
-          { label: 'Bouquet', value: selectedBouquet.label },
+          { label: 'Provider',       value: selectedProvider.label },
+          { label: 'Bouquet',        value: selectedBouquet.label },
           { label: selectedProvider.verifyLabel, value: smartCardNumber },
-          { label: 'Customer Name', value: verifiedName },
-          { label: 'Validity', value: selectedBouquet.validity },
-          { label: 'Amount', value: `₦${Number(selectedBouquet.price).toLocaleString()}` },
-          { label: 'Service Fee', value: '₦0.00' },
+          { label: 'Customer Name',  value: verifiedName },
+          { label: 'Validity',       value: selectedBouquet.validity },
+          { label: 'Amount',         value: `₦${Number(selectedBouquet.price).toLocaleString()}` },
+          { label: 'Service Fee',    value: '₦0.00' },
         ],
       });
     } catch (error) {
