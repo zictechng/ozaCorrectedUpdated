@@ -77,7 +77,7 @@ const InboxMessageScreen = () => {
     const page = reset ? 1 : currentPage;
     try {
       const res = await client.get(
-        `api/user_notificationMobile/${userInfo.userData._id}?page=${page}`,
+        `/api/user_notificationMobile/${userInfo.userData._id}?page=${page}`,
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (Array.isArray(res.data) && res.data.length > 0) {

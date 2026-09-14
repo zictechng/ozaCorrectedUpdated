@@ -216,12 +216,12 @@ const [sliderData] = useState([
   // ── Fetch Recent Transactions 
   const latestTransaction = async () => {
     try {
-      const res = await client.get('/api/latest_transaction/' + userInfo?.userData?._id, {
+      const res = await client.get('/api/recent_transactions/' + userInfo?.userData?._id, {
         headers: { 'Authorization': 'Bearer ' + userToken },
       });
-      if (res.data.msg === '200') {
-        setRecentTranData(res.data.data);
-        setNoTransaction(res.data.data.length === 0);
+      if (res.data && Array.isArray(res.data)) {
+        setRecentTranData(res.data);
+        setNoTransaction(res.data.length === 0);
       } else {
         setNoTransaction(true);
       }

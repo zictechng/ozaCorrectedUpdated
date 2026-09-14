@@ -216,7 +216,7 @@ const loadAll = async (reset = false) => {
   const page = reset ? 1 : allPage;
   try {
     const res = await client.get(
-      `api/all_historyMobile/${userInfo.userData._id}?page=${page}`,
+      `/api/all_historyMobile/${userInfo.userData._id}?page=${page}`,
       { headers: { 'Authorization': 'Bearer ' + userToken } }
     );
     if (res.data.length > 0) {
@@ -248,7 +248,7 @@ const loadPaypal = async (reset = false) => {
   const page = reset ? 1 : paypalPage;
   try {
     const res = await client.get(
-      `api/all_historyMobilePapay/${userInfo.userData._id}?page=${page}`,
+      `/api/all_historyMobilePapay/${userInfo.userData._id}?page=${page}`,
       { headers: { 'Authorization': 'Bearer ' + userToken } }
     );
     if (res.data.length > 0) {
@@ -280,7 +280,7 @@ const loadPayoneer = async (reset = false) => {
   const page = reset ? 1 : payoneerPage;
   try {
     const res = await client.get(
-      `api/all_historyMobilePayooner/${userInfo.userData._id}?page=${page}`,
+      `/api/all_historyMobilePayooner/${userInfo.userData._id}?page=${page}`,
       { headers: { 'Authorization': 'Bearer ' + userToken } }
     );
     if (res.data.length > 0) {
@@ -312,7 +312,7 @@ const loadBills = async (reset = false) => {
   const page = reset ? 1 : billsPage;
   try {
     const res = await client.get(
-      `api/bills/history/${userInfo.userData._id}?page=${page}`,
+      `/api/bills/history/${userInfo.userData._id}?page=${page}`,
       { headers: { 'Authorization': 'Bearer ' + userToken } }
     );
     if (res.data?.data?.length > 0) {
@@ -413,7 +413,7 @@ const loadBills = async (reset = false) => {
         </TouchableOpacity>
       </View>
 
-      {/* ── Summary Banner ───────────────────────── */}
+      {/* ── Summary Banner  */}
       <LinearGradient
         colors={[colors.primaryColor1, colors.primaryColor1b]}
         start={{ x: 0, y: 0 }}

@@ -62,7 +62,7 @@ const TransactionsDetails = ({ route, navigation }) => {
     setError(null);
     try {
       const res = await client.get(
-        `api/getTransactionInfo/${tPayId}`,
+        `/api/getTransactionInfo/${tPayId}`,
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (res.data.msg === '200') {
