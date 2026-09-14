@@ -83,10 +83,10 @@ const WithdrawScreen = ({ navigation }) => {
     if (!validate()) return;
     setIsLoading(true);
     try {
-      const res = await client.post(
-        '/api/withdrawFund_userMobile',
+        const res = await client.post(
+        '/api/userFundWithdrawal',
         {
-          amount,
+          amt: amount,
           pin,
           note,
           userId,
