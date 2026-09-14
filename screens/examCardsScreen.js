@@ -74,7 +74,7 @@ const ExamTypeCard = ({ exam, isSelected, onSelect }) => {
           styles.examPriceText,
           { color: isSelected ? '#fff' : colors.primaryColor1 },
         ]}>
-          ₦{Number(exam.buyPrice).toLocaleString()}
+          from ₦{Number(exam.buyPrice).toLocaleString()}
         </Text>
       </View>
 
@@ -350,13 +350,12 @@ const ExamCardsScreen = ({ navigation, route }) => {
   }, [isFocused]);
 
   // ── Calculate Total ────────────────────────────
-  
-  const totalPrice = unitPrice * quantity;
   const [livePrice, setLivePrice] = useState(null);
 
   // Fetch live price from backend when exam type changes
   useEffect(() => {
     if (!selectedExam) return;
+    setLivePrice(null); // reset while loading
     const fetchPrice = async () => {
       try {
         const res = await client.get(`/api/bills/exam_price/${selectedExam.apiCode}`, {
@@ -375,6 +374,7 @@ const ExamCardsScreen = ({ navigation, route }) => {
   }, [selectedExam]);
 
   const unitPrice = Number(livePrice || selectedExam?.buyPrice || 0);
+  const totalPrice = unitPrice * quantity;
 
   // ── Quantity Handlers ─────────────────────────
   const handleIncrease = () => {
@@ -446,18 +446,18 @@ const ExamCardsScreen = ({ navigation, route }) => {
     setIsProcessing(true);
     try {
       navigation.navigate('BillsConfirm', {
-        serviceType: 'exam_cards',
+        serviceType:  'exam_cards',
         serviceTitle: `${selectedExam.label} Scratch Card`,
-        examType: selectedExam.id,
-        examApiCode: selectedExam.apiCode,
-        examLabel: selectedExam.label,
+        service_id:   selectedExam.apiCode,
+        exam_type:    selectedExam.id,
+        exam_label:   selectedExam.label,
         quantity,
-        phoneNumber,
+        phone:        phoneNumber,
         email,
-        unitPrice: String(unitPrice),
-        amount: totalPrice.toString(),
-        fee: '0',
-        totalAmount: totalPrice.toString(),
+        unitPrice:    String(unitPrice),
+        amount:       totalPrice.toString(),
+        fee:          '0',
+        totalAmount:  totalPrice.toString(),
         gradientColors: [selectedExam.color, selectedExam.color + 'CC'],
         icon: selectedExam.icon,
         summaryItems: [
