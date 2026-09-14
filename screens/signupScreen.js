@@ -21,6 +21,7 @@ import { noticeData } from '../components/errorNotice';
 import IsValidEmail from '../components/checkEmailFormat';
 import FormInput from '../components/FormInput';
 import { isSmallPhone } from '../utils/responsive';
+import { _AppSystemSettings } from '../components/controls';
 
 // ─────────────────────────────────────────────────
 // STEP INDICATOR
@@ -100,6 +101,7 @@ const SignupScreen = ({ navigation }) => {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isChecked, setChecked] = useState(false);
+  const [isSignUpDisabled, setIsSignUpDisabled] = useState(false);
 
   // ── Step 1 — Account Info ─────────────────────
   const [fullName, setFullName] = useState('');
@@ -114,6 +116,18 @@ const SignupScreen = ({ navigation }) => {
   const [countryCode, setCountryCode] = useState('NG');
   const [countryFlag, setCountryFlag] = useState('🇳🇬');
   const [showCountryPicker, setShowCountryPicker] = useState(false);
+
+
+    _AppSystemSettings().then((res) => {
+      // Check if signup status is explicitly false or string 'false'
+      const isBlocked = res?.app_new_signup_status === false || res?.app_new_signup_status === 'false';
+      
+      setIsSignUpDisabled(isBlocked);
+    });
+
+  useEffect(() => {
+      _AppSystemSettings();
+    }, []);
 
   // ── Step 3 — Review ───────────────────────────
   const [errors, setErrors] = useState({});
@@ -357,19 +371,25 @@ const onSelectCountry = (c) => {
                   colors={colors}
                 />
 
-                <LinearGradient
-                  colors={[colors.primaryColor1, colors.primaryColor1b]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[styles.nextBtn, { padding: 0 }]}>
-                  <TouchableOpacity
-                    style={styles.nextBtnInner}
-                    onPress={handleNext}
-                    activeOpacity={0.85}>
-                    <Text style={styles.nextBtnText}>Continue</Text>
-                    <Ionicons name="arrow-forward" size={20} color="#fff" />
-                  </TouchableOpacity>
-                </LinearGradient>
+                {/* Continue Button */}
+                  <LinearGradient
+                    colors={[colors.primaryColor1, colors.primaryColor1b]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={[
+                      styles.nextBtn, 
+                      { padding: 0 },
+                      (isButtonDisable || isSignUpDisabled) && { opacity: 0.6 }
+                    ]}>
+                    <TouchableOpacity
+                      style={styles.nextBtnInner}
+                      onPress={handleNext}
+                      disabled={isButtonDisable || isSignUpDisabled}
+                      activeOpacity={0.85}>
+                      <Text style={styles.nextBtnText}>Continue</Text>
+                      <Ionicons name="arrow-forward" size={20} color="#fff" />
+                    </TouchableOpacity>
+                  </LinearGradient>
               </View>
             )}
 
@@ -569,29 +589,29 @@ const onSelectCountry = (c) => {
                 </View>
 
                 {/* Submit Button */}
-                <LinearGradient
-                  colors={[colors.primaryColor1, colors.primaryColor1b]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[
-                    styles.submitBtn,
-                    (isBtnLoading || isButtonDisable) && { opacity: 0.7 },
-                  ]}>
-                  <TouchableOpacity
-                    style={styles.nextBtnInner}
-                    onPress={handleRegister}
-                    disabled={isBtnLoading || isButtonDisable}
-                    activeOpacity={0.85}>
-                    {isBtnLoading ? (
-                      <ActivityIndicator color="#fff" size={22} />
-                    ) : (
-                      <>
-                        <Ionicons name="checkmark-circle-outline" size={22} color="#fff" />
-                        <Text style={styles.nextBtnText}>Create My Account</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                </LinearGradient>
+                  <LinearGradient
+                    colors={[colors.primaryColor1, colors.primaryColor1b]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={[
+                      styles.submitBtn,
+                      (isBtnLoading || isButtonDisable || isSignUpDisabled) && { opacity: 0.7 },
+                    ]}>
+                    <TouchableOpacity
+                      style={styles.nextBtnInner}
+                      onPress={handleRegister}
+                      disabled={isBtnLoading || isButtonDisable || isSignUpDisabled}
+                      activeOpacity={0.85}>
+                      {isBtnLoading ? (
+                        <ActivityIndicator color="#fff" size={22} />
+                      ) : (
+                        <>
+                          <Ionicons name="checkmark-circle-outline" size={22} color="#fff" />
+                          <Text style={styles.nextBtnText}>Create My Account</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </LinearGradient>
 
                 {/* Already have account */}
                 <View style={styles.signinRow}>

@@ -1,4 +1,5 @@
 import React, {useState, useEffect, useContext} from 'react';
+import { AppState } from 'react-native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ALERT_TYPE, Dialog, Toast } from 'react-native-alert-notification';
 import client from "./client";
@@ -25,19 +26,12 @@ const UserProvider = ({children}) =>{
     const [homeChartDisplay, setHomeChartDisplay] = useState(false);
     const [logoutModal, setLogoutModal] = useState(false);
     const [otpStatus, setOtpStatus] = useState(false)
-    
-    // const updateUserEmail = (newValue) => {
-    //   setUserRegEmail({ ...userRegEmail, value: newValue });
-    // };
-
 
   // get user information from local storage here
   const _getAppLocalInfo = async () =>{
-
   await AsyncStorage.getItem('userInfo').then(res =>{
       if(res != null){
           setUserInfo(JSON.parse(res))
-          //console.log('User data ', res);
       }
       else if(res == null || res == '' || res== undefined){
         pageInfo()
@@ -47,7 +41,6 @@ const UserProvider = ({children}) =>{
 
     // login function
     const loginAction = async(username, password)=>{
-      //console.log('Login details:', username, password);
       setIsBtnLoading(true);
       try {
         setIsLoading(true);
@@ -56,7 +49,6 @@ const UserProvider = ({children}) =>{
           username,
           password
       })
-        //console.log(res.data);
     if(res.data.msg =='200'){ 
       let userInfo = res.data;
       let appSettingDetails = res.data.appData;
@@ -137,7 +129,7 @@ const UserProvider = ({children}) =>{
                 textBodyStyle: noticeData[0].errorMessageStyle,
                 })
                 return
-            } 
+          } 
         }
         finally {
           setIsLoading(false);
@@ -146,15 +138,14 @@ const UserProvider = ({children}) =>{
           }
       }
       
-
       // Async logout API call
         const logoutRequest = async (logout_data) => {
           try {
-            const authLogout = await client.get(`/api/user_logout/${logout_data}`); // call logout endpoint
+            const authLogout = await client.get(`/api/user_logout/${logout_data}`);
             return authLogout.data;
           } catch (error) {
             console.error("Error during logout:", error.message);
-            throw new Error("Logout failed"); // Optionally handle error
+            throw new Error("Logout failed");
           }
         };
 
@@ -162,24 +153,20 @@ const UserProvider = ({children}) =>{
       const logoutAction = async () => {
         try {
           setIsLoading(true);
+          const logout_data = userInfo?.userData?._id;
+          if (logout_data) {
+            await logoutRequest(logout_data);
+          }
 
-          // Call the logout API first
-          const logout_data = userInfo.userData._id 
-          await logoutRequest(logout_data);
-
-          // Clear local storage after successful logout
           await AsyncStorage.multiRemove([
             'userToken',
             'userInfo',
-            'AppSettingInfo',
-            // 'alreadyLaunch' if you want to clear it too
+            'AppSettingData',
           ]);
 
-          // Update state after storage cleared
           setUserToken(null);
         } catch (error) {
           console.error('Logout error:', error);
-          // Optionally show a message to the user here
         } finally {
           setIsLoading(false);
         }
@@ -191,38 +178,64 @@ const UserProvider = ({children}) =>{
 
     // ── Refresh user profile from API ─────────────
     const refreshUserProfile = async () => {
-      try {
-        if (!userToken || !userInfo?.userData?._id) return;
-        const res = await client.get(
-          '/api/userProfileMobile/' + userInfo.userData._id,
-          { headers: { 'Authorization': 'Bearer ' + userToken } }
-        );
-        if (res.data.msg === '200') {
-          setUserInfo(res.data);
-          await AsyncStorage.setItem('userInfo', JSON.stringify(res.data));
-        }
-      } catch (error) {
-        console.log('Refresh profile error:', error.message);
-      }
-    };
+        try {
+          if (!userToken || !userInfo?.userData?._id) return;
+          
+          const res = await client.get(
+            '/api/userProfileMobile/' + userInfo.userData._id,
+            { headers: { 'Authorization': 'Bearer ' + userToken } }
+          );
+          //console.log('User profile fetch:', res.data);
+          // 1. Check if backend explicitly returns a blocked/suspended status in the payload
+          const userStatus = res.data?.userData?.acct_status; // Adjust key based on your DB schema (e.g., 'active', 'suspended', 'blocked')
+          if (userStatus === 'suspended' || userStatus === 'blocked' || userStatus === 'deleted') {
+            await logoutAction();
+            Toast.show({
+              type: ALERT_TYPE.DANGER,
+              title: 'Account Restricted',
+              textBody: 'Your account has been suspended or blocked! Contact support.',
+              titleStyle: noticeData[0].errorTitleStyle,
+              textBodyStyle: noticeData[0].errorMessageStyle,
+            });
+            return;
+          }
 
-    const pageInfo = async() =>{
+          // 2. Normal profile and balance sync
+          if (res.data.msg === '200') {
+            setUserInfo(res.data);
+            await AsyncStorage.setItem('userInfo', JSON.stringify(res.data));
+          }
+        } catch (error) {
+          console.log('Refresh profile error:', error.message);
+
+          // 3. If the token is invalidated or user is deleted on the backend (yielding 401/403/404)
+          if (error.response?.status === 401 || error.response?.status === 403 || error.response?.status === 404) {
+            await logoutAction();
+            Toast.show({
+              type: ALERT_TYPE.DANGER,
+              title: 'Session Expired',
+              textBody: 'Your account status has changed. Please log in again.',
+              titleStyle: noticeData[0].errorTitleStyle,
+              textBodyStyle: noticeData[0].errorMessageStyle,
+            });
+          }
+        }
+      };
+
+    // Updated with isBackground flag to avoid full-screen spinner flicker during sync
+    const pageInfo = async(isBackground = false) =>{
       try{
-        setIsLoading(true)
+        if (!isBackground) setIsLoading(true);
         const res = await client.get('/api/fetchApp_info')
-            //console.log('response ', JSON.stringify(res.data))
             if(res.data.msg =='200'){
-             //console.log('Yes ')
              setAppSettingDetails(res.data.infoData)
+             await AsyncStorage.setItem('AppSettingData', JSON.stringify(res.data.infoData));
             }
-            else if(res.data.status == '404'){
-              // console.log('App details details ', res.data.status)
-              }
            }catch (e){
             console.log(e.message);
-            }
+           }
         finally{
-          setIsLoading(false);
+          if (!isBackground) setIsLoading(false);
         }
       }
 
@@ -240,11 +253,9 @@ const UserProvider = ({children}) =>{
             setUserToken(userToken);
             setUserInfo(userInfo);
             setAppSettingDetails(appSettingDetails)
-            console.log('User LoggedIn ')
           }
        } catch (error) {
         console.log(`Login error ${error.message}`);
-        
       }
       finally{
         setIsLoading(false);
@@ -255,11 +266,9 @@ const UserProvider = ({children}) =>{
       try {
         const value = await AsyncStorage.getItem('alreadyLaunch');
           if (value !== null) {
-            // We have data!!
             setUserLaunch(value);
             }
       } catch (error) {
-       // Error retrieving data
        console.log("No first launch error ");
       }
     }
@@ -269,18 +278,32 @@ const UserProvider = ({children}) =>{
       _getAppLocalInfo()
       pageInfo()
       _retrieveData()
-  //    setTimeout(async() =>{
-  //       AsyncStorage.getItem('alreadyLaunch').then(value =>{
-  //         if(value == null){
-  //           AsyncStorage.setItem('alreadyLaunch', 'true');
-  //         }
-  //         else if(value !== null){
-  //           setUserLaunch(true);
-  //         }
-  //       });
-  //  }, 1000)
-      
     }, [])
+
+    // ── Real-Time Auto-Sync Polling & AppState Foreground Listener ──
+    useEffect(() => {
+      if (!userToken) return;
+
+      // 1. Periodic background sync every 15 seconds
+      const pollInterval = setInterval(() => {
+        pageInfo(true);
+        refreshUserProfile();
+      }, 15000);
+
+      // 2. Instant sync when app transitions from background back to foreground
+      const subscription = AppState.addEventListener('change', (nextAppState) => {
+        if (nextAppState === 'active') {
+          pageInfo(true);
+          refreshUserProfile();
+        }
+      });
+
+      return () => {
+        clearInterval(pollInterval);
+        subscription.remove();
+      };
+    }, [userToken]);
+
     return (
         <AuthContext.Provider value={{
           test, 
@@ -313,4 +336,4 @@ const UserProvider = ({children}) =>{
     )
 }
 
-export default UserProvider
+export default UserProvider;

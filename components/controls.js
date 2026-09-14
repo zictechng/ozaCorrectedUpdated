@@ -7,8 +7,10 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  TouchableOpacity
+  TouchableOpacity,
+  BackHandler, Platform
 } from "react-native";
+
 import { useNavigation } from "@react-navigation/native";
 import { AuthContext } from "../contextAPI/authContext";
 import { NumericFormat } from "react-number-format";
@@ -580,76 +582,69 @@ export const ConfirmPaymentModal = ({
 };
 
 // create app modal  function here
+// Replace ONLY this function block inside components/control.js
 export const AppModeModal = ({
   openModal,
   ModalShortDesc,
   ModalDesc,
   logoutBtn,
-  modalBgColor,
-  animationType,
-  bntYesText
+  modalBgColor = 'rgba(15, 23, 42, 0.75)',
+  animationType = 'fade',
+  bntYesText = 'Okay',
 }) => {
+  const handleButtonPress = () => {
+    if (logoutBtn) {
+      logoutBtn();
+    } else {
+      // Completely close the app (Works natively on Android)
+      BackHandler.exitApp();
+    }
+  };
+
   return (
     <Modal
       animationType={animationType}
       transparent={true}
       visible={openModal}
       onRequestClose={() => {
-        Alert.alert("Modal has been closed.");
-        // closeModal(!logoutModal);
+        if (Platform.OS === 'android') {
+          BackHandler.exitApp();
+        }
       }}
     >
-      <View style={[styles.centeredView, {backgroundColor: modalBgColor,
-  } ]}>
-        <View style={styles.modalViewManualPayment}>
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: colors.redColor,
-              width: "100%",
-              borderTopRightRadius: 8,
-              borderTopLeftRadius: 8,
-              marginTop: -1,
-              maxHeight: 60,
-              justifyContent:'center',
-              }}>
-      <View style={{justifyContent:'center', alignItems:'center', marginTop: -30}}>
-      <MaterialIcons name='warning' size={70} color={colors.textColor} />
-       </View>          
-
-          </View>
-          <View style={{ marginTop: 10, marginBottom: 20, marginHorizontal: 3  }}>
+      <View style={[styles.centeredView, { backgroundColor: modalBgColor }]}>
+        <View style={styles.appModeModalCard}>
           
-            <Text style={{ fontFamily: "_semiBold", fontSize: 14, textAlign:'center', padding:5 }}>
+          {/* Sleek Icon Header Badge */}
+          <View style={styles.appModeIconContainer}>
+            <View style={styles.appModeIconCircle}>
+              <MaterialIcons name="warning" size={32} color="#EF4444" />
+            </View>
+          </View>
+
+          {/* Content Section */}
+          <View style={styles.appModeContentContainer}>
+            <Text style={styles.appModeShortDesc}>
               {ModalShortDesc}
             </Text>
-            <Text style={{ fontFamily: "_regular", fontSize: 14,  }}>
+            <Text style={styles.appModeDesc}>
               {ModalDesc}
             </Text>
           </View>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              padding: 10,
-            }}
-          >
-            {/* <View style={{ marginRight: 40 }}>
-              <Pressable style={[styles.button]} onPress={closeBtn}>
-                <Text style={[styles.textStyle, { color: colors.blackColor1 }]}>
-                  Cancel
-                </Text>
-              </Pressable>
-            </View> */}
-            <View style={{ }}>
-              <Pressable
-                style={[styles.button, styles.buttonYes]}
-                onPress={logoutBtn}
-              >
-                <Text style={styles.textStyle}>{bntYesText}</Text>
-              </Pressable>
-            </View>
+
+          {/* Action Button Footer */}
+          <View style={styles.appModeFooterContainer}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.appModeButtonYes,
+                pressed && { opacity: 0.85 },
+              ]}
+              onPress={handleButtonPress}
+            >
+              <Text style={styles.appModeButtonText}>{bntYesText}</Text>
+            </Pressable>
           </View>
+
         </View>
       </View>
     </Modal>
@@ -666,8 +661,9 @@ export const _AppSystemSettings = async() =>{
         }
        if(response.data.msg == '200'){
        //setAppSignupStatus(response.data.infoData?.app_new_signup_status)
+       //console.log(" App Info ", response.data.infoData?.app_new_signup_status)
+       
        return response.data.infoData
-       //console.log(" App Info ", "Yes")
        }
 
    }
@@ -791,5 +787,75 @@ const styles = StyleSheet.create({
       alignItems:'center',
       backgroundColor: "#FF6347",
     
-      }
+      },
+
+  // Add these specific styles to your existing StyleSheet.create({}) object in components/control.js:
+  appModeModalCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    paddingTop: 32,
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  appModeIconContainer: {
+    marginBottom: 20,
+  },
+  appModeIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  appModeContentContainer: {
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  appModeShortDesc: {
+    fontFamily: '_semiBold',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A1F36',
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: -0.02,
+  },
+  appModeDesc: {
+    fontFamily: '_regular',
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  appModeFooterContainer: {
+    width: '100%',
+  },
+  appModeButtonYes: {
+    width: '100%',
+    backgroundColor: '#1E293B',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#1E293B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  appModeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
 });

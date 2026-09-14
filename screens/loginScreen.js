@@ -44,6 +44,7 @@ const LoginScreen = ({ navigation }) => {
   const [appDetails, setAppDetails] = useState({});
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [isLoginDisabled, setIsLoginDisabled] = useState(false);
 
   const _getAppLocalInfo = async () => {
     AsyncStorage.getItem('AppSettingInfo').then(res => {
@@ -52,8 +53,11 @@ const LoginScreen = ({ navigation }) => {
   };
 
   _AppSystemSettings().then((res) => {
-    if (res?.app_stop_login_status == false) setCheckLoginState(true);
-    else if (res?.app_stop_login_status == true) setCheckLoginState(false);
+    const isStopped = res?.app_stop_login_status === true || res?.app_stop_login_status === 'true';
+  
+    // Set true if login is stopped/disabled, false if it's allowed
+    setIsLoginDisabled(isStopped);
+
   });
 
   useEffect(() => {
@@ -237,12 +241,12 @@ const LoginScreen = ({ navigation }) => {
                   end={{ x: 1, y: 0 }}
                   style={[
                     styles.loginBtn,
-                    (isButtonDisable || checkLoginState) && { opacity: 0.6 },
+                    (isButtonDisable || isLoginDisabled) && { opacity: 0.6 },
                   ]}>
                   <TouchableOpacity
                     style={styles.loginBtnInner}
                     onPress={UserLogin}
-                    disabled={isButtonDisable || checkLoginState}
+                    disabled={isButtonDisable || isLoginDisabled}
                     activeOpacity={0.85}>
                     {isBtnLoading ? (
                       <ActivityIndicator color="#fff" size={24} />

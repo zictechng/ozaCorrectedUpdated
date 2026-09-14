@@ -153,6 +153,9 @@ const HomeScreen = ({ navigation }) => {
     refreshUserProfile,
   } = useContext(AuthContext);
 
+  // Inside your Home screen or Modal component:
+  const { logoutAction } = useContext(AuthContext);
+
   const refSellRBSheet = useRef();
   const refBuyRBSheet = useRef();
   const refMoreRBSheet = useRef();
@@ -172,7 +175,10 @@ const HomeScreen = ({ navigation }) => {
     exam_cards: 'active',
   });
 
-
+  // On your "OKAY" button's onPress:
+  const handleAppModeClose = async () => {
+    await logoutAction();
+  };
 
 const [sliderData] = useState([
   { id: 1, title: 'Buy & Sell Virtual Funds Instantly', desc: 'PayPal, Payoneer & Bitcoin at best rates', color: ['#4C5FD5', '#6C7FE8'], icon: 'swap-horizontal', BannerIcon: BuySellIcon },
@@ -253,16 +259,12 @@ const [sliderData] = useState([
   };
 
   // ── App System Settings ─────────────────────────
-  useEffect(() => {
-    _AppSystemSettings().then((res) => {
-      if (res?.app_operation_status === false) {
-        setAppMode(true);
-        setAppModeMessage(res?.app_mode_message);
-      } else {
-        setAppMode(false);
-      }
-    });
-  }, []);
+    // Automatically derived from the global provider's background sync
+    const showModal = 
+    appSettingDetails?.app_operation_status === true || 
+    appSettingDetails?.app_operation_status === 'true' ||
+    appSettingDetails?.app_stop_login_status === true || 
+    appSettingDetails?.app_stop_login_status === 'true';
 
   // ── On Screen Focus ─────────────────────────────
   useEffect(() => {
@@ -417,7 +419,7 @@ const [sliderData] = useState([
 
       {!appMode && (
         <>
-                    {/* ── Header ─────────────────────────── */}
+        {/* ── Header ─────────────────────────── */}
           <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
             <View>
               <Text style={[styles.greetingText, { color: colors.textBlack }]}>
@@ -787,21 +789,7 @@ const [sliderData] = useState([
         </>
       )}
 
-      {/* ── App Maintenance Mode ────────────────── */}
-      {appMode && (
-        <View style={{ flex: 1 }}>
-          <AppModeModal
-            openModal={appMode}
-            animationType="slide"
-            ModalShortDesc="Service Unavailable"
-            ModalDesc={appModeMessage}
-            closeBtn={signMeOut}
-            logoutBtn={signMeOut}
-            modalBgColor="rgba(0,0,0,0.2)"
-            bntYesText="Okay"
-          />
-        </View>
-      )}
+      
     </SafeAreaView>
   );
 };

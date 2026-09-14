@@ -5,9 +5,10 @@ import axios from "axios";
 //export default axios.create({baseURL: 'http://192.168.1.83:3500'});
 
 //export default axios.create({baseURL: 'https://ozabackendapi.ozaapp.com'})
+//baseURL: 'https://oza-backend-api-git-newmaster-perry-joes-projects.vercel.app',
 
 const client = axios.create({
-  baseURL: 'https://oza-backend-api-git-newmaster-perry-joes-projects.vercel.app',
+  baseURL: 'http://192.168.1.73:3500',
   timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
