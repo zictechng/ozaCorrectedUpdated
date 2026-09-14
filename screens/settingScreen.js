@@ -232,42 +232,8 @@ const SettingScreen = () => {
         contentContainerStyle={styles.scrollContent}>
 
         {/* Account Overview Card */}
-        <LinearGradient
-          colors={[colors.primaryColor1, colors.primaryColor1b]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.overviewCard}>
-          <View style={styles.overviewCircle} />
-          <View style={styles.overviewRow}>
-            <View style={styles.overviewAvatar}>
-              <Text style={styles.overviewInitial}>
-                {userInfo?.userData?.display_name?.charAt(0)?.toUpperCase() || 'U'}
-              </Text>
-            </View>
-            <View style={styles.overviewInfo}>
-              <Text style={styles.overviewName}>
-                {userInfo?.userData?.display_name}
-              </Text>
-              <Text style={styles.overviewEmail}>
-                {userInfo?.userData?.email}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.overviewTagRow}>
-            <View style={styles.overviewTagBox}>
-              <Text style={styles.overviewTagLabel}>Customer ID</Text>
-              <Text style={styles.overviewTagValue}>
-                {userInfo?.userData?.tag_id}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.overviewCopyBtn}
-              onPress={copyCustomerId}>
-              <Ionicons name="copy-outline" size={16} color="#fff" />
-              <Text style={styles.overviewCopyText}>Copy</Text>
-            </TouchableOpacity>
-          </View>
-        </LinearGradient>
+        
+        <View style={styles.overviewTagRow}></View>
 
         {/* Account */}
         <SectionCard title="Account">
@@ -423,6 +389,16 @@ const SettingScreen = () => {
           />
         </SectionCard>
 
+        {/* App Info */}
+        <View style={styles.appInfo}>
+          <Text style={[styles.appVersion, { color: colors.textSecColor }]}>
+            {appSettingDetails?.app_name} • v{appSettingDetails?.app_version || '1.0.1'}
+          </Text>
+          <Text style={[styles.appCopyright, { color: colors.textSecColor2 }]}>
+            © {new Date().getFullYear()} {appSettingDetails?.app_name}. All rights reserved.
+          </Text>
+        </View>
+
         {/* Logout */}
         <TouchableOpacity
           style={[styles.logoutBtn, {
@@ -441,16 +417,6 @@ const SettingScreen = () => {
             Sign Out
           </Text>
         </TouchableOpacity>
-
-        {/* App Info */}
-        <View style={styles.appInfo}>
-          <Text style={[styles.appVersion, { color: colors.textSecColor }]}>
-            {appSettingDetails?.app_name} • v{appSettingDetails?.app_version || '2.0.1'}
-          </Text>
-          <Text style={[styles.appCopyright, { color: colors.textSecColor2 }]}>
-            © 2026 OtaMobile. All rights reserved.
-          </Text>
-        </View>
 
         <View style={{ height: spacing.xxxl }} />
       </ScrollView>
@@ -771,6 +737,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xl,
     marginBottom: spacing.md,
     borderWidth: 1.5,
+    marginTop: 25,
   },
   logoutBtnText: {
     fontFamily: '_bold',

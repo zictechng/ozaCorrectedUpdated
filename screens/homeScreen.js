@@ -44,7 +44,7 @@ const payoonerImage = require('../assets/images/payooner2.png');
 const bitcoinImage = require('../assets/images/bitcoin.png');
 const background = require('../assets/images/sec3.png');
 
-// ── Quick Action Button Component ─────────────────
+// ── Quick Action Button Component
 const QuickActionBtn = ({ icon, label, onPress, color, bgColor, colors }) => (
   <TouchableOpacity style={styles.quickActionBtn} onPress={onPress} activeOpacity={0.8}>
     <View style={[styles.quickActionIcon, { backgroundColor: bgColor || colors.bgLight }]}>
@@ -54,7 +54,7 @@ const QuickActionBtn = ({ icon, label, onPress, color, bgColor, colors }) => (
   </TouchableOpacity>
 );
 
-// ── Service Status Badge ──────────────────────────
+// ── Service Status Badge 
 const StatusBadge = ({ status }) => {
   if (status === 'paused') {
     return (
@@ -66,7 +66,7 @@ const StatusBadge = ({ status }) => {
   return null;
 };
 
-// ── Add this helper above HomeScreen ──────────────
+// ── Add this helper above HomeScreen 
 const formatTranAmount = (item) => {
   const num = Number(item.amount || 0);
   if (item.currency_level === '2') {
@@ -75,7 +75,7 @@ const formatTranAmount = (item) => {
   return `₦${num.toLocaleString('en-NG')}`;
 };
 
-// ── Bill Service Card Component ───────────────────
+// ── Bill Service Card Component
 const BillServiceCard = ({ icon, label, color, bgColor, onPress, status, colors }) => {
   const isDisabled = status === 'paused';
   const isHidden = status === 'hidden';
@@ -99,7 +99,7 @@ const BillServiceCard = ({ icon, label, color, bgColor, onPress, status, colors 
   );
 };
 
-// ── Transaction Item Component ────────────────────
+// ── Transaction Item Component
 const TransactionItem = ({ item, onPress, colors }) => (
   <TouchableOpacity
     style={[styles.transactionItem, { backgroundColor: colors.bgCard }]}
@@ -141,7 +141,7 @@ const TransactionItem = ({ item, onPress, colors }) => (
   </TouchableOpacity>
 );
 
-// ── Main Home Screen ──────────────────────────────
+// ── Main Home Screen 
 const HomeScreen = ({ navigation }) => {
   const isFocused = useIsFocused();
   const { S, colors, isDark } = useThemeStyles();
@@ -201,7 +201,7 @@ const [sliderData] = useState([
     return `Good Evening, ${myName} 👋`;
   };
 
-  // ── Fetch Bill Services Status ──────────────────
+  // ── Fetch Bill Services Status
   const fetchBillServicesStatus = async () => {
     try {
       const res = await client.get('/api/bills_services_status');
@@ -213,7 +213,7 @@ const [sliderData] = useState([
     }
   };
 
-  // ── Fetch Recent Transactions ───────────────────
+  // ── Fetch Recent Transactions 
   const latestTransaction = async () => {
     try {
       const res = await client.get('/api/latest_transaction/' + userInfo?.userData?._id, {
@@ -231,7 +231,7 @@ const [sliderData] = useState([
     }
   };
 
-  // ── Refresh User Details ────────────────────────
+  // ── Refresh User Details 
   const RefreshUserDetails = async () => {
     try {
       const res = await client.get('/api/userProfileMobile/' + userInfo?.userData?._id, {
@@ -248,7 +248,7 @@ const [sliderData] = useState([
     }
   };
 
-  // ── Check User Token ────────────────────────────
+  // ── Check User Token
   const checkUserToken = async () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
@@ -258,15 +258,8 @@ const [sliderData] = useState([
     }
   };
 
-  // ── App System Settings ─────────────────────────
-    // Automatically derived from the global provider's background sync
-    const showModal = 
-    appSettingDetails?.app_operation_status === true || 
-    appSettingDetails?.app_operation_status === 'true' ||
-    appSettingDetails?.app_stop_login_status === true || 
-    appSettingDetails?.app_stop_login_status === 'true';
-
-  // ── On Screen Focus ─────────────────────────────
+  
+  // ── On Screen Focus 
   useEffect(() => {
     if (isFocused) {
       latestTransaction();
@@ -275,17 +268,7 @@ const [sliderData] = useState([
     }
   }, [isFocused]);
 
-  // ── Sign Out ────────────────────────────────────
-  const signMeOut = async () => {
-    try {
-      await AsyncStorage.multiRemove(['userToken', 'userInfo', 'AppSettingInfo']);
-      navigation.replace('Login');
-    } catch (error) {
-      console.log('Sign out error:', error.message);
-    }
-  };
-
-  // ── Pull to Refresh ─────────────────────────────
+  // ── Pull to Refresh 
   const handleHomeRefresh = useCallback(() => {
     setIsRefreshing(true);
     RefreshUserDetails();
@@ -298,14 +281,14 @@ const [sliderData] = useState([
   // ── Close Incomplete Registration Banner ────────
   const closeIncompleteRegistration = () => setCompleteRegData(false);
 
-  // ── Open Play Store ─────────────────────────────
+  // ── Open Play Store 
   const openPlayStore = () => {
-    Linking.openURL('market://details?id=com.ozaapp.mobile').catch(() =>
-      Linking.openURL('https://play.google.com/store/apps/details?id=com.ozaapp.mobile')
+    Linking.openURL('').catch(() =>
+      Linking.openURL('')
     );
   };
 
-  // ── Sell Navigation ─────────────────────────────
+  // ── Sell Navigation 
   const sellPaypalBtn = () => {
     if (appSettingDetails?.app_paypal_sell === false) {
       Toast.show({ type: ALERT_TYPE.DANGER, title: 'Unavailable', textBody: 'This service is currently unavailable' });
@@ -333,7 +316,7 @@ const [sliderData] = useState([
     navigation.navigate('SalesPage', { pageName: 'Bitcoin', categoryType: 'Sell' });
   };
 
-  // ── Buy Navigation ──────────────────────────────
+  // ── Buy Navigation 
   const buyPaypalBtn = () => {
     if (appSettingDetails?.app_paypal_buy === false) {
       Toast.show({ type: ALERT_TYPE.DANGER, title: 'Unavailable', textBody: 'This service is currently unavailable' });
@@ -361,7 +344,7 @@ const [sliderData] = useState([
     navigation.navigate('BuyPage', { pageName: 'Bitcoin', categoryType: 'Buy' });
   };
 
-  // ── More Navigation ─────────────────────────────
+  // ── More Navigation
   const addFundBtn = () => {
     refMoreRBSheet.current.close();
     navigation.navigate('Add-fund', { pageName: 'FundAccount', categoryType: 'Funding' });
@@ -377,7 +360,7 @@ const [sliderData] = useState([
     navigation.navigate('Wallet', { pageName: 'wallet', categoryType: 'Funding' });
   };
 
-  // ── Carousel Banner Renderer ────────────────────
+  // ── Carousel Banner Renderer 
     const renderBanner = ({ item }) => (
   <LinearGradient
     colors={item.color}
@@ -419,7 +402,7 @@ const [sliderData] = useState([
 
       {!appMode && (
         <>
-        {/* ── Header ─────────────────────────── */}
+        {/* ── Header */}
           <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
             <View>
               <Text style={[styles.greetingText, { color: colors.textBlack }]}>
@@ -694,7 +677,7 @@ const [sliderData] = useState([
             <View style={{ height: 30 }} />
           </ScrollView>
 
-          {/* ── Sell Bottom Sheet ───────────── */}
+          {/* ── Sell Bottom Sheet */}
           <RBSheet
             ref={refSellRBSheet}
             closeOnDragDown={true}
@@ -725,7 +708,7 @@ const [sliderData] = useState([
             />
           </RBSheet>
 
-          {/* ── Buy Bottom Sheet ────────────── */}
+          {/* ── Buy Bottom Sheet */}
           <RBSheet
             ref={refBuyRBSheet}
             closeOnDragDown={true}
@@ -756,7 +739,7 @@ const [sliderData] = useState([
             />
           </RBSheet>
 
-          {/* ── More Bottom Sheet ───────────── */}
+          {/* ── More Bottom Sheet */}
           <RBSheet
             ref={refMoreRBSheet}
             closeOnDragDown={true}

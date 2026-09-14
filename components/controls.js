@@ -383,6 +383,7 @@ export const ShowLogoutModal = ({
   );
 };
 
+
 export const LogoutModal = ({
   openModal,
   modalTitle,
@@ -395,39 +396,65 @@ export const LogoutModal = ({
 }) => {
   return (
     <Modal
-            visible={openModal}
-            transparent={true}
-            animationType="slide" 
-            >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalText}>{modalTitle}</Text>
-                <Text style={styles.modalSubText}>
-                  {ModalDesc}
-                </Text>
-                
-                <View style={{ flexDirection: "row", justifyContent: "space-between", padding: 10,}}>
-                <View style={{ marginRight: 40 }}>
-                  <Pressable style={[styles.button]} onPress={closeBtn}>
-                    <Text style={[styles.textStyle, { color: colors.blackColor1 }]}>
-                      Cancel
-                    </Text>
-                  </Pressable>
-                </View>
+      visible={openModal}
+      transparent={true}
+      animationType={animationType || "fade"}
+      statusBarTranslucent={true}
+    >
+      <View style={[styles.modalContainer, { backgroundColor: modalBgColor || 'rgba(0, 0, 0, 0.65)' }]}>
+        <View style={[styles.modalContent, { borderRadius: 24, padding: 24, alignItems: 'center', maxWidth: 340, width: '90%' }]}>
+          
+          {/* Professional Icon Badge */}
+          <View style={{
+            width: 52,
+            height: 52,
+            borderRadius: 26,
+            backgroundColor: 'rgba(239, 83, 80, 0.1)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: 16
+          }}>
+            <Text style={{ fontSize: 22, fontWeight: '700', color: '#EF5350' }}>!</Text>
+          </View>
 
-                <View style={{ marginLeft: 40 }}>
-                  <Pressable
-                    style={[styles.btn]}
-                    onPress={logoutBtn}>
-                    <Text style={styles.textStyle}>{bntYesText}</Text>
-                  </Pressable>
-                </View>
-                </View>
-              </View>
+          <Text style={[styles.modalText, { fontSize: 18, fontWeight: '700', textAlign: 'center', marginBottom: 8 }]}>
+            {modalTitle}
+          </Text>
+          
+          <Text style={[styles.modalSubText, { fontSize: 14, lineHeight: 20, textAlign: 'center', marginBottom: 24, color: '#666' }]}>
+            {ModalDesc}
+          </Text>
+          
+          <View style={{ flexDirection: "row", justifyContent: "space-between", width: '100%', gap: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Pressable 
+                style={[styles.button, { paddingVertical: 14, borderRadius: 14, backgroundColor: '#F1F3F5', alignItems: 'center', justifyContent: 'center' }]} 
+                onPress={closeBtn}
+              >
+                <Text style={[styles.textStyle, { color: '#495057', fontSize: 15, fontWeight: '600' }]}>
+                  Cancel
+                </Text>
+              </Pressable>
             </View>
-          </Modal>
-  )
-}
+
+            <View style={{ flex: 1 }}>
+              <Pressable
+                style={[styles.btn, { paddingVertical: 14, borderRadius: 14, backgroundColor: '#EF5350', alignItems: 'center', justifyContent: 'center' }]}
+                onPress={logoutBtn}
+              >
+                <Text style={[styles.textStyle, { color: '#FFFFFF', fontSize: 15, fontWeight: '600' }]}>{bntYesText}</Text>
+              </Pressable>
+            </View>
+          </View>
+
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// Add these styles into your existing StyleSheet.create object in control.js
+
 
 // create update modal  function here
 export const ShowUpdateModal = ({
@@ -858,4 +885,72 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+
+  logoutModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    padding: 20,
+  },
+  logoutModalContent: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 10,
+  },
+  logoutIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  logoutIconText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#EF5350',
+  },
+  logoutModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  logoutModalSubText: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  logoutButtonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  logoutButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutCancelButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  logoutConfirmButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+
 });
