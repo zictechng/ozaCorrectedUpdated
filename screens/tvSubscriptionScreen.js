@@ -270,7 +270,7 @@ const RewardsTipsCard = () => {
   );
 };
 
-// ── Main TV Subscription Screen ───────────────────
+// ── Main TV Subscription Screen 
 const TVSubscriptionScreen = ({ navigation }) => {
   const isFocused = useIsFocused();
   const { colors, isDark } = useThemeStyles();
