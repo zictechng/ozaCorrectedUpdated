@@ -218,16 +218,14 @@ const MobileDataScreen = ({ navigation }) => {
     loadDataPlans(selectedNetwork);
   }, [selectedNetwork]);
 
-  const loadDataPlans = async (network) => {
+    const loadDataPlans = async (network) => {
     setIsLoadingPlans(true);
     setSelectedPlan(null);
     try {
-      // Try fetching live plans from backend first
-        const res = await client.get(`/api/bills/plans/data/${network}`, {
+      const res = await client.get(`/api/bills/plans/data/${network}`, {
         headers: { 'Authorization': 'Bearer ' + userToken },
       });
       if (res.data.msg === '200' && res.data.plans?.length > 0) {
-        // Map backend response to expected shape
         setDataPlans(res.data.plans.map(p => ({
           id:       p.id || p.plan_id || p.code,
           label:    p.name || p.label,
@@ -236,18 +234,25 @@ const MobileDataScreen = ({ navigation }) => {
           apiCode:  p.code || p.plan_code || p.id,
         })));
       } else {
-        setDataPlans(getDataPlans(network));
+        setDataPlans([]);
       }
     } catch (error) {
-      setDataPlans(getDataPlans(network));
+      setDataPlans([]);
     } finally {
       setIsLoadingPlans(false);
     }
   };
 
   // ── Get selected network color ────────────────
+    // ── Get selected network color ────────────────
+  const NETWORK_COLOR_MAP = {
+    mtn:      '#b79d0fbe',
+    airtel:   '#EF4444',
+    glo:      '#10B981',
+    '9mobile':'#059669',
+  };
   const getNetworkColor = () => {
-    return NETWORKS.find((n) => n.id === selectedNetwork)?.color || colors.primaryColor1;
+    return NETWORK_COLOR_MAP[selectedNetwork?.toLowerCase()] || colors.primaryColor1;
   };
 
   // ── Validation ────────────────────────────────

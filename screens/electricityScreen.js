@@ -22,8 +22,6 @@ import BillAmountInput from '../components/BillAmountInput';
 import useBillService from '../hooks/useBillService';
 import client from '../contextAPI/client';
 
-// ── DISCO List ────────────────────────────────────
-import { DISCO_LIST as DISCOS } from '../constants/discoList';
 // ── Meter Type Selector ───────────────────────────
 const MeterTypeSelector = ({ selectedType, onSelect }) => {
   const { colors } = useThemeStyles();
@@ -70,10 +68,67 @@ const MeterTypeSelector = ({ selectedType, onSelect }) => {
 };
 
 // ── DISCO Selector ────────────────────────────────
+// ── DISCO color map — used when backend doesn't return colors
+const DISCO_COLOR_MAP = {
+  ekedc:        { color: '#E53E3E', bgColor: '#FEE2E2' },
+  ikedc:        { color: '#D97706', bgColor: '#FEF3C7' },
+  aedc:         { color: '#059669', bgColor: '#D1FAE5' },
+  portharcourt: { color: '#7C3AED', bgColor: '#EDE9FE' },
+  ibadan:       { color: '#0284C7', bgColor: '#E0F2FE' },
+  enugu:        { color: '#B45309', bgColor: '#FEF3C7' },
+  benin:        { color: '#0F766E', bgColor: '#CCFBF1' },
+  kaduna:       { color: '#C026D3', bgColor: '#FAE8FF' },
+  kano:         { color: '#15803D', bgColor: '#DCFCE7' },
+  jos:          { color: '#1D4ED8', bgColor: '#DBEAFE' },
+  yola:         { color: '#9333EA', bgColor: '#F3E8FF' },
+  aba:          { color: '#DC2626', bgColor: '#FEE2E2' },
+};
+
+const getDiscoStyle = (id = '') => {
+  return DISCO_COLOR_MAP[id.toLowerCase()] || { color: '#6B7280', bgColor: '#F3F4F6' };
+};
+
+// ── DISCO Selector ────────────────────────────────
 const DiscoSelector = ({ selectedDisco, onSelect }) => {
   const { colors } = useThemeStyles();
   const [showAll, setShowAll] = useState(false);
-  const displayList = showAll ? DISCOS : DISCOS.slice(0, 6);
+  const [discos, setDiscos] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDiscos = async () => {
+      try {
+        const res = await client.get('/api/bills/networks/electricity');
+        if (res.data.msg === '200' && res.data.networks?.length > 0) {
+          setDiscos(res.data.networks.map(n => ({
+            id:         n.id,
+            label:      n.name || n.id,
+            state:      n.extra?.state || '',
+            service_id: n.service_id,
+            ...getDiscoStyle(n.id),
+          })));
+        } else {
+          setDiscos(FALLBACK_DISCOS);
+        }
+      } catch {
+        setDiscos(FALLBACK_DISCOS);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDiscos();
+  }, []);
+
+  const displayList = showAll ? discos : discos.slice(0, 6);
+
+  if (loading) {
+    return (
+      <View style={styles.discoContainer}>
+        <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>Select Your DISCO</Text>
+        <ActivityIndicator size="small" color={colors.primaryColor1} style={{ marginTop: spacing.sm }} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.discoContainer}>
@@ -122,7 +177,7 @@ const DiscoSelector = ({ selectedDisco, onSelect }) => {
               </Text>
 
               <Text style={[styles.discoState, { color: colors.textSecColor }]} numberOfLines={1}>
-                {disco.state.split('/')[0]}
+                {disco.state ? disco.state.split('/')[0] : ''}
               </Text>
 
               {isSelected && (
@@ -138,7 +193,7 @@ const DiscoSelector = ({ selectedDisco, onSelect }) => {
         style={[styles.showMoreBtn, { backgroundColor: "transparent" }]}
         onPress={() => setShowAll(!showAll)}>
         <Text style={[styles.showMoreText, { color: colors.primaryColor1 }]}>
-          {showAll ? 'Show Less' : `Show All ${DISCOS.length} DISCOs`}
+          {showAll ? 'Show Less' : `Show All ${discos.length} DISCOs`}
         </Text>
         <Ionicons
           name={showAll ? 'chevron-up' : 'chevron-down'}
@@ -149,6 +204,16 @@ const DiscoSelector = ({ selectedDisco, onSelect }) => {
     </View>
   );
 };
+
+// Fallback DISCOs if API is down
+const FALLBACK_DISCOS = [
+  { id: 'ekedc', label: 'EKEDC', state: 'Lagos', service_id: 326, ...{ color: '#E53E3E', bgColor: '#FEE2E2' } },
+  { id: 'ikedc', label: 'IKEDC', state: 'Lagos', service_id: 325, ...{ color: '#D97706', bgColor: '#FEF3C7' } },
+  { id: 'aedc',  label: 'AEDC',  state: 'FCT',   service_id: 327, ...{ color: '#059669', bgColor: '#D1FAE5' } },
+  { id: 'portharcourt', label: 'PHEDC', state: 'Rivers', service_id: 329, ...{ color: '#7C3AED', bgColor: '#EDE9FE' } },
+  { id: 'ibadan', label: 'IBEDC', state: 'Oyo',  service_id: 333, ...{ color: '#0284C7', bgColor: '#E0F2FE' } },
+  { id: 'enugu',  label: 'EEDC',  state: 'Enugu', service_id: 332, ...{ color: '#B45309', bgColor: '#FEF3C7' } },
+];
 
 // ── Meter Number Input ────────────────────────────
 const MeterInput = ({ value, onChangeText, onVerify, isVerifying, verifiedName }) => {
@@ -329,9 +394,9 @@ const ElectricityScreen = ({ navigation }) => {
     setIsVerifying(true);
     try {
       const res = await client.post('/api/bills/verify_meter', {
-        disco: selectedDisco.id,
-        meter_number: meterNumber,
-        meter_type: meterType.toLowerCase(),
+        service_id: selectedDisco.service_id,
+        meter_no:   meterNumber,
+        disco:      selectedDisco.id,
       }, {
         headers: { 'Authorization': 'Bearer ' + userToken },
       });
@@ -438,11 +503,13 @@ const ElectricityScreen = ({ navigation }) => {
       navigation.navigate('BillsConfirm', {
         serviceType: 'electricity',
         serviceTitle: 'Electricity Token',
-        disco: selectedDisco.id,
-        discoName: selectedDisco.label,
-        meterNumber,
+        service_id:    selectedDisco.service_id,
+        disco:         selectedDisco.id,
+        disco_name:    selectedDisco.label,
+        meter_no:      meterNumber,
+        phone_number:  userInfo?.userData?.phone || '',
+        customer_name: verifiedName,
         meterType,
-        customerName: verifiedName,
         amount,
         fee: '0',
         totalAmount: amount,
