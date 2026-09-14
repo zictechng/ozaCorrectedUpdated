@@ -289,7 +289,7 @@ const TVSubscriptionScreen = ({ navigation }) => {
   const { serviceStatus, isCheckingStatus, fetchServiceStatus, preFlightCheck } =
     useBillService('tv_subscription');
 
-  const walletBalance = userInfo?.userData?.tran_account || '0';
+  const walletBalance = userInfo?.userData?.amount || '0';
 
   useEffect(() => {
     if (isFocused) fetchServiceStatus();

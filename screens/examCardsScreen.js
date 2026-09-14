@@ -336,7 +336,7 @@ const ExamCardsScreen = ({ navigation, route }) => {
   const { serviceStatus, isCheckingStatus, fetchServiceStatus, preFlightCheck } =
     useBillService('exam_cards');
 
-  const walletBalance = userInfo?.userData?.tran_account || '0';
+  const walletBalance = userInfo?.userData?.amount || '0';
   const userPhone = userInfo?.userData?.phone || '';
   const userEmail = userInfo?.userData?.email || '';
 
