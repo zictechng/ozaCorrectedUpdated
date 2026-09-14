@@ -169,14 +169,9 @@ const BillsConfirmScreen = ({ navigation, route }) => {
   const handlePinConfirm = async (pin) => {
     setIsProcessing(true);
     try {
-      // Validate PIN with backend
-      const pinRes = await client.post(
-        '/api/validate_transaction_pin',
-        { pin, user_id: userInfo?.userData?._id },
-        { headers: { 'Authorization': 'Bearer ' + userToken } }
-      );
-
-      if (pinRes.data.msg !== '200') {
+      // Validate PIN against stored user PIN
+      const storedPin = userInfo?.userData?.acct_cot_pin;
+      if (!storedPin || String(pin) !== String(storedPin)) {
         Toast.show({
           type: ALERT_TYPE.DANGER,
           title: 'Invalid PIN',
@@ -198,11 +193,24 @@ const BillsConfirmScreen = ({ navigation, route }) => {
       }
 
       // Process the bill payment
+            // Map serviceType to correct backend endpoint
+      const endpointMap = {
+        airtime:         'buy_airtime',
+        mobile_data:     'buy_data',
+        electricity:     'buy_electricity',
+        tv_subscription: 'buy_tv',
+        exam_cards:      'buy_exam_cards',
+      };
+      const endpoint = endpointMap[serviceType] || serviceType;
+
+      // Process the bill payment
       const res = await client.post(
-        `/api/bills/${serviceType}`,
+        `/api/bills/${endpoint}`,
         {
           ...params,
-          user_id: userInfo?.userData?._id,
+          userId:         userInfo?.userData?._id,
+          user_id:        userInfo?.userData?._id,
+          tag_id:         userInfo?.userData?.tag_id,
           wallet_balance: userInfo?.userData?.tran_account,
         },
         { headers: { 'Authorization': 'Bearer ' + userToken } }

@@ -310,8 +310,8 @@ const TVSubscriptionScreen = ({ navigation }) => {
     setIsLoadingBouquets(true);
     setSelectedBouquet(null);
     try {
-      const res = await client.get(
-        `/api/bills/tv_bouquets/${providerId}`,
+        const res = await client.get(
+        `/api/bills/plans/tv/${providerId}`,
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (res.data.msg === '200' && res.data.bouquets?.length > 0) {
@@ -330,9 +330,9 @@ const TVSubscriptionScreen = ({ navigation }) => {
     if (!selectedProvider) return;
     setIsVerifying(true);
     try {
-      const res = await client.post(
-        '/api/bills/verify_tv_smartcard',
-        { provider: selectedProvider.apiCode, smartcard_number: smartCardNumber },
+        const res = await client.post(
+        '/api/bills/verify_tv',
+        { service_id: selectedProvider.apiCode, smartcard_number: smartCardNumber, phone: userInfo?.userData?.phone || '08000000000' },
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (res.data.msg === '200') {
