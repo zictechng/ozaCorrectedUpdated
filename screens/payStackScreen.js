@@ -1,6 +1,7 @@
 ﻿import React, { useContext, useState, useEffect }  from 'react';
 import { Animated, View, Text, TouchableOpacity, StyleSheet, StatusBar, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import useThemeStyles from '../hooks/useThemeStyles';
 import HeaderMenu from '../components/headerMenu';
 import { Ionicons } from '@expo/vector-icons';
 import { gs, colors } from "../styles";
@@ -17,25 +18,33 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PayStackScreen = ({route, navigation}) => {
     let routeName = route.params?.amt;
-    const {userToken, userInfo, setUserInfo} = useContext(AuthContext);
+    const { colors, isDark } = useThemeStyles();
+    const { userToken, userInfo, appSettingDetails } = useContext(AuthContext);
     const [isLoading, setIsLoading] = useState(false);
-    const [show, setShow] = useState(true)
-    const [currentRate, setCurrentRate] = useState({});
-    const [payStackToken, setPayStackToken] = useState({});
-    const [ totalMoney, setTotalMoney] = useState('')
+    const [show, setShow] = useState(true);
     const [payStackPaymentStatus, setPayStackPaymentStatus] = useState('');
-    
-    var totalMoneySend = '';
 
-    // get local storage app setting details here
-    const data = AsyncStorage.getItem('AppSettingData').then((res) => {
-      const dataInfo = JSON.parse(res)
-      setPayStackToken(dataInfo.app_paypayKey)
-      })
+    // Read Paystack key from context (already loaded by userProvider)
+    // Fallback to AsyncStorage if context not yet loaded
+    const [payStackToken, setPayStackToken] = useState(
+      appSettingDetails?.app_paypayKey || ''
+    );
+
+    useEffect(() => {
+      if (appSettingDetails?.app_paypayKey) {
+        setPayStackToken(appSettingDetails.app_paypayKey);
+      } else {
+        AsyncStorage.getItem('AppSettingData').then(res => {
+          if (res) {
+            const data = JSON.parse(res);
+            setPayStackToken(data?.app_paypayKey || '');
+          }
+        }).catch(() => {});
+      }
+    }, [appSettingDetails]);
       
       //console.log(payStackToken)
 
-    const newTotal = totalMoney * routeName.buy_amt;
          //console.log('Paystack data ', routeName)
          // manual checkout action routes
     const checkOutPaystack = async(data)=>{
