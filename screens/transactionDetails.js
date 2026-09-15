@@ -121,16 +121,25 @@ const TransactionsDetails = ({ route, navigation }) => {
     dataDetails?.transac_nature || '',
     dataDetails?.tran_type || ''
   );
-    // Only sell (Sales) transactions need proof upload
-  // Only show when pending AND no proof uploaded yet
-  const isSellTransaction = dataDetails?.tran_service_type === 'Sales';
-  const isPending = dataDetails?.transaction_status === 'Pending';
-  const hasProof = dataDetails?.payment_proof_url && dataDetails?.payment_proof_url !== '';
+    
+  const status    = dataDetails?.transaction_status;
+  const serviceType = dataDetails?.tran_service_type || '';
+  const hasProof  = !!(dataDetails?.payment_proof_url && dataDetails?.payment_proof_url !== '');
+  const isPending = status === 'Pending';
+  const isApproved = ['Successful', 'Completed'].includes(status);
 
-  const canUploadProof = isSellTransaction && isPending && !hasProof;
-  const proofAlreadyUploaded = isSellTransaction && hasProof;
-  const isApproved = ['Successful', 'Completed'].includes(dataDetails?.transaction_status);
+  // All manual payment types need proof upload
+  const requiresProof =
+    serviceType === 'Sales'          || // sell PayPal/Payoneer/BTC
+    serviceType === 'USD Funding'    || // fund USD wallet via PayPal
+    serviceType === 'Account Funding'|| // fund NGN wallet via bank transfer
+    serviceType === 'paypal'         || // buy PayPal
+    serviceType === 'payoneer'       || // buy Payoneer
+    serviceType === 'bitcoin';          // buy Bitcoin
 
+  const canUploadProof     = requiresProof && isPending && !hasProof;
+  const proofAlreadyUploaded = requiresProof && hasProof && !isApproved;
+  const isSellTransaction  = requiresProof; // used for section visibility
   // ── Loading State ─────────────────────────────
   if (isLoading) {
     return (
