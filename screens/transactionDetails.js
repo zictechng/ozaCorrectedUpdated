@@ -121,9 +121,15 @@ const TransactionsDetails = ({ route, navigation }) => {
     dataDetails?.transac_nature || '',
     dataDetails?.tran_type || ''
   );
-  const canUploadProof =
-    dataDetails?.transac_category !== 'Withdraw' &&
-    (!dataDetails?.payment_proof_url || dataDetails?.payment_proof_url === '');
+    // Only sell (Sales) transactions need proof upload
+  // Only show when pending AND no proof uploaded yet
+  const isSellTransaction = dataDetails?.tran_service_type === 'Sales';
+  const isPending = dataDetails?.transaction_status === 'Pending';
+  const hasProof = dataDetails?.payment_proof_url && dataDetails?.payment_proof_url !== '';
+
+  const canUploadProof = isSellTransaction && isPending && !hasProof;
+  const proofAlreadyUploaded = isSellTransaction && hasProof;
+  const isApproved = ['Successful', 'Completed'].includes(dataDetails?.transaction_status);
 
   // ── Loading State ─────────────────────────────
   if (isLoading) {
@@ -409,41 +415,50 @@ const TransactionsDetails = ({ route, navigation }) => {
         </SectionCard>
 
         {/* ── Upload Proof of Payment ───────────── */}
-        {canUploadProof && (
+        {isSellTransaction && (
           <SectionCard>
-            <View style={[
-                  styles.uploadNotice,
-                  {
-                    backgroundColor: colors.bgLight,                         
-                    borderColor: colors.warningColor,                       
-                  },
-                ]}>
-              <Ionicons
-                name="information-circle-outline"
-                size={20}
-                color={colors.warningColor}
-              />
-              <Text style={[styles.uploadNoticeText, { color: colors.textSecColor }]}>
-                Payment proof has not been uploaded for this transaction.
-                Upload it to speed up processing.
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.uploadBtn, { backgroundColor: colors.primaryColor1 }]}
-              onPress={() => navigation.navigate('UploadPaymentProof', {
-                track_id: dataDetails.tid,
-              })}
-              activeOpacity={0.85}>
-              <Ionicons
-                name="cloud-upload-outline"
-                size={20}
-                color="#fff"
-                style={{ marginRight: spacing.sm }}
-              />
-              <Text style={styles.uploadBtnText}>Upload Proof of Payment</Text>
-            </TouchableOpacity>
-          </SectionCard>
-        )}
+            {isApproved ? (
+              // Transaction approved — no action needed
+              <View style={[styles.uploadNotice, { backgroundColor: '#D1FAE5', borderColor: '#10B981' }]}>
+                <Ionicons name="checkmark-circle-outline" size={20} color="#10B981" />
+                <Text style={[styles.uploadNoticeText, { color: '#065F46' }]}>
+                  Transaction approved. Your wallet has been credited.
+                </Text>
+              </View>
+            ) : proofAlreadyUploaded ? (
+              // Proof uploaded, waiting for admin review
+              <View style={[styles.uploadNotice, { backgroundColor: colors.bgLight, borderColor: colors.primaryColor1 }]}>
+                <Ionicons name="time-outline" size={20} color={colors.primaryColor1} />
+                <Text style={[styles.uploadNoticeText, { color: colors.textSecColor }]}>
+                  Payment proof uploaded. Our team is reviewing your transaction. This usually takes 1–24 hours.
+                </Text>
+              </View>
+            ) : canUploadProof ? (
+              // Pending — needs proof upload
+              <>
+                <View style={[styles.uploadNotice, { backgroundColor: colors.bgLight, borderColor: colors.warningColor }]}>
+          <Ionicons name="information-circle-outline" size={20} color={colors.warningColor} />
+          <Text style={[styles.uploadNoticeText, { color: colors.textSecColor }]}>
+            Payment proof has not been uploaded. Upload your receipt to speed up processing.
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.uploadBtn, { backgroundColor: colors.primaryColor1 }]}
+          onPress={() => navigation.navigate('UploadPaymentProof', {
+            track_id: dataDetails.tid,
+            assetLabel: dataDetails.transac_category || 'PayPal',
+            amount: String(dataDetails.amount || '0'),
+            currency: 'USD',
+            ngnAmount: '0',
+          })}
+          activeOpacity={0.85}>
+          <Ionicons name="cloud-upload-outline" size={20} color="#fff" style={{ marginRight: spacing.sm }} />
+          <Text style={[styles.uploadBtnText, { color: '#fff' }]}>Upload Proof of Payment</Text>
+        </TouchableOpacity>
+      </>
+    ) : null}
+  </SectionCard>
+)}
 
         {/* ── Support Notice ───────────────────── */}
         <View style={[styles.supportCard, { backgroundColor: colors.bgLight, borderColor: colors.dividerColor }]}>
