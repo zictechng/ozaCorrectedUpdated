@@ -87,7 +87,7 @@ const TransactionsDetails = ({ route, navigation }) => {
             currency_level:     '1',
             tran_service_type:  'Bills',
             tran_desc:          raw.service_title || raw.service_type,
-            trans_method:       raw.provider || 'VTUGate',
+            trans_method:       'Wallet',
             payment_proof_url:  '',
           });
         } else {
