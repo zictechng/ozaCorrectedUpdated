@@ -61,6 +61,20 @@ const CheckOutManualPage = ({ route, navigation }) => {
   const ngnAmount = route.params?.ngnAmount || '0';
   const rateId = route.params?.rateId;
   const currency = route.params?.currency || 'USD';
+  const serviceName = route.params?.serviceName || assetLabel;
+  const serviceCategory = route.params?.serviceCategory || 'Sell';
+  const serviceType = route.params?.serviceType || 'Sales';
+  const method = route.params?.method || 'Manual';
+
+  // Get company wallet address for this asset from appSettingDetails
+  const { appSettingDetails } = useContext(AuthContext);
+  const getCompanyAddress = () => {
+    if (asset === 'paypal')   return appSettingDetails?.company_paypal_address   || '';
+    if (asset === 'payoneer') return appSettingDetails?.company_payoneer_address || '';
+    if (asset === 'bitcoin')  return appSettingDetails?.company_btc_address      || '';
+    return '';
+  };
+  const companyAddress = getCompanyAddress();
 
   const [checkoutData, setCheckoutData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,27 +94,32 @@ const CheckOutManualPage = ({ route, navigation }) => {
     initCheckout();
   }, []);
 
-    const initCheckout = async () => {
+  const initCheckout = async () => {
     setIsLoading(true);
     try {
       const res = await client.post(
         '/api/fundPurchase_funding',
         {
           myId:            userInfo?.userData?._id,
-          sell_amt:        amount,
-          serviceName:     assetLabel,
-          serviceCategory: 'Sell',
-          serviceType:     'Sell',
+          sell_amt:        Number(amount),
+          serviceName:     serviceName,
+          serviceCategory: serviceCategory,
+          serviceType:     serviceType,
           sell_note:       `${assetLabel} sell request — ${amount} ${currency} at rate ₦${rate}`,
-          method:          'Manual',
-          total_money:     ngnAmount,
+          method:          method,
+          total_money:     Number(String(ngnAmount).replace(/,/g, '')) || 0,
           payId:           null,
         },
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (res.data.msg === '200') {
-        // Backend returns transaction ID as feedback
-        setCheckoutData({ _id: res.data.feedback, transId: res.data.feedback });
+        const transId = res.data.feedback;
+        setCheckoutData({
+          _id:            transId,
+          transId:        transId,
+          wallet_address: companyAddress,
+          reference:      transId,
+        });
       } else {
         Toast.show({
           type: ALERT_TYPE.DANGER,
@@ -140,25 +159,22 @@ const CheckOutManualPage = ({ route, navigation }) => {
   };
 
   // ── Confirm payment sent ──────────────────────
-    const handleConfirm = async () => {
+  const handleConfirm = async () => {
     setIsConfirming(true);
     try {
-      // Sell request already submitted on initCheckout
-      // This button confirms the user has sent the asset
-      Dialog.show({
-        type: ALERT_TYPE.SUCCESS,
-        title: 'Request Submitted!',
-        textBody: `Your ${assetLabel} sell request has been logged. Reference: ${checkoutData?.transId || ''}. We will credit your wallet once payment is confirmed.`,
-        button: 'Done',
-        titleStyle: noticeData[0].errorTitleStyle,
-        textBodyStyle: noticeData[0].errorMessageStyle,
-        onHide: () => navigation.replace('Home'),
+      // Navigate to upload payment proof screen
+      navigation.navigate('UploadPaymentProof', {
+        track_id:    checkoutData?.transId,
+        assetLabel,
+        amount,
+        currency,
+        ngnAmount,
       });
     } catch (error) {
       Toast.show({
         type: ALERT_TYPE.DANGER,
         title: 'Failed',
-        textBody: 'Could not confirm. Please try again.',
+        textBody: 'Could not proceed. Please try again.',
         titleStyle: noticeData[0].errorTitleStyle,
         textBodyStyle: noticeData[0].errorMessageStyle,
       });

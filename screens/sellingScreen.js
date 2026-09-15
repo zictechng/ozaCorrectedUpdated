@@ -103,6 +103,15 @@ const SellingScreen = ({ navigation, route }) => {
   const { colors, isDark } = useThemeStyles();
   const { userToken, userInfo } = useContext(AuthContext);
 
+  // Read checkout method set by admin for each asset
+  const getCheckoutMethod = (assetId) => {
+    if (!appSettingDetails) return 'Manual';
+    if (assetId === 'paypal')   return appSettingDetails.app_paypal_sale   || 'Manual';
+    if (assetId === 'payoneer') return appSettingDetails.app_payoneer_sale || 'Manual';
+    if (assetId === 'bitcoin')  return appSettingDetails.app_bitcoin_sale  || 'Manual';
+    return 'Manual';
+  };
+
   const refRateSheet = useRef(null);
 
   // Pre-select asset from bottom sheet navigation
@@ -185,21 +194,33 @@ const SellingScreen = ({ navigation, route }) => {
   };
 
   // ── Proceed to checkout ───────────────────────
+
   const handleProceed = async () => {
     Keyboard.dismiss();
     if (!validate()) return;
     setIsProcessing(true);
     try {
-      navigation.navigate('CheckManual', {
-        asset: selectedAsset.id,
-        assetLabel: selectedAsset.label,
+      const checkoutMethod = getCheckoutMethod(selectedAsset.id);
+      const navParams = {
+        asset:         selectedAsset.id,
+        assetLabel:    selectedAsset.label,
         amount,
-        rate: selectedRate.rate,
-        ngnAmount: ngnEquivalent(),
-        rateId: selectedRate._id,
-        currency: selectedAsset.currency,
-        userId: userInfo?.userData?._id,
-      });
+        rate:          selectedRate.rate,
+        ngnAmount:     String(Number(amount) * Number(selectedRate.rate)),
+        rateId:        selectedRate._id,
+        currency:      selectedAsset.currency,
+        userId:        userInfo?.userData?._id,
+        serviceName:   selectedAsset.label,
+        serviceCategory: 'Sell',
+        serviceType:   'Sales',
+        method:        checkoutMethod,
+      };
+
+      if (checkoutMethod === 'Manual') {
+        navigation.navigate('CheckManual', navParams);
+      } else {
+        navigation.navigate('PaypalPayment', navParams);
+      }
     } catch (error) {
       Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Something went wrong. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
     } finally {
