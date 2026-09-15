@@ -281,13 +281,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     overflow: 'hidden',
   },
-  heroCircle1: {
+    heroCircle1: {
     position: 'absolute',
     right: -40,
     top: -40,
     width: 160,
     height: 160,
     borderRadius: 80,
+    backgroundColor: 'rgba(255,255,255,0.10)',
   },
   heroCircle2: {
     position: 'absolute',
@@ -296,11 +297,13 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.07)',
   },
   successIconBox: {
     width: 90,
     height: 90,
     borderRadius: radius.full,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.lg,
@@ -309,16 +312,19 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontFamily: '_bold',
     fontSize: typography.xxl,
+    color: '#FFFFFF',
     marginBottom: spacing.sm,
   },
   heroAmount: {
     fontFamily: '_bold',
     fontSize: typography.giant,
+    color: '#FFFFFF',
     lineHeight: 48,
   },
   heroService: {
     fontFamily: '_regular',
     fontSize: typography.base,
+    color: 'rgba(255,255,255,0.85)',
     marginTop: spacing.xs,
     lineHeight: 22,
   },
