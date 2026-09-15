@@ -262,7 +262,17 @@ const BillsHomeScreen = ({ navigation }) => {
         headers: { 'Authorization': 'Bearer ' + userToken },
       });
       if (res.data.msg === '200') {
-        setBillServices(res.data.services);
+        const s = res.data.services;
+        setBillServices({
+          airtime:         s.airtime         || 'active',
+          electricity:     s.electricity     || 'active',
+          mobile_data:     s.data            || s.mobile_data || 'active',
+          tv_subscription: s.tv_subscription || 'active',
+          waec:            s.exam_cards      || s.waec  || 'active',
+          neco:            s.exam_cards      || s.neco  || 'active',
+          jamb:            s.exam_cards      || s.jamb  || 'active',
+          nabteb:          s.exam_cards      || s.nabteb || 'active',
+        });
       }
     } catch (error) {
       console.log('Bills status error:', error.message);

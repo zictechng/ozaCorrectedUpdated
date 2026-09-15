@@ -33,7 +33,7 @@ const WithdrawScreen = ({ navigation }) => {
   const [pinFocused, setPinFocused] = useState(false);
   const [pinSecure, setPinSecure] = useState(true);
 
-  const walletBalance = Number(userInfo?.userData?.amount || 0);
+  const walletBalance = Number(userInfo?.userData?.all_bonus_acct || 0);
   const userId = userInfo?.userData?._id;
 
   // ── Fetch user bank details ───────────────────
