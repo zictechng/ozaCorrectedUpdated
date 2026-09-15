@@ -82,8 +82,6 @@ const FundAccountScreen = ({ navigation }) => {
   const refCheckoutSheet = useRef();
   const refUsdSheet = useRef();
   const scrollRef = useRef();
-  const noteInputRef = useRef();
-  const usdNoteInputRef = useRef();
 
   // ── Tab state ─────────────────────────────────
   const [activeTab, setActiveTab] = useState('naira');
@@ -323,15 +321,14 @@ const FundAccountScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.bgColor} />
-              <KeyboardAvoidingView
+      <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior="padding"
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
             ref={scrollRef}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={[styles.scrollContent, { paddingBottom: 150 }]}
+            contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled">
 
             {/* ── Header ──────────────────────── */}
@@ -458,22 +455,16 @@ const FundAccountScreen = ({ navigation }) => {
                     backgroundColor: noteFocused ? colors.primaryColor1 + '10' : colors.bgLight,
                   }]}>
                     <TextInput
-                      ref={noteInputRef}
                       style={[styles.noteField, { color: colors.textBlack }]}
                       placeholder="e.g. Monthly top-up, Trading funds..."
                       placeholderTextColor={colors.textSecColor2}
                       value={note}
                       onChangeText={setNote}
                       multiline
-                      numberOfLines={3}
+                      numberOfLines={2}
                       textAlignVertical="top"
                       maxLength={200}
-                      onFocus={() => {
-                        setNoteFocused(true);
-                        setTimeout(() => {
-                          scrollRef.current?.scrollToEnd({ animated: true });
-                        }, 150);
-                      }}
+                      onFocus={() => setNoteFocused(true)}
                       onBlur={() => setNoteFocused(false)}
                     />
                   </View>
@@ -547,21 +538,15 @@ const FundAccountScreen = ({ navigation }) => {
                   </Text>
                   <View style={[styles.noteContainer, { borderColor: colors.dividerColor, backgroundColor: colors.bgLight }]}>
                     <TextInput
-                      ref={usdNoteInputRef}
                       style={[styles.noteField, { color: colors.textBlack }]}
                       placeholder="Additional notes..."
                       placeholderTextColor={colors.textSecColor2}
                       value={usdNote}
                       onChangeText={setUsdNote}
                       multiline
-                      numberOfLines={3}
+                      numberOfLines={2}
                       textAlignVertical="top"
                       maxLength={200}
-                     onFocus={() => {
-                        setTimeout(() => {
-                          scrollRef.current?.scrollToEnd({ animated: true });
-                        }, 150);
-                      }}
                     />
                   </View>
                 </View>
