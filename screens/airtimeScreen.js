@@ -211,7 +211,7 @@ const AirtimeScreen = ({ navigation }) => {
         fee: '0',
         totalAmount: amount,
         gradientColors: ['#EC4899', '#DB2777'],
-        icon: 'phone-in-talk-outline',
+        icon: 'call-outline',
         summaryItems: [
           { label: 'Network', value: selectedNetwork },
           { label: 'Phone Number', value: phoneNumber },
