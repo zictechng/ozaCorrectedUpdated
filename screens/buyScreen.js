@@ -1,10 +1,11 @@
-﻿import React, { useState, useContext, useEffect } from 'react';
+﻿import React, { useState, useContext, useEffect, useRef  } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   StatusBar, TextInput, ActivityIndicator, Platform,
   KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard,
-  Image, Modal,
+  Image,
 } from 'react-native';
+import RBSheet from 'react-native-raw-bottom-sheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -113,7 +114,7 @@ const BuyScreen = ({ navigation, route }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);
   const [accountFocused, setAccountFocused] = useState(false);
-  const [showMethodModal, setShowMethodModal] = useState(false);
+  const refMethodSheet = useRef();
   const [userBankDetails, setUserBankDetails] = useState(null);
 
   const walletBalance = Number(userInfo?.userData?.amount || 0);
@@ -240,12 +241,12 @@ const BuyScreen = ({ navigation, route }) => {
   const handleProceed = () => {
     Keyboard.dismiss();
     if (!validate()) return;
-    setShowMethodModal(true);
+    refMethodSheet.current.open();
   };
 
   // ── Manual Transfer ───────────────────────────
   const handleManualTransfer = async () => {
-    setShowMethodModal(false);
+    refMethodSheet.current.close();
     setIsProcessing(true);
     try {
       const res = await client.post('/api/fundBuy_funding', {
@@ -286,12 +287,11 @@ const BuyScreen = ({ navigation, route }) => {
   };
 
     // ── Paystack Checkout ─────────────────────────
-  const handlePaystackCheckout = () => {
-    setShowMethodModal(false);
-    // payStackScreen reads route.params?.amt as nested object
-    // total_money must be in kobo (NGN × 100) for Paystack SDK
-    // buy_amt is the USD equivalent
-    navigation.navigate('Paystack_checkout', {
+    const handlePaystackCheckout = () => {
+    refMethodSheet.current.close();
+    // Use same FundAcctPaystackCheckout as fund account page
+    // This screen reads route.params?.amt — total_money in kobo for Paystack SDK
+    navigation.navigate('FundAcctPaystackCheckout', {
       amt: {
         tag_id:          userInfo?.userData?.tag_id,
         myId:            userInfo?.userData?._id,
@@ -300,8 +300,10 @@ const BuyScreen = ({ navigation, route }) => {
         serviceCategory: 'Exchange',
         method:          'Paystack Checkout',
         total_money:     Number(amount),
+        amt:             Number(amount),
         serviceType:     'Buy',
         buy_note:        '',
+        isBuy:           true,
       },
     });
   };
@@ -314,7 +316,7 @@ const BuyScreen = ({ navigation, route }) => {
       />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -609,63 +611,82 @@ const BuyScreen = ({ navigation, route }) => {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
-          {/* ── Payment Method Modal ─────────────── */}
-      <Modal
-        visible={showMethodModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowMethodModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: colors.bgCard }]}>
-            <Text style={[styles.modalTitle, { color: colors.textBlack }]}>
-              Choose Payment Method
+     {/* ── Payment Method Bottom Sheet ──────────── */}
+      <RBSheet
+        ref={refMethodSheet}
+        closeOnDragDown
+        closeOnPressMask
+        openDuration={400}
+        closeDuration={300}
+        height={paystackEnabled ? 380 : 280}
+        closeOnPressBack
+        customStyles={{
+          container: {
+            backgroundColor: colors.bgColor,
+            borderTopLeftRadius: radius.xl,
+            borderTopRightRadius: radius.xl,
+          },
+          draggableIcon: { backgroundColor: colors.dividerColor },
+        }}>
+        <View style={styles.sheetContent}>
+          <Text style={[styles.sheetTitle, { color: colors.textBlack }]}>
+            Choose Payment Method
+          </Text>
+          <Text style={[styles.sheetDesc, { color: colors.textSecColor }]}>
+            Select how you want to pay ₦{Number(amount).toLocaleString()} for {selectedAsset?.label}
+          </Text>
+          <View style={[styles.sheetDivider, { backgroundColor: colors.dividerColor }]} />
+
+          {/* Paystack — instant */}
+          {paystackEnabled && (
+            <TouchableOpacity
+              style={[styles.sheetBtn, { backgroundColor: '#0ba360' }]}
+              onPress={handlePaystackCheckout}
+              activeOpacity={0.85}>
+              <Ionicons name="card-outline" size={22} color="#fff" />
+              <View style={styles.sheetBtnInfo}>
+                <Text style={styles.sheetBtnText}>Pay with Paystack</Text>
+                <Text style={styles.sheetBtnSub}>Instant • Debit/Credit Card or Bank Transfer</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.8)" />
+            </TouchableOpacity>
+          )}
+
+          {/* Manual Transfer */}
+          <TouchableOpacity
+            style={[styles.sheetBtn, {
+              backgroundColor: 'transparent',
+              borderWidth: 1.5,
+              borderColor: colors.primaryColor1,
+            }]}
+            onPress={handleManualTransfer}
+            disabled={isProcessing}
+            activeOpacity={0.85}>
+            {isProcessing ? (
+              <ActivityIndicator color={colors.primaryColor1} size={22} />
+            ) : (
+              <>
+                <Ionicons name="business-outline" size={22} color={colors.primaryColor1} />
+                <View style={styles.sheetBtnInfo}>
+                  <Text style={[styles.sheetBtnText, { color: colors.primaryColor1 }]}>
+                    Manual Transfer
+                  </Text>
+                  <Text style={[styles.sheetBtnSub, { color: colors.textSecColor }]}>
+                    Bank transfer • Takes 1–24 hours
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.primaryColor1} />
+              </>
+            )}
+          </TouchableOpacity>
+
+          {!paystackEnabled && (
+            <Text style={[styles.sheetNoGateway, { color: colors.textSecColor }]}>
+              Online payment gateway not available. Please use manual transfer.
             </Text>
-            <Text style={[styles.modalDesc, { color: colors.textSecColor }]}>
-              It's faster to get your transaction approved when you pay directly with Paystack.
-            </Text>
-
-            <View style={styles.modalBtns}>
-              {paystackEnabled && (
-                <TouchableOpacity
-                  style={[styles.modalBtn, { backgroundColor: '#0ba360' }]}
-                  onPress={handlePaystackCheckout}
-                  activeOpacity={0.85}>
-                  <Ionicons name="card-outline" size={20} color="#fff" />
-                  <Text style={styles.modalBtnText}>Pay With Paystack</Text>
-                </TouchableOpacity>
-              )}
-
-              <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: colors.primaryColor1 }]}
-                onPress={handleManualTransfer}
-                disabled={isProcessing}
-                activeOpacity={0.85}>
-                {isProcessing
-                  ? <ActivityIndicator color="#fff" size={20} />
-                  : <>
-                      <Ionicons name="swap-horizontal-outline" size={20} color="#fff" />
-                      <Text style={styles.modalBtnText}>Manual Transfer</Text>
-                    </>
-                }
-              </TouchableOpacity>
-
-              {!paystackEnabled && (
-                <Text style={[styles.modalNoGateway, { color: colors.textSecColor }]}>
-                  Online payment gateway not available. Please use manual transfer.
-                </Text>
-              )}
-
-              <TouchableOpacity
-                style={styles.modalCancel}
-                onPress={() => setShowMethodModal(false)}>
-                <Text style={[styles.modalCancelText, { color: colors.textSecColor }]}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          )}
         </View>
-      </Modal>
+      </RBSheet>
 
     </SafeAreaView>
   );
@@ -1027,57 +1048,24 @@ const styles = StyleSheet.create({
   },
 
   // Method Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalCard: {
-    borderTopLeftRadius: radius.xxl,
-    borderTopRightRadius: radius.xxl,
-    padding: spacing.xl,
-    paddingBottom: spacing.xxxl,
-  },
-  modalTitle: {
-    fontFamily: '_bold',
-    fontSize: typography.xxl,
-    marginBottom: spacing.sm,
-  },
-  modalDesc: {
-    fontFamily: '_regular',
-    fontSize: typography.base,
-    lineHeight: 22,
-    marginBottom: spacing.lg,
-  },
-  modalBtns: { gap: spacing.md },
-  modalBtn: {
+    // Bottom Sheet
+  sheetContent: { padding: spacing.xl, flex: 1 },
+  sheetTitle: { fontFamily: '_bold', fontSize: typography.xl, marginBottom: 4 },
+  sheetDesc: { fontFamily: '_regular', fontSize: typography.base, lineHeight: 22, marginBottom: spacing.md },
+  sheetDivider: { height: 1, marginBottom: spacing.lg },
+  sheetBtn: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    height: 52,
-    borderRadius: radius.lg,
-    gap: spacing.sm,
-    ...shadows.md,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    gap: spacing.md,
+    ...shadows.sm,
   },
-  modalBtnText: {
-    fontFamily: '_bold',
-    fontSize: typography.base,
-    color: '#fff',
-  },
-  modalNoGateway: {
-    fontFamily: '_regular',
-    fontSize: typography.sm,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  modalCancel: {
-    alignItems: 'center',
-    padding: spacing.md,
-  },
-  modalCancelText: {
-    fontFamily: '_semiBold',
-    fontSize: typography.base,
-  },
+  sheetBtnInfo: { flex: 1 },
+  sheetBtnText: { fontFamily: '_bold', fontSize: typography.base, color: '#fff', lineHeight: 22 },
+  sheetBtnSub: { fontFamily: '_regular', fontSize: typography.sm, color: 'rgba(255,255,255,0.8)', lineHeight: 20, marginTop: 2 },
+  sheetNoGateway: { fontFamily: '_regular', fontSize: typography.sm, textAlign: 'center', lineHeight: 20, marginTop: spacing.sm },
 });
 
 export default BuyScreen;
