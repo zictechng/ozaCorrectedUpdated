@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   StatusBar, TextInput, ActivityIndicator, Platform,
   KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard,
-  Image,
+  Image, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
@@ -90,12 +90,22 @@ const RateRow = ({ label, value, colors }) => (
 );
 
 // ── Main Buy Screen ───────────────────────────────
-const BuyScreen = ({ navigation }) => {
+const BuyScreen = ({ navigation, route }) => {
   const isFocused = useIsFocused();
   const { colors, isDark } = useThemeStyles();
-  const { userToken, userInfo } = useContext(AuthContext);
+  const { userToken, userInfo, appSettingDetails } = useContext(AuthContext);
 
-  const [selectedAsset, setSelectedAsset] = useState(null);
+  // Pre-select asset from bottom sheet
+  const preSelectedName = route?.params?.pageName || null;
+  const getPreSelected = () => {
+    if (!preSelectedName) return null;
+    return ASSETS.find(a =>
+      a.label.toLowerCase() === preSelectedName.toLowerCase() ||
+      a.id.toLowerCase() === preSelectedName.toLowerCase()
+    ) || null;
+  };
+
+  const [selectedAsset, setSelectedAsset] = useState(getPreSelected);
   const [amount, setAmount] = useState('');
   const [accountDetail, setAccountDetail] = useState('');
   const [selectedRate, setSelectedRate] = useState(null);
@@ -103,8 +113,22 @@ const BuyScreen = ({ navigation }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);
   const [accountFocused, setAccountFocused] = useState(false);
+  const [showMethodModal, setShowMethodModal] = useState(false);
 
-  const walletBalance = Number(userInfo?.userData?.tran_account || 0);
+  const walletBalance = Number(userInfo?.userData?.amount || 0);
+  const paystackEnabled = appSettingDetails?.app_payStack_btn === true ||
+                          appSettingDetails?.app_payStack_btn === 'true';
+
+  // Reset state on focus return
+  useEffect(() => {
+    if (isFocused) {
+      setAmount('');
+      setAccountDetail('');
+      setSelectedRate(null);
+      setShowMethodModal(false);
+      setSelectedAsset(getPreSelected());
+    }
+  }, [isFocused]);
 
   // ── Fetch rates when asset selected ──────────
   useEffect(() => {
@@ -175,43 +199,45 @@ const BuyScreen = ({ navigation }) => {
   };
 
   // ── Proceed to checkout ───────────────────────
-    const handleProceed = async () => {
+     // ── Proceed — opens method modal ──────────────
+  const handleProceed = () => {
     Keyboard.dismiss();
     if (!validate()) return;
+    setShowMethodModal(true);
+  };
+
+  // ── Manual Transfer ───────────────────────────
+  const handleManualTransfer = async () => {
+    setShowMethodModal(false);
     setIsProcessing(true);
     try {
-      const manualData = {
-        tag_id: userInfo?.userData?.tag_id,
-        myId: userInfo?.userData?._id,
-        buy_amt: amount,
-        serviceName: selectedAsset.label,
+      const res = await client.post('/api/fundBuy_funding', {
+        tag_id:          userInfo?.userData?.tag_id,
+        myId:            userInfo?.userData?._id,
+        buy_amt:         usdEquivalent(),
+        serviceName:     selectedAsset.label,
         serviceCategory: 'Exchange',
-        method: 'Manual Checkout',
-        total_money: (Number(amount) / Number(selectedRate.rate)).toFixed(2),
-        serviceType: selectedAsset.id,
-        accountDetail: accountDetail.trim(),
-        currency: selectedAsset.currency,
-      };
-
-      const res = await client.post(
-        '/api/fundBuy_funding',
-        manualData,
-        { headers: { 'Authorization': 'Bearer ' + userToken } }
-      );
+        method:          'Manually Checkout',
+        total_money:     usdEquivalent(),
+        serviceType:     'Buy',
+        buy_note:        '',
+        accountDetail:   accountDetail.trim(),
+      }, { headers: { 'Authorization': 'Bearer ' + userToken } });
 
       if (res.data.msg === '200') {
         navigation.navigate('CheckManual', {
-          asset: selectedAsset.id,
-          assetLabel: selectedAsset.label,
-          amount: usdEquivalent(),
-          rate: selectedRate.rate,
-          ngnAmount: amount,
-          rateId: selectedRate._id,
-          currency: selectedAsset.currency,
-          userId: userInfo?.userData?._id,
+          asset:           selectedAsset.id,
+          assetLabel:      selectedAsset.label,
+          amount:          usdEquivalent(),
+          rate:            selectedRate.rate,
+          ngnAmount:       amount,
+          currency:        selectedAsset.currency,
+          serviceName:     selectedAsset.label,
+          serviceCategory: 'Exchange',
+          serviceType:     'Buy',
+          method:          'Manually Checkout',
+          tag_id:          userInfo?.userData?.tag_id,
         });
-        setAmount('');
-        setAccountDetail('');
       } else {
         Toast.show({ type: ALERT_TYPE.DANGER, title: 'Failed', textBody: res.data.message || 'Something went wrong. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       }
@@ -220,6 +246,26 @@ const BuyScreen = ({ navigation }) => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // ── Paystack Checkout ─────────────────────────
+    // ── Paystack Checkout ─────────────────────────
+  const handlePaystackCheckout = () => {
+    setShowMethodModal(false);
+    // payStackScreen reads route.params?.amt as nested object
+    navigation.navigate('Paystack_checkout', {
+      amt: {
+        tag_id:          userInfo?.userData?.tag_id,
+        myId:            userInfo?.userData?._id,
+        buy_amt:         usdEquivalent(),
+        serviceName:     selectedAsset.label,
+        serviceCategory: 'Exchange',
+        method:          'Paystack Checkout',
+        total_money:     Number(amount),
+        serviceType:     'Buy',
+        buy_note:        '',
+      },
+    });
   };
 
   return (
@@ -269,52 +315,33 @@ const BuyScreen = ({ navigation }) => {
               </View>
             </LinearGradient>
 
-            {/* ── Wallet Balance ────────────────── */}
-            <View style={[styles.balanceCard, {
-              backgroundColor: colors.bgCard,
-              borderColor: colors.dividerColor,
-            }]}>
-              <View style={[styles.balanceIconBox, { backgroundColor: '#DBEAFE' }]}>
-                <Ionicons name="wallet-outline" size={20} color="#3B82F6" />
-              </View>
-              <View style={styles.balanceInfo}>
-                <Text style={[styles.balanceLabel, { color: colors.textSecColor }]}>
-                  Wallet Balance
-                </Text>
-                <Text style={[styles.balanceValue, { color: colors.textBlack }]}>
-                  ₦{walletBalance.toLocaleString()}
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={[styles.fundBtn, { backgroundColor: '#3B82F6' }]}
-                onPress={() => navigation.navigate('FundAccount')}
-                activeOpacity={0.85}>
-                <Text style={styles.fundBtnText}>Add Funds</Text>
-              </TouchableOpacity>
-            </View>
-
             {/* ── Select Asset ──────────────────── */}
             <View style={[styles.sectionCard, { backgroundColor: colors.bgCard }]}>
               <Text style={[styles.sectionTitle, { color: colors.textBlack }]}>
                 Select Asset to Buy
               </Text>
               <Text style={[styles.sectionDesc, { color: colors.textSecColor }]}>
-                Choose the digital asset you want to purchase with your Naira balance
+                Choose the digital asset you want to purchase.
               </Text>
-              <View style={styles.assetsRow}>
-                {ASSETS.map((asset) => (
-                  <AssetCard
-                    key={asset.id}
-                    asset={asset}
-                    isSelected={selectedAsset?.id === asset.id}
-                    onSelect={(a) => {
-                      setSelectedAsset(a);
-                      setAmount('');
-                      setAccountDetail('');
-                    }}
-                    colors={colors}
-                  />
-                ))}
+                <View style={styles.assetsRow}>
+                {ASSETS.map((asset) => {
+                  const isSelected = selectedAsset?.id === asset.id;
+                  const isDisabled = preSelectedName && !isSelected;
+                  return (
+                    <AssetCard
+                      key={asset.id}
+                      asset={asset}
+                      isSelected={isSelected}
+                      onSelect={(a) => {
+                        if (isDisabled) return;
+                        setSelectedAsset(a);
+                        setAmount('');
+                        setAccountDetail('');
+                      }}
+                      colors={colors}
+                    />
+                  );
+                })}
               </View>
             </View>
 
@@ -512,10 +539,10 @@ const BuyScreen = ({ navigation }) => {
                 How It Works
               </Text>
               {[
-                { icon: 'hand-left-outline', text: 'Select the asset you want to buy and enter the NGN amount' },
-                { icon: 'mail-outline', text: 'Provide your account email or wallet address to receive the funds' },
-                { icon: 'checkmark-circle-outline', text: 'We deduct the NGN amount from your wallet and process your order' },
-                { icon: 'time-outline', text: 'Your digital asset is delivered to your account within minutes' },
+                { icon: 'hand-left-outline', text: 'Select the asset you want to buy and enter the amount' },
+                { icon: 'mail-outline', text: 'Provide your account email address or wallet address to receive the funds' },
+                { icon: 'checkmark-circle-outline', text: 'Pay with Paystack or manual transfer to the company account to process your order' },
+                { icon: 'time-outline', text: 'Your digital asset is delivered to your account within minutes, after payment verified' },
               ].map((step, i) => (
                 <View key={i} style={styles.howRow}>
                   <View style={[styles.howNum, { backgroundColor: '#DBEAFE' }]}>
@@ -543,9 +570,69 @@ const BuyScreen = ({ navigation }) => {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+          {/* ── Payment Method Modal ─────────────── */}
+      <Modal
+        visible={showMethodModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMethodModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.bgCard }]}>
+            <Text style={[styles.modalTitle, { color: colors.textBlack }]}>
+              Choose Payment Method
+            </Text>
+            <Text style={[styles.modalDesc, { color: colors.textSecColor }]}>
+              It's faster to get your transaction approved when you pay directly with Paystack.
+            </Text>
+
+            <View style={styles.modalBtns}>
+              {paystackEnabled && (
+                <TouchableOpacity
+                  style={[styles.modalBtn, { backgroundColor: '#0ba360' }]}
+                  onPress={handlePaystackCheckout}
+                  activeOpacity={0.85}>
+                  <Ionicons name="card-outline" size={20} color="#fff" />
+                  <Text style={styles.modalBtnText}>Pay With Paystack</Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: colors.primaryColor1 }]}
+                onPress={handleManualTransfer}
+                disabled={isProcessing}
+                activeOpacity={0.85}>
+                {isProcessing
+                  ? <ActivityIndicator color="#fff" size={20} />
+                  : <>
+                      <Ionicons name="swap-horizontal-outline" size={20} color="#fff" />
+                      <Text style={styles.modalBtnText}>Manual Transfer</Text>
+                    </>
+                }
+              </TouchableOpacity>
+
+              {!paystackEnabled && (
+                <Text style={[styles.modalNoGateway, { color: colors.textSecColor }]}>
+                  Online payment gateway not available. Please use manual transfer.
+                </Text>
+              )}
+
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => setShowMethodModal(false)}>
+                <Text style={[styles.modalCancelText, { color: colors.textSecColor }]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -893,11 +980,64 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: spacing.sm,
   },
-  noticeText: {
+    noticeText: {
     fontFamily: '_regular',
     fontSize: typography.base,
     lineHeight: 22,
     flex: 1,
+  },
+
+  // Method Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    borderTopLeftRadius: radius.xxl,
+    borderTopRightRadius: radius.xxl,
+    padding: spacing.xl,
+    paddingBottom: spacing.xxxl,
+  },
+  modalTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xxl,
+    marginBottom: spacing.sm,
+  },
+  modalDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+  },
+  modalBtns: { gap: spacing.md },
+  modalBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 52,
+    borderRadius: radius.lg,
+    gap: spacing.sm,
+    ...shadows.md,
+  },
+  modalBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    color: '#fff',
+  },
+  modalNoGateway: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  modalCancel: {
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  modalCancelText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
   },
 });
 
