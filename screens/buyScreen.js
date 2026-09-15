@@ -114,21 +114,50 @@ const BuyScreen = ({ navigation, route }) => {
   const [amountFocused, setAmountFocused] = useState(false);
   const [accountFocused, setAccountFocused] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
+  const [userBankDetails, setUserBankDetails] = useState(null);
 
   const walletBalance = Number(userInfo?.userData?.amount || 0);
   const paystackEnabled = appSettingDetails?.app_payStack_btn === true ||
                           appSettingDetails?.app_payStack_btn === 'true';
+  
+  // ── Fetch user's stored payment accounts ──────
+  useEffect(() => {
+    const fetchBankDetails = async () => {
+      try {
+        const res = await client.get(
+          `/api/user_bankDetails/${userInfo?.userData?._id}`,
+          { headers: { 'Authorization': 'Bearer ' + userToken } }
+        );
+        if (res.data.msg === '200') {
+          setUserBankDetails(res.data.bankDetail);
+        }
+      } catch (_) {}
+    };
+    if (userInfo?.userData?._id) fetchBankDetails();
+  }, []);
+
+  
+    // Auto-populate account detail from stored bank details
+  const getStoredAccount = (assetId) => {
+    if (!userBankDetails) return '';
+    if (assetId === 'paypal')   return userBankDetails.paypal_address   || '';
+    if (assetId === 'payoneer') return userBankDetails.payoneer_address || '';
+    if (assetId === 'bitcoin')  return userBankDetails.btc_address       || '';
+    return '';
+  };
 
   // Reset state on focus return
   useEffect(() => {
     if (isFocused) {
       setAmount('');
-      setAccountDetail('');
       setSelectedRate(null);
       setShowMethodModal(false);
-      setSelectedAsset(getPreSelected());
+      const preAsset = getPreSelected();
+      setSelectedAsset(preAsset);
+      // Auto-populate account from stored details
+      setAccountDetail(preAsset ? getStoredAccount(preAsset.id) : '');
     }
-  }, [isFocused]);
+  }, [isFocused, userBankDetails]);
 
   // ── Fetch rates when asset selected ──────────
   useEffect(() => {
@@ -332,11 +361,12 @@ const BuyScreen = ({ navigation, route }) => {
                       key={asset.id}
                       asset={asset}
                       isSelected={isSelected}
-                      onSelect={(a) => {
+                       onSelect={(a) => {
                         if (isDisabled) return;
                         setSelectedAsset(a);
                         setAmount('');
-                        setAccountDetail('');
+                        // Auto-populate stored account, user can still edit
+                        setAccountDetail(getStoredAccount(a.id));
                       }}
                       colors={colors}
                     />
