@@ -52,7 +52,7 @@ const DetailRow = ({ label, value, copyable, onCopy, colors }) => (
 const CheckOutManualPage = ({ route, navigation }) => {
   const isFocused = useIsFocused();
   const { colors, isDark } = useThemeStyles();
-  const { userToken, userInfo } = useContext(AuthContext);
+  const { userToken, userInfo, appSettingDetails } = useContext(AuthContext);
 
   const asset = route.params?.asset || 'paypal';
   const assetLabel = route.params?.assetLabel || 'PayPal';
@@ -67,7 +67,6 @@ const CheckOutManualPage = ({ route, navigation }) => {
   const method = route.params?.method || 'Manual';
 
   // Get company wallet address for this asset from appSettingDetails
-  const { appSettingDetails } = useContext(AuthContext);
   const getCompanyAddress = () => {
     if (asset === 'paypal')   return appSettingDetails?.company_paypal_address   || '';
     if (asset === 'payoneer') return appSettingDetails?.company_payoneer_address || '';
