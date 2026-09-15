@@ -311,22 +311,34 @@ const loadBills = async (reset = false) => {
   setBillsLoading(true);
   const page = reset ? 1 : billsPage;
   try {
-    const res = await client.get(
+      const res = await client.get(
       `/api/bills/history/${userInfo.userData._id}?page=${page}`,
       { headers: { 'Authorization': 'Bearer ' + userToken } }
     );
-    if (res.data?.data?.length > 0) {
+    const rawBills = res.data?.transactions || res.data?.data || [];
+    // Normalise BillsTransaction fields to match TransactionItem expectations
+    const bills = rawBills.map(b => ({
+      ...b,
+      transac_nature:      b.service_title || b.service_type || 'Bill Payment',
+      tran_type:           'Debit',
+      transaction_status:  b.status === 'success' ? 'Completed' : b.status === 'failed' ? 'Failed' : 'Pending',
+      tid:                 b.reference,
+      creditOn:            b.createdAt,
+      currency_level:      '1',
+      transac_category:    b.service_type,
+    }));
+    if (bills.length > 0) {
       setBillsData(prev => {
-        const combined = reset ? res.data.data : [...prev, ...res.data.data];
-        const seen = new Set();                                    // ✅ deduplicate
+        const combined = reset ? bills : [...prev, ...bills];
+        const seen = new Set();                                    
         return combined.filter(item => {
           if (seen.has(item._id)) return false;
           seen.add(item._id);
           return true;
         });
       });
-      setBillsPage(page + 1);
-      setBillsEnd(false);
+    setBillsPage(page + 1);
+      setBillsEnd(!res.data?.pagination?.hasMore);
     } else {
       setBillsEnd(true);
     }
@@ -366,6 +378,7 @@ const loadBills = async (reset = false) => {
       loadAll();
       loadPaypal();
       loadPayoneer();
+      loadBills();
     }
   }, [isFocused]);
 
