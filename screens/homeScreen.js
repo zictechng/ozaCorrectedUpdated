@@ -239,7 +239,7 @@ const [sliderData] = useState([
       });
       if (res.data.msg === '200') {
         // Log to see actual field names from API
-        console.log('USER DATA FIELDS:', JSON.stringify(res.data.userData, null, 2));
+        //console.log('USER DATA FIELDS:', JSON.stringify(res.data.userData, null, 2));
         AsyncStorage.setItem('userInfo', JSON.stringify(res.data));
         setUserInfo(res.data);
       }

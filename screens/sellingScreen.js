@@ -139,15 +139,15 @@ const SellingScreen = ({ navigation, route }) => {
 
   const walletBalance = Number(userInfo?.userData?.amount || 0);
 
-  // ── Fetch rates when asset selected ──────────
-    // ── Reset state when returning to screen ─────
+    // ── Reset state every time screen comes into focus ──
   useEffect(() => {
-    if (isFocused && !preSelectedName) {
-      // Only reset if not pre-selected from bottom sheet
-      setSelectedAsset(null);
+    if (isFocused) {
       setAmount('');
       setSelectedRate(null);
       setShowMethodModal(false);
+      // Re-apply preselected asset from bottom sheet params
+      // or clear if no preselection
+      setSelectedAsset(getPreSelected());
     }
   }, [isFocused]);
 
