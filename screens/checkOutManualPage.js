@@ -372,8 +372,9 @@ const CheckOutManualPage = ({ route, navigation }) => {
             `Log in to your ${assetLabel} account`,
             `Send exactly $${amount} ${currency} to the wallet address above`,
             'Include the reference number in your payment note',
-            'Click "I\'ve Sent Payment" below after sending',
-            'We will verify and credit your wallet within minutes',
+            'Take a screenshot of your transfer receipt',
+            'Click "I\'ve Sent Payment" — upload proof of sending the funds',
+            'We will verify and credit your NGN wallet within 1–24 hours',
           ].map((step, i) => (
             <View key={i} style={styles.instructionRow}>
               <View style={[styles.instructionNum, { backgroundColor: '#EF4444' }]}>
@@ -407,16 +408,16 @@ const CheckOutManualPage = ({ route, navigation }) => {
         </TouchableOpacity>
 
         {/* ── Cancel Button ─────────────────────── */}
-        <TouchableOpacity
+       <TouchableOpacity
           style={[styles.cancelBtn, {
-            borderColor: colors.dangerColor,
-            backgroundColor: colors.lightRed,
+            borderColor: colors.dividerColor,
+            backgroundColor: colors.bgLight,
           }]}
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.navigate('Home')}
           activeOpacity={0.85}>
-          <Ionicons name="close-circle-outline" size={20} color={colors.dangerColor} />
-          <Text style={[styles.cancelBtnText, { color: colors.dangerColor }]}>
-            Cancel Transaction
+          <Ionicons name="time-outline" size={20} color={colors.textSecColor} />
+          <Text style={[styles.cancelBtnText, { color: colors.textSecColor }]}>
+            I'll Do This Later
           </Text>
         </TouchableOpacity>
 
