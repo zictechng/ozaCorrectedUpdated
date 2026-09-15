@@ -360,6 +360,11 @@ const [sliderData] = useState([
     navigation.navigate('Wallet', { pageName: 'wallet', categoryType: 'Funding' });
   };
 
+  const sendFundBtn = () => {
+    refMoreRBSheet.current.close();
+    navigation.navigate('SendFund', { pageName: 'wallet', categoryType: 'Funding' });
+  };
+
   // ── Carousel Banner Renderer 
     const renderBanner = ({ item }) => (
   <LinearGradient
@@ -758,15 +763,15 @@ const [sliderData] = useState([
               buttonStyle={gs.bottomSheetButton}
               iconType1={<Feather name="plus-circle" size={20} color={colors.primaryColor1} />}
               iconType2={<Feather name="minus-circle" size={20} color={colors.primaryColor1} />}
-              iconType3={<Ionicons name="wallet-outline" size={20} color={colors.primaryColor1} />}
+              iconType3={<Ionicons name="paper-plane-outline" size={20} color={colors.primaryColor1} />}
               imageStyle={gs.bottomSheetImageStyle}
               buttonTextStyle={gs.bottomSheetButtonText}
               buttonLabel_paypal="Fund Account"
               buttonLabel_payooner="Withdraw Funds"
-              buttonLabel_bitcoin="My Wallet"
+              buttonLabel_bitcoin="Send Fund"
               onPress1={addFundBtn}
               onPress2={WithdrawBtn}
-              onPress3={walletBtn}
+              onPress3={sendFundBtn}
             />
           </RBSheet>
         </>

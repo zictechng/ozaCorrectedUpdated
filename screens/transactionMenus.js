@@ -91,6 +91,16 @@ const TransactionMenus = () => {
       subtitle: 'Buy PayPal, Payoneer or Bitcoin',
       route: 'BuyPage',
     },
+
+    {
+      id: 'bills',
+      icon: 'receipt-outline',
+      iconBg: '#DBEAFE',
+      iconColor: '#3B82F6',
+      title: 'Pay Bills',
+      subtitle: 'Airtime, Data, Electricity, TV Subscription, Educational Pins',
+      route: 'BillsHome',
+    },
   ];
 
   return (
@@ -136,25 +146,6 @@ const TransactionMenus = () => {
             </Text>
           </View>
         </LinearGradient>
-
-        {/* ── Wallet Balance Strip ──────────────── */}
-        <View style={[styles.balanceStrip, { backgroundColor: colors.bgCard, borderColor: colors.dividerColor }]}>
-          <View>
-            <Text style={[styles.balanceLabel, { color: colors.textSecColor }]}>
-              Wallet Balance
-            </Text>
-            <Text style={[styles.balanceValue, { color: colors.textBlack }]}>
-              ₦{Number(userInfo?.userData?.tran_account || 0).toLocaleString()}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.walletBtn, { backgroundColor: colors.primaryColor1 }]}
-            onPress={() => navigation.navigate('Wallet')}
-            activeOpacity={0.85}>
-            <Ionicons name="wallet-outline" size={16} color="#fff" />
-            <Text style={styles.walletBtnText}>My Wallet</Text>
-          </TouchableOpacity>
-        </View>
 
         {/* ── Section Title ─────────────────────── */}
         <Text style={[styles.sectionTitle, { color: colors.textBlack }]}>
