@@ -73,22 +73,36 @@ const FundAccountPaystackScreen = ({ route, navigation }) => {
   };
 
   // ── Handle successful payment ─────────────────
-  const handlePaystackSuccess = async (reference) => {
+    const handlePaystackSuccess = async (reference) => {
     setIsLoading(true);
     try {
-      const res = await client.post(
-        '/api/userAccount_funding',
-        {
-          tag_id: routeData?.tag_id,
-          serviceName: routeData?.serviceName,
-          serviceCategory: 'Exchange',
-          method: 'Paystack Checkout',
-          total_money: routeData?.total_money,
-          payId: reference,
-          amt: routeData?.total_money,
-          note: routeData?.note,
-          userId: userInfo?.userData?._id,
-        },
+      // Route to correct endpoint based on transaction type
+      const isBuy = routeData?.isBuy === true;
+      const endpoint = isBuy ? '/api/fundBuy_funding' : '/api/userAccount_funding';
+      const body = isBuy ? {
+        tag_id:          routeData?.tag_id,
+        myId:            userInfo?.userData?._id,
+        buy_amt:         routeData?.buy_amt,
+        serviceName:     routeData?.serviceName,
+        serviceCategory: 'Exchange',
+        method:          'Paystack Checkout',
+        total_money:     routeData?.total_money,
+        serviceType:     'Buy',
+        buy_note:        routeData?.buy_note || '',
+        payId:           reference,
+      } : {
+        tag_id:          routeData?.tag_id,
+        serviceName:     routeData?.serviceName,
+        serviceCategory: 'Exchange',
+        method:          'Paystack Checkout',
+        total_money:     routeData?.total_money,
+        payId:           reference,
+        amt:             routeData?.total_money,
+        note:            routeData?.note,
+        userId:          userInfo?.userData?._id,
+      };
+
+      const res = await client.post(endpoint, body,
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (res.data.msg === '200') {
@@ -413,7 +427,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: spacing.xl,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.xxxl,
   },
   payBtn: {
     flexDirection: 'row',
