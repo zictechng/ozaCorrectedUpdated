@@ -366,12 +366,12 @@ const MobileDataScreen = ({ navigation }) => {
         headers: { 'Authorization': 'Bearer ' + userToken },
       });
       if (res.data.msg === '200' && res.data.plans?.length > 0) {
-        setDataPlans(res.data.plans.map(p => ({
-          id:       p.id || p.plan_id || p.code,
-          label:    p.name || p.label,
-          validity: p.validity || p.duration || '',
-          price:    String(p.price || p.amount || '0'),
-          apiCode:  p.code || p.plan_code || p.id,
+        setDataPlans(res.data.plans.map((p, index) => ({
+          id:       p.plan_code || p.code || p.id || p.plan_id || `plan_${index}`,
+          label:    p.plan_name || p.name || p.label || p.allowance || '',
+          validity: p.month_validate || p.validity || p.duration || '',
+          price:    String(p.plan_amount || p.price || p.amount || '0'),
+          apiCode:  p.plan_code || p.code || p.id || `plan_${index}`,
         })));
       } else {
         setDataPlans([]);
@@ -602,9 +602,9 @@ const MobileDataScreen = ({ navigation }) => {
                         </View>
                       ) : (
                         <View style={styles.plansGrid}>
-                          {dataPlans.map((plan) => (
+                          {dataPlans.map((plan, index) => (
                             <PlanCard
-                              key={plan.id}
+                              key={`${plan.id}_${index}`}
                               plan={plan}
                               isSelected={selectedPlan?.id === plan.id}
                               onSelect={handlePlanSelect}
