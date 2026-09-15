@@ -203,20 +203,20 @@ const AirtimeScreen = ({ navigation }) => {
     setIsProcessing(true);
     try {
       navigation.navigate('BillsConfirm', {
-        serviceType: 'airtime',
+        serviceType:  'airtime',
         serviceTitle: 'Airtime Recharge',
-        network: selectedNetwork,
-        phoneNumber,
+        network:      selectedNetwork,
+        phone:        phoneNumber,
         amount,
-        fee: '0',
-        totalAmount: amount,
+        fee:          '0',
+        totalAmount:  amount,
         gradientColors: ['#EC4899', '#DB2777'],
-        icon: 'call-outline',
+        icon:         'call-outline',
         summaryItems: [
-          { label: 'Network', value: selectedNetwork },
+          { label: 'Network',      value: selectedNetwork },
           { label: 'Phone Number', value: phoneNumber },
-          { label: 'Amount', value: `₦${Number(amount).toLocaleString()}` },
-          { label: 'Service Fee', value: '₦0.00' },
+          { label: 'Amount',       value: `₦${Number(amount).toLocaleString()}` },
+          { label: 'Service Fee',  value: '₦0.00' },
         ],
       });
     } catch (error) {
