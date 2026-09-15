@@ -345,33 +345,33 @@ const BillsConfirmScreen = ({ navigation, route }) => {
         {/* ── Wallet Balance ────────────────────── */}
         <View style={[styles.walletCard, { backgroundColor: colors.bgCard }]}>
           <View style={styles.walletRow}>
-            <View style={styles.walletIconBox}>
+            <View style={[styles.walletIconBox, { backgroundColor: colors.bgLight }]}>
               <Ionicons name="wallet-outline" size={20} color={colors.primaryColor1} />
             </View>
             <View style={styles.walletInfo}>
               <Text style={[styles.walletLabel, { color: colors.textSecColor }]}>Wallet Balance</Text>
               <Text style={[styles.walletBalance, { color: colors.textBlack }]}>
-                ₦{Number(userInfo?.userData?.tran_account || 0).toLocaleString()}
+                ₦{Number(userInfo?.userData?.amount || 0).toLocaleString()}
               </Text>
             </View>
             <View style={[
               styles.walletStatusBadge,
               {
                 backgroundColor:
-                  Number(totalAmount) <= Number(userInfo?.userData?.tran_account || 0)
+                  Number(totalAmount) <= Number(userInfo?.userData?.amount || 0)
                     ? colors.greenColorLight
                     : colors.lightRed,
               },
             ]}>
               <Ionicons
                 name={
-                  Number(totalAmount) <= Number(userInfo?.userData?.tran_account || 0)
+                  Number(totalAmount) <= Number(userInfo?.userData?.amount || 0)
                     ? 'checkmark-circle'
                     : 'close-circle'
                 }
                 size={18}
                 color={
-                  Number(totalAmount) <= Number(userInfo?.userData?.tran_account || 0)
+                  Number(totalAmount) <= Number(userInfo?.userData?.amount || 0)
                     ? colors.successColor
                     : colors.dangerColor
                 }
@@ -380,12 +380,12 @@ const BillsConfirmScreen = ({ navigation, route }) => {
                 styles.walletStatusText,
                 {
                   color:
-                    Number(totalAmount) <= Number(userInfo?.userData?.tran_account || 0)
+                    Number(totalAmount) <= Number(userInfo?.userData?.amount || 0)
                       ? colors.successColor
                       : colors.dangerColor,
                 },
               ]}>
-                {Number(totalAmount) <= Number(userInfo?.userData?.tran_account || 0)
+                {Number(totalAmount) <= Number(userInfo?.userData?.amount || 0)
                   ? 'Sufficient'
                   : 'Insufficient'}
               </Text>
@@ -407,12 +407,12 @@ const BillsConfirmScreen = ({ navigation, route }) => {
           style={[
             styles.payBtn,
             { backgroundColor: gradientColors[0] },
-            Number(totalAmount) > Number(userInfo?.userData?.tran_account || 0)
+            Number(totalAmount) > Number(userInfo?.userData?.amount || 0)
             && { opacity: 0.5 },
           ]}
-          onPress={handlePay}
-          disabled={
-            Number(totalAmount) > Number(userInfo?.userData?.tran_account || 0)
+            onPress={handlePay}
+            disabled={
+            Number(totalAmount) > Number(userInfo?.userData?.amount || 0)
           }
           activeOpacity={0.85}>
           <Ionicons
@@ -483,13 +483,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...shadows.lg,
   },
-  bannerCircle1: {
+    bannerCircle1: {
     position: 'absolute',
     right: -30,
     top: -30,
     width: 120,
     height: 120,
     borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.10)',
   },
   bannerCircle2: {
     position: 'absolute',
@@ -498,11 +499,13 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 45,
+    backgroundColor: 'rgba(255,255,255,0.07)',
   },
   bannerIconBox: {
     width: 64,
     height: 64,
     borderRadius: radius.full,
+    backgroundColor: 'rgba(255,255,255,0.20)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.md,
@@ -510,17 +513,20 @@ const styles = StyleSheet.create({
   bannerTitle: {
     fontFamily: '_semiBold',
     fontSize: typography.base,
+    color: '#FFFFFF',
     marginBottom: spacing.sm,
     lineHeight: 22,
   },
   bannerAmount: {
     fontFamily: '_bold',
     fontSize: typography.giant,
+    color: '#FFFFFF',
     lineHeight: 48,
   },
   bannerLabel: {
     fontFamily: '_regular',
     fontSize: typography.sm,
+    color: 'rgba(255,255,255,0.80)',
     marginTop: 4,
     lineHeight: 20,
   },
@@ -742,15 +748,17 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     marginBottom: spacing.sm,
   },
-  pinDot: {
+    pinDot: {
     width: 16,
     height: 16,
     borderRadius: 8,
     borderWidth: 2,
-    
+    borderColor: '#9CA3AF',
     backgroundColor: 'transparent',
   },
   pinDotFilled: {
+    backgroundColor: '#4C5FD5',
+    borderColor: '#4C5FD5',
   },
   pinHint: {
     fontFamily: '_regular',
@@ -772,7 +780,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 64,
     borderRadius: radius.lg,
-    
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
     ...shadows.sm,

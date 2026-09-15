@@ -238,13 +238,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     overflow: 'hidden',
   },
-  heroCircle1: {
+    heroCircle1: {
     position: 'absolute',
     right: -40,
     top: -40,
     width: 160,
     height: 160,
     borderRadius: 80,
+    backgroundColor: 'rgba(255,255,255,0.10)',
   },
   heroCircle2: {
     position: 'absolute',
@@ -253,11 +254,13 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.07)',
   },
   failedIconBox: {
     width: 90,
     height: 90,
     borderRadius: radius.full,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.lg,
@@ -266,21 +269,25 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontFamily: '_bold',
     fontSize: typography.xxl,
+    color: '#FFFFFF',
     marginBottom: spacing.sm,
   },
   heroAmount: {
     fontFamily: '_bold',
     fontSize: typography.giant,
+    color: '#FFFFFF',
     lineHeight: 48,
   },
   heroService: {
     fontFamily: '_regular',
     fontSize: typography.base,
+    color: 'rgba(255,255,255,0.85)',
     marginTop: spacing.xs,
     lineHeight: 22,
   },
   errorCodeBadge: {
     borderRadius: radius.full,
+    backgroundColor: 'rgba(255,255,255,0.20)',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     marginTop: spacing.md,
@@ -288,6 +295,7 @@ const styles = StyleSheet.create({
   errorCodeText: {
     fontFamily: '_semiBold',
     fontSize: typography.sm,
+    color: '#FFFFFF',
   },
 
   // Error Card
@@ -335,7 +343,7 @@ const styles = StyleSheet.create({
   reasonsTitle: {
     fontFamily: '_bold',
     fontSize: typography.lg,
-    
+    color: '#111827',
     marginBottom: spacing.md,
   },
   reasonRow: {
@@ -348,7 +356,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    
+    backgroundColor: '#EF4444',
     marginTop: 7,
   },
   reasonText: {
@@ -411,12 +419,13 @@ const styles = StyleSheet.create({
   },
 
   // Buttons
-  retryBtn: {
+    retryBtn: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     height: 56,
     borderRadius: radius.lg,
+    backgroundColor: '#EF4444',
     marginHorizontal: spacing.xl,
     marginBottom: spacing.md,
     ...shadows.md,
@@ -424,6 +433,7 @@ const styles = StyleSheet.create({
   retryBtnText: {
     fontFamily: '_bold',
     fontSize: typography.lg,
+    color: '#FFFFFF',
   },
   homeBtn: {
     flexDirection: 'row',
@@ -434,12 +444,13 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xl,
     marginBottom: spacing.md,
     borderWidth: 1.5,
+    borderColor: '#EF4444',
     backgroundColor: 'transparent',
   },
   homeBtnText: {
     fontFamily: '_semiBold',
     fontSize: typography.base,
-    
+    color: '#EF4444',
   },
   supportBtn: {
     alignItems: 'center',
@@ -449,7 +460,7 @@ const styles = StyleSheet.create({
   supportBtnText: {
     fontFamily: '_semiBold',
     fontSize: typography.base,
-    
+    color: '#6B7280',
     lineHeight: 22,
   },
 });
