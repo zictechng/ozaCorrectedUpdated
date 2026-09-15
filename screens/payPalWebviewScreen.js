@@ -59,7 +59,7 @@ const PayPalWebviewScreen = ({ route, navigation }) => {
         type: ALERT_TYPE.SUCCESS,
         title: 'Payment Successful! 🎉',
         button: 'Done',
-        textBody: `Your PayPal payment of $${amount} ${currency} has been received. Your NGN wallet will be credited shortly.`,
+        textBody: `Your PayPal payment of $${amount} ${currency} has been received. Your local bank account will be credited shortly.`,
         titleStyle: noticeData[0].errorTitleStyle,
         textBodyStyle: noticeData[0].errorMessageStyle,
       });
@@ -200,9 +200,9 @@ const PayPalWebviewScreen = ({ route, navigation }) => {
             }
           }}
           startInLoadingState
-          originWhitelist={['https://*', 'http://*']}
+          originWhitelist={['*']}
+          setSupportMultipleWindows={false}
           onShouldStartLoadWithRequest={(request) => {
-            // Block about:srcdoc and other non-http URLs that cause the warning
             const url = request.url || '';
             if (url.startsWith('about:') || url.startsWith('javascript:')) {
               return false;
