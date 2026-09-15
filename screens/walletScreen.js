@@ -116,6 +116,9 @@ const WalletScreen = ({ navigation }) => {
   const [walletBalance, setWalletBalance] = useState([]);
   const [bonusTotalBalance, setBonusTotalBalance] = useState(0);
   const [withdrawTotalBalance, setWithdrawTotalBalance] = useState(0);
+  const [inflowTotal, setInflowTotal] = useState(0);
+  const [pendingTotal, setPendingTotal] = useState(0);
+  const [bonusApproved, setBonusApproved] = useState(0);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [chartLoading, setChartLoading] = useState(false);
   const [chartDataLoading, setChartDataLoading] = useState(false);
@@ -218,8 +221,11 @@ const WalletScreen = ({ navigation }) => {
       });
       if (res.data.msg === '201') {
         setWalletBalance(res.data.feedback);
-        setBonusTotalBalance(res.data.feedbackBonus);
-        setWithdrawTotalBalance(res.data.feedbackWithdraw);
+        setBonusTotalBalance(res.data.feedbackBonus  || 0);  // pending referral bonus
+        setBonusApproved(res.data.bonusMoney         || 0);  // approved referral bonus
+        setWithdrawTotalBalance(res.data.feedbackWithdraw || 0);
+        setInflowTotal(res.data.feedbackInflow        || 0);
+        setPendingTotal(res.data.feedbackPending      || 0);
       }
     } catch (error) {
       console.log('Wallet balance error:', error.message);
@@ -417,31 +423,47 @@ const WalletScreen = ({ navigation }) => {
         </View>
         <View style={styles.statsGrid}>
           <StatCard
-            label="Pending Bonus"
-            value={bonusTotalBalance}
-            icon="gift-outline"
-            color={colors.accentGold}
-            bgColor={isDark ? '#2D2810' : '#FFF3CD'}
-            isDollar={true}
+            label="Total Inflow"
+            value={inflowTotal}
+            icon="arrow-up-circle-outline"
+            color={colors.primaryColor1}
+            bgColor={colors.bgLight}
+            isDollar={false}
           />
           <StatCard
             label="Total Withdrawn"
             value={withdrawTotalBalance}
-            icon="arrow-down-outline"
+            icon="arrow-down-circle-outline"
             color={colors.successColor}
             bgColor={colors.greenColorLight}
-            isDollar={true}
+            isDollar={false}
           />
           <StatCard
-            label="USD Wallet"
-            value={userInfo?.userData?.usd_balance || 0}
-            icon="globe-outline"
+            label="Pending Transactions"
+            value={pendingTotal}
+            icon="time-outline"
+            color={colors.accentGold}
+            bgColor={isDark ? '#2D2810' : '#FFF3CD'}
+            isDollar={false}
+          />
+          <StatCard
+            label="Referral Bonus Earned"
+            value={bonusApproved}
+            icon="gift-outline"
             color="#10B981"
             bgColor="#D1FAE5"
-            isDollar={true}
+            isDollar={false}
           />
           <StatCard
-            label="Total Funded"
+            label="Pending Referral Bonus"
+            value={bonusTotalBalance}
+            icon="hourglass-outline"
+            color={colors.accentGold}
+            bgColor={isDark ? '#2D2810' : '#FFF3CD'}
+            isDollar={false}
+          />
+          <StatCard
+            label="Total Wallet Funded"
             value={walletBalance?.[0]?.totalAmount || 0}
             icon="wallet-outline"
             color={colors.primaryColor1}
