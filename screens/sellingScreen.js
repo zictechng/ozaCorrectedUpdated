@@ -226,20 +226,37 @@ const SellingScreen = ({ navigation, route }) => {
   };
 
   // ── PayPal Checkout ───────────────────────────
-  const handlePaypalCheckout = () => {
+  const handlePaypalCheckout = async () => {
     setShowMethodModal(false);
-    // payPaypal screen reads route.params?.amt as a nested object
-    navigation.navigate('PaypalPayment', {
-      amt: {
-        amt:             amount,
+    setIsProcessing(true);
+    try {
+      const res = await client.post('/api/create-payment', {
+        amount,
+        currency:        'USD',
+        tag_id:          userInfo?.userData?.tag_id,
+        myId:            userInfo?.userData?._id,
         sell_note:       '',
         serviceName:     selectedAsset.label,
         serviceCategory: 'Exchange',
-        serviceType:     'Sales',
         method:          'Paypal Checkout',
-        total_money:     String(Number(amount) * Number(selectedRate.rate)),
-      },
-    });
+      }, { headers: { 'Authorization': 'Bearer ' + userToken } });
+
+      if (res.data?.approvalUrl) {
+        navigation.navigate('paypalWebview', {
+          uri:         res.data.approvalUrl,
+          amount,
+          currency:    'USD',
+          assetLabel:  selectedAsset.label,
+          ngnAmount:   String(Number(amount) * Number(selectedRate.rate)),
+        });
+      } else {
+        Toast.show({ type: ALERT_TYPE.DANGER, title: 'PayPal Error', textBody: 'Could not initiate PayPal payment. Please try manual transfer.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      }
+    } catch (error) {
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Could not connect to PayPal. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
