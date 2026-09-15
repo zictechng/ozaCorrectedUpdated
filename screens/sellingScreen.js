@@ -408,13 +408,13 @@ const SellingScreen = ({ navigation, route }) => {
                     borderColor: colors.dividerColor,
                   }]}>
                     <Text style={[styles.ngnLabel, { color: colors.textSecColor }]}>
-                      You will receive
+                      You will receive (estimated)
                     </Text>
                     <Text style={[styles.ngnValue, { color: colors.primaryColor1 }]}>
                       ₦{ngnEquivalent()}
                     </Text>
                     <Text style={[styles.ngnNote, { color: colors.textSecColor }]}>
-                      Rate: ₦{Number(selectedRate.rate).toLocaleString()} per $1
+                      Exchange rate may vary at the time of payment
                     </Text>
                   </View>
                 )}
