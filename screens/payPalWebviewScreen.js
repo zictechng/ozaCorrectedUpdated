@@ -200,6 +200,15 @@ const PayPalWebviewScreen = ({ route, navigation }) => {
             }
           }}
           startInLoadingState
+          originWhitelist={['https://*', 'http://*']}
+          onShouldStartLoadWithRequest={(request) => {
+            // Block about:srcdoc and other non-http URLs that cause the warning
+            const url = request.url || '';
+            if (url.startsWith('about:') || url.startsWith('javascript:')) {
+              return false;
+            }
+            return true;
+          }}
           renderLoading={() => (
             <View style={[styles.loadingOverlay, { backgroundColor: colors.bgColor }]}>
               <View style={[styles.loadingCard, { backgroundColor: colors.bgCard }]}>
