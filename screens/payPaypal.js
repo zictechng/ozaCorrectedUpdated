@@ -11,6 +11,7 @@ import {
   TouchableWithoutFeedback,
   Image,
   StatusBar,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from "@expo/vector-icons";
@@ -28,11 +29,11 @@ import PayPal from "expo-paypal";
 import { AuthContext } from "../contextAPI/authContext";
 
 const PayPaypalScreen = ({ route, navigation }) => {
-    let receiveAmt = route.params?.amt;
+    let receiveAmt = route.params?.amt || {};
     const {userToken, userInfo, setUserInfo} = useContext(AuthContext);
     const [resetLoading, setResetLoading] = useState(false);
     const [inputTag, setInputTag] = useState(false);
-    const [amount, setAmount] = useState(receiveAmt.amt);
+    const [amount, setAmount] = useState(receiveAmt?.amt || '0');
   
     // send opt to user email to verify password reset
     const sendPayment = async (startProcess) => {
