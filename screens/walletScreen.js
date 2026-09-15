@@ -438,14 +438,18 @@ const WalletScreen = ({ navigation }) => {
             bgColor={colors.greenColorLight}
             isDollar={false}
           />
-          <StatCard
-            label="Pending Transactions"
-            value={pendingTotal}
-            icon="time-outline"
-            color={colors.accentGold}
-            bgColor={isDark ? '#2D2810' : '#FFF3CD'}
-            isDollar={false}
-          />
+          {/* Signup bonus — only show when pending (not yet activated) */}
+          {!userInfo?.userData?.signup_bonus_activated &&
+            Number(userInfo?.userData?.pending_signup_bonus_usd || 0) > 0 && (
+            <StatCard
+              label="Pending Signup Bonus"
+              value={userInfo?.userData?.pending_signup_bonus_usd}
+              icon="star-outline"
+              color="#F59E0B"
+              bgColor={isDark ? '#2D2810' : '#FEF3C7'}
+              isDollar={true}
+            />
+          )}
           <StatCard
             label="Referral Bonus Earned"
             value={bonusApproved}
