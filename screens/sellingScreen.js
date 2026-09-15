@@ -228,18 +228,17 @@ const SellingScreen = ({ navigation, route }) => {
   // ── PayPal Checkout ───────────────────────────
   const handlePaypalCheckout = () => {
     setShowMethodModal(false);
+    // payPaypal screen reads route.params?.amt as a nested object
     navigation.navigate('PaypalPayment', {
-      asset:           selectedAsset.id,
-      assetLabel:      selectedAsset.label,
-      amount,
-      rate:            selectedRate.rate,
-      ngnAmount:       String(Number(amount) * Number(selectedRate.rate)),
-      currency:        selectedAsset.currency,
-      serviceName:     selectedAsset.label,
-      serviceCategory: 'Exchange',
-      serviceType:     'Sales',
-      method:          'Paypal Checkout',
-      tag_id:          userInfo?.userData?.tag_id,
+      amt: {
+        amt:             amount,
+        sell_note:       '',
+        serviceName:     selectedAsset.label,
+        serviceCategory: 'Exchange',
+        serviceType:     'Sales',
+        method:          'Paypal Checkout',
+        total_money:     String(Number(amount) * Number(selectedRate.rate)),
+      },
     });
   };
 

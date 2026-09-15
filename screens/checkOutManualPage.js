@@ -67,19 +67,20 @@ const CheckOutManualPage = ({ route, navigation }) => {
   const method = route.params?.method || 'Manual';
 
   // Get company wallet address for this asset from appSettingDetails
-  const getCompanyAddress = () => {
-    if (asset === 'paypal')   return appSettingDetails?.company_paypal_address   || '';
-    if (asset === 'payoneer') return appSettingDetails?.company_payoneer_address || '';
-    if (asset === 'bitcoin')  return appSettingDetails?.company_btc_address      || '';
-    return '';
-  };
-  const companyAddress = getCompanyAddress();
-
+  const [companyBankInfo, setCompanyBankInfo] = useState(null);
   const [checkoutData, setCheckoutData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isConfirming, setIsConfirming] = useState(false);
   const [timerExpired, setTimerExpired] = useState(false);
   const [blink, setBlink] = useState(true);
+
+  // Get company wallet address for this asset from fetched bank info
+  const getCompanyAddress = (bankInfo) => {
+    if (asset === 'paypal')   return bankInfo?.company_paypal_address   || '';
+    if (asset === 'payoneer') return bankInfo?.company_payoneer_address || '';
+    if (asset === 'bitcoin')  return bankInfo?.company_btc_address      || '';
+    return '';
+  };
 
   // ── Blink on expiry ───────────────────────────
   useEffect(() => {
@@ -93,9 +94,16 @@ const CheckOutManualPage = ({ route, navigation }) => {
     initCheckout();
   }, []);
 
-  const initCheckout = async () => {
+    const initCheckout = async () => {
     setIsLoading(true);
     try {
+      // Fetch company bank/wallet info first
+      const bankRes = await client.get('/api/fetchBankInfo', {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      });
+      const bankInfo = bankRes.data?.bankData || null;
+      setCompanyBankInfo(bankInfo);
+
       const res = await client.post(
         '/api/fundPurchase_funding',
           {
@@ -117,7 +125,7 @@ const CheckOutManualPage = ({ route, navigation }) => {
         setCheckoutData({
           _id:            transId,
           transId:        transId,
-          wallet_address: companyAddress,
+          wallet_address: getCompanyAddress(bankInfo),
           reference:      transId,
         });
       } else {
