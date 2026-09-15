@@ -130,10 +130,10 @@ const WalletScreen = ({ navigation }) => {
 
   const carouselRef = useRef(null);
 
-  const dataWallet = [
+   const dataWallet = [
     {
       id: 1,
-      title: 'Funding Balance',
+      title: 'NGN Wallet',
       subtitle: 'Available to spend',
       icon: 'wallet-outline',
       bgColor: colors.bgLight,
@@ -141,17 +141,31 @@ const WalletScreen = ({ navigation }) => {
       isDollar: false,
       actionLabel: 'Fund Account',
       actionIcon: 'add',
+      gradientColors: [colors.primaryColor1, colors.primaryColor1b || '#3D4EAA'],
     },
     {
       id: 2,
+      title: 'USD Wallet',
+      subtitle: 'Spendable USD balance',
+      icon: 'globe-outline',
+      bgColor: '#E8F5E9',
+      amount: userInfo?.userData?.usd_balance || '0.0',
+      isDollar: true,
+      actionLabel: 'Buy Assets',
+      actionIcon: 'trending-down',
+      gradientColors: ['#10B981', '#059669'],
+    },
+    {
+      id: 3,
       title: 'Bonus Balance',
-      subtitle: 'Earned rewards',
+      subtitle: 'Earned rewards — NGN',
       icon: 'gift-outline',
       bgColor: '#FFF3CD',
       amount: userInfo?.userData?.all_bonus_acct || '0.0',
-      isDollar: true,
+      isDollar: false,
       actionLabel: 'Withdraw',
       actionIcon: 'arrow-down-outline',
+      gradientColors: ['#1A1D2E', '#2D3561'],
     },
   ];
 
@@ -249,7 +263,8 @@ const WalletScreen = ({ navigation }) => {
 
   const redirectionButton = (index) => {
     if (index === 0) navigation.navigate('Add-fund');
-    else if (index === 1) navigation.navigate('withdraw-fund');
+    else if (index === 1) navigation.navigate('BuyPage');
+    else if (index === 2) navigation.navigate('withdraw-fund');
   };
 
   // ── Chart Data ────────────────────────────────
@@ -268,11 +283,7 @@ const WalletScreen = ({ navigation }) => {
   // ── Wallet Card Renderer ──────────────────────
   const renderWalletCard = ({ item, index }) => (
     <LinearGradient
-      colors={
-        item.id === 1
-          ? [colors.primaryColor1, colors.primaryColor1b]
-          : ['#1A1D2E', '#2D3561']
-      }
+      colors={item.gradientColors || [colors.primaryColor1, colors.primaryColor1b || '#3D4EAA']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.walletCard}>
@@ -422,8 +433,16 @@ const WalletScreen = ({ navigation }) => {
             isDollar={true}
           />
           <StatCard
+            label="USD Wallet"
+            value={userInfo?.userData?.usd_balance || 0}
+            icon="globe-outline"
+            color="#10B981"
+            bgColor="#D1FAE5"
+            isDollar={true}
+          />
+          <StatCard
             label="Total Funded"
-            value={walletBalance[0]?.totalAmount}
+            value={walletBalance?.[0]?.totalAmount || 0}
             icon="wallet-outline"
             color={colors.primaryColor1}
             bgColor={colors.bgLight}
