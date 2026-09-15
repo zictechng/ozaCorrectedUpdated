@@ -154,10 +154,18 @@ const BuyScreen = ({ navigation, route }) => {
       setShowMethodModal(false);
       const preAsset = getPreSelected();
       setSelectedAsset(preAsset);
-      // Auto-populate account from stored details
       setAccountDetail(preAsset ? getStoredAccount(preAsset.id) : '');
     }
-  }, [isFocused, userBankDetails]);
+  }, [isFocused]);
+
+  // Auto-populate account when bank details load (without clearing other state)
+  useEffect(() => {
+    if (userBankDetails && selectedAsset) {
+      setAccountDetail(prev =>
+        prev ? prev : getStoredAccount(selectedAsset.id)
+      );
+    }
+  }, [userBankDetails]);
 
   // ── Fetch rates when asset selected ──────────
   useEffect(() => {
