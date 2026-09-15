@@ -315,12 +315,12 @@ const TVSubscriptionScreen = ({ navigation }) => {
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (res.data.msg === '200' && res.data.plans?.length > 0) {
-        setBouquets(res.data.plans.map(p => ({
-          id:       p.id || p.code,
-          label:    p.name || p.label,
-          price:    String(p.price || p.amount || '0'),
-          validity: p.validity || p.duration || '1 Month',
-          apiCode:  p.code || p.plan_code || p.id,
+        setBouquets(res.data.plans.map((p, index) => ({
+          id:       p.plan_code || p.code || p.id || `bouquet_${index}`,
+          label:    p.plan_name || p.name || p.label || '',
+          price:    String(p.plan_amount || p.price || p.amount || '0'),
+          validity: p.month_validate || p.validity || p.duration || '1 Month',
+          apiCode:  p.plan_code || p.code || p.id || `bouquet_${index}`,
         })));
       } else {
         // Fallback to local constants if API returns nothing
@@ -460,9 +460,9 @@ const TVSubscriptionScreen = ({ navigation }) => {
                       />
                     ) : (
                       <View style={styles.bouquetGrid}>
-                        {bouquets.map((bouquet) => (
+                        {bouquets.map((bouquet, index) => (
                           <BouquetCard
-                            key={bouquet.id}
+                            key={`${bouquet.id}_${index}`}
                             bouquet={bouquet}
                             isSelected={selectedBouquet?.id === bouquet.id}
                             onSelect={(b) => { setSelectedBouquet(b); setShowSummary(false); }}
