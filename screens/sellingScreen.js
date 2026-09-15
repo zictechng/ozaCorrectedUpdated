@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   StatusBar, TextInput, ActivityIndicator, Platform,
   KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard,
-  Image,
+  Image, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
@@ -101,7 +101,7 @@ const RateRow = ({ label, value, highlight, colors }) => (
 const SellingScreen = ({ navigation, route }) => {
   const isFocused = useIsFocused();
   const { colors, isDark } = useThemeStyles();
-  const { userToken, userInfo } = useContext(AuthContext);
+  const { userToken, userInfo, appSettingDetails  } = useContext(AuthContext);
 
   // Read checkout method set by admin for each asset
   const getCheckoutMethod = (assetId) => {
@@ -130,6 +130,12 @@ const SellingScreen = ({ navigation, route }) => {
   const [isLoadingRates, setIsLoadingRates] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);
+  const [showMethodModal, setShowMethodModal] = useState(false);
+
+  // PayPal button only shows when PayPal is selected and PayPal btn is enabled
+  const paypalBtnEnabled = appSettingDetails?.app_payStack_btn === true ||
+                           appSettingDetails?.app_paypal_bnt === true;
+  const showPaypalBtn = selectedAsset?.id === 'paypal' && paypalBtnEnabled;
 
   const walletBalance = Number(userInfo?.userData?.amount || 0);
 
@@ -193,39 +199,48 @@ const SellingScreen = ({ navigation, route }) => {
     return true;
   };
 
-  // ── Proceed to checkout ───────────────────────
-
-  const handleProceed = async () => {
+  // ── Proceed — opens method choice modal ───────
+  const handleProceed = () => {
     Keyboard.dismiss();
     if (!validate()) return;
-    setIsProcessing(true);
-    try {
-      const checkoutMethod = getCheckoutMethod(selectedAsset.id);
-      const navParams = {
-        asset:         selectedAsset.id,
-        assetLabel:    selectedAsset.label,
-        amount,
-        rate:          selectedRate.rate,
-        ngnAmount:     String(Number(amount) * Number(selectedRate.rate)),
-        rateId:        selectedRate._id,
-        currency:      selectedAsset.currency,
-        userId:        userInfo?.userData?._id,
-        serviceName:   selectedAsset.label,
-        serviceCategory: 'Sell',
-        serviceType:   'Sales',
-        method:        checkoutMethod,
-      };
+    setShowMethodModal(true);
+  };
 
-      if (checkoutMethod === 'Manual') {
-        navigation.navigate('CheckManual', navParams);
-      } else {
-        navigation.navigate('PaypalPayment', navParams);
-      }
-    } catch (error) {
-      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Something went wrong. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
-    } finally {
-      setIsProcessing(false);
-    }
+  // ── Manual Transfer ───────────────────────────
+  const handleManualTransfer = () => {
+    setShowMethodModal(false);
+    navigation.navigate('CheckManual', {
+      asset:           selectedAsset.id,
+      assetLabel:      selectedAsset.label,
+      amount,
+      rate:            selectedRate.rate,
+      ngnAmount:       String(Number(amount) * Number(selectedRate.rate)),
+      currency:        selectedAsset.currency,
+      serviceName:     selectedAsset.label,
+      serviceCategory: 'Exchange',
+      serviceType:     'Sales',
+      method:          'Manually Checkout',
+      sell_note:       '',
+      tag_id:          userInfo?.userData?.tag_id,
+    });
+  };
+
+  // ── PayPal Checkout ───────────────────────────
+  const handlePaypalCheckout = () => {
+    setShowMethodModal(false);
+    navigation.navigate('PaypalPayment', {
+      asset:           selectedAsset.id,
+      assetLabel:      selectedAsset.label,
+      amount,
+      rate:            selectedRate.rate,
+      ngnAmount:       String(Number(amount) * Number(selectedRate.rate)),
+      currency:        selectedAsset.currency,
+      serviceName:     selectedAsset.label,
+      serviceCategory: 'Exchange',
+      serviceType:     'Sales',
+      method:          'Paypal Checkout',
+      tag_id:          userInfo?.userData?.tag_id,
+    });
   };
 
   return (
@@ -473,6 +488,63 @@ const SellingScreen = ({ navigation, route }) => {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+          {/* ── Checkout Method Modal ──────────────── */}
+      <Modal
+        visible={showMethodModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMethodModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.bgCard }]}>
+            <Text style={[styles.modalTitle, { color: colors.textBlack }]}>
+              Choose Method
+            </Text>
+            <Text style={[styles.modalDesc, { color: colors.textSecColor }]}>
+              {showPaypalBtn
+                ? "It's faster and secured to transfer directly with PayPal."
+                : "Continue with manual transfer — free and credited immediately."}
+            </Text>
+            {showPaypalBtn && (
+              <Text style={styles.modalNote}>
+                Note: Charges may be applied by PayPal.
+              </Text>
+            )}
+
+            <View style={styles.modalBtns}>
+              {showPaypalBtn && (
+                <TouchableOpacity
+                  style={[styles.modalBtn, { backgroundColor: '#003087' }]}
+                  onPress={handlePaypalCheckout}
+                  activeOpacity={0.85}>
+                  <Image source={paypalImage} style={styles.modalBtnIcon} resizeMode="contain" />
+                  <Text style={styles.modalBtnText}>Transfer With PayPal</Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: colors.primaryColor1 }]}
+                onPress={handleManualTransfer}
+                activeOpacity={0.85}>
+                <Ionicons name="swap-horizontal-outline" size={20} color="#fff" />
+                <Text style={styles.modalBtnText}>Manual Transfer</Text>
+              </TouchableOpacity>
+
+              <Text style={[styles.modalNoCharge, { color: colors.textSecColor }]}>
+                No extra charges with manual transfer.
+              </Text>
+
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => setShowMethodModal(false)}>
+                <Text style={[styles.modalCancelText, { color: colors.textSecColor }]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -822,13 +894,75 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  howText: {
+    howText: {
     fontFamily: '_regular',
     fontSize: typography.base,
     lineHeight: 22,
     flex: 1,
     paddingTop: spacing.xs,
   },
+
+  // Method Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    borderTopLeftRadius: radius.xxl,
+    borderTopRightRadius: radius.xxl,
+    padding: spacing.xl,
+    paddingBottom: spacing.xxxl,
+  },
+  modalTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xxl,
+    marginBottom: spacing.sm,
+  },
+  modalDesc: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: spacing.sm,
+  },
+  modalNote: {
+    fontFamily: '_semiBold',
+    fontSize: typography.sm,
+    color: '#EF4444',
+    marginBottom: spacing.lg,
+    textAlign: 'center',
+  },
+  modalBtns: { gap: spacing.md },
+  modalBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 52,
+    borderRadius: radius.lg,
+    gap: spacing.sm,
+    ...shadows.md,
+  },
+  modalBtnIcon: { width: 22, height: 22 },
+  modalBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    color: '#fff',
+  },
+  modalNoCharge: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  modalCancel: {
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  modalCancelText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+  },
+
 });
 
 export default SellingScreen;

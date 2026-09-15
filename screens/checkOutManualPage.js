@@ -98,15 +98,16 @@ const CheckOutManualPage = ({ route, navigation }) => {
     try {
       const res = await client.post(
         '/api/fundPurchase_funding',
-        {
+          {
           myId:            userInfo?.userData?._id,
+          tag_id:          userInfo?.userData?.tag_id,
           sell_amt:        Number(amount),
           serviceName:     serviceName,
-          serviceCategory: serviceCategory,
-          serviceType:     serviceType,
-          sell_note:       `${assetLabel} sell request — ${amount} ${currency} at rate ₦${rate}`,
+          serviceCategory: 'Exchange',
+          serviceType:     'Sales',
+          sell_note:       route.params?.sell_note || '',
           method:          method,
-          total_money:     Number(String(ngnAmount).replace(/,/g, '')) || 0,
+          total_money:     Number(amount),
           payId:           null,
         },
         { headers: { 'Authorization': 'Bearer ' + userToken } }
