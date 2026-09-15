@@ -148,11 +148,10 @@ const BuyScreen = ({ navigation, route }) => {
   };
 
   // Reset state on focus return
-  useEffect(() => {
+   useEffect(() => {
     if (isFocused) {
       setAmount('');
       setSelectedRate(null);
-      setShowMethodModal(false);
       const preAsset = getPreSelected();
       setSelectedAsset(preAsset);
       setAccountDetail(preAsset ? getStoredAccount(preAsset.id) : '');
