@@ -193,9 +193,17 @@ const DeliveryInput = ({
             onFocus={() => setPhoneFocused(true)}
             onBlur={() => setPhoneFocused(false)}
           />
-          <TouchableOpacity onPress={onUseMine} style={[styles.useMineBtn, { backgroundColor: colors.bgLight }]}>
-            <Text style={[styles.useMineBtnText, { color: colors.primaryColor1 }]}>Use Mine</Text>
-          </TouchableOpacity>
+            {phone.length > 0 ? (
+            <TouchableOpacity
+              onPress={() => onPhoneChange('')}
+              style={[styles.useMineBtn, { backgroundColor: colors.bgLight }]}>
+              <Ionicons name="close-circle" size={18} color={colors.textSecColor} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={onUseMine} style={[styles.useMineBtn, { backgroundColor: colors.bgLight }]}>
+              <Text style={[styles.useMineBtnText, { color: colors.primaryColor1 }]}>Use Mine</Text>
+            </TouchableOpacity>
+          )}
         </View>
         <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
           Pin will be sent as SMS to this number
