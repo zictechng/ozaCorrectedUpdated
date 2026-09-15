@@ -57,15 +57,16 @@ const ASSETS = [
 ];
 
 // ── Asset Selector Card ───────────────────────────
-const AssetCard = ({ asset, isSelected, onSelect, colors }) => (
+const AssetCard = ({ asset, isSelected, onSelect, colors, disabled }) => (
   <TouchableOpacity
     style={[
       styles.assetCard,
       { backgroundColor: colors.bgCard, borderColor: colors.dividerColor },
       isSelected && { borderColor: asset.color, backgroundColor: asset.bgColor },
+      disabled && { opacity: 0.35 },
     ]}
     onPress={() => onSelect(asset)}
-    activeOpacity={0.85}>
+    activeOpacity={disabled ? 1 : 0.85}>
     <Image source={asset.image} style={styles.assetImage} resizeMode="contain" />
     <Text style={[
       styles.assetLabel,
@@ -97,21 +98,31 @@ const RateRow = ({ label, value, highlight, colors }) => (
 );
 
 // ── Main Selling Screen ───────────────────────────
-const SellingScreen = ({ navigation }) => {
+const SellingScreen = ({ navigation, route }) => {
   const isFocused = useIsFocused();
   const { colors, isDark } = useThemeStyles();
   const { userToken, userInfo } = useContext(AuthContext);
 
   const refRateSheet = useRef(null);
 
-  const [selectedAsset, setSelectedAsset] = useState(null);
+  // Pre-select asset from bottom sheet navigation
+  const preSelectedName = route?.params?.pageName || null;
+  const getPreSelected = () => {
+    if (!preSelectedName) return null;
+    return ASSETS.find(a =>
+      a.label.toLowerCase() === preSelectedName.toLowerCase() ||
+      a.id.toLowerCase() === preSelectedName.toLowerCase()
+    ) || null;
+  };
+
+  const [selectedAsset, setSelectedAsset] = useState(getPreSelected);
   const [amount, setAmount] = useState('');
   const [selectedRate, setSelectedRate] = useState(null);
   const [isLoadingRates, setIsLoadingRates] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);
 
-  const walletBalance = Number(userInfo?.userData?.tran_account || 0);
+  const walletBalance = Number(userInfo?.userData?.amount || 0);
 
   // ── Fetch rates when asset selected ──────────
   useEffect(() => {
@@ -270,18 +281,24 @@ const SellingScreen = ({ navigation }) => {
                 Choose the digital asset you want to exchange for Naira
               </Text>
               <View style={styles.assetsRow}>
-                {ASSETS.map((asset) => (
-                  <AssetCard
-                    key={asset.id}
-                    asset={asset}
-                    isSelected={selectedAsset?.id === asset.id}
-                    onSelect={(a) => {
-                      setSelectedAsset(a);
-                      setAmount('');
-                    }}
-                    colors={colors}
-                  />
-                ))}
+                {ASSETS.map((asset) => {
+                  const isSelected = selectedAsset?.id === asset.id;
+                  const isDisabled = preSelectedName && !isSelected;
+                  return (
+                    <AssetCard
+                      key={asset.id}
+                      asset={asset}
+                      isSelected={isSelected}
+                      onSelect={(a) => {
+                        if (isDisabled) return;
+                        setSelectedAsset(a);
+                        setAmount('');
+                      }}
+                      colors={colors}
+                      disabled={isDisabled}
+                    />
+                  );
+                })}
               </View>
             </View>
 
@@ -434,8 +451,8 @@ const SellingScreen = ({ navigation }) => {
               {[
                 { icon: 'hand-left-outline', text: 'Select the asset you want to sell and enter the amount' },
                 { icon: 'send-outline', text: 'Send the asset to our official wallet address provided after checkout' },
-                { icon: 'checkmark-circle-outline', text: 'Upload your payment proof and we confirm within minutes' },
-                { icon: 'wallet-outline', text: 'Naira equivalent is credited to your wallet instantly' },
+                { icon: 'checkmark-circle-outline', text: 'If manually transfer, Upload your proof of transfer and we will confirm within minutes' },
+                { icon: 'wallet-outline', text: 'Your local equivalent currency will be credited to your bank instantly' },
               ].map((step, i) => (
                 <View key={i} style={styles.howRow}>
                   <View style={[styles.howNum, { backgroundColor: '#FEE2E2' }]}>
