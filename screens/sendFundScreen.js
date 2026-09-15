@@ -484,15 +484,16 @@ const SendFundScreen = ({ navigation }) => {
       </KeyboardAvoidingView>
 
       {/* ── PIN Authorization Modal ───────────────── */}
-            <Modal
+      <Modal
         visible={showPinModal}
         transparent
         animationType="slide"
         onRequestClose={() => setShowPinModal(false)}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1, justifyContent: 'flex-end' }}>
-          <View style={[styles.modalCard, { backgroundColor: colors.bgCard }]}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+              <View style={[styles.modalCard, { backgroundColor: colors.bgCard }]}>
             <Text style={[styles.modalTitle, { color: colors.textBlack }]}>Authorization Required</Text>
             <Text style={[styles.modalDesc, { color: colors.textSecColor }]}>
               Enter your account PIN to authorize this transaction
@@ -540,7 +541,9 @@ const SendFundScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           </View>
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </SafeAreaView>
   );
