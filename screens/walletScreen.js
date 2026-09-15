@@ -521,9 +521,22 @@ const WalletScreen = ({ navigation }) => {
                 </Text>
               </View>
             ) : (
-              walletHistory.map((item, index) => (
-                <WalletTransactionItem key={index} item={item} />
-              ))
+              <>
+                {walletHistory.slice(0, 5).map((item, index) => (
+                  <WalletTransactionItem key={index} item={item} />
+                ))}
+                {walletHistory.length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.seeAllBtn, { borderColor: colors.dividerColor, backgroundColor: colors.bgCard }]}
+                    onPress={() => navigation.navigate('History')}
+                    activeOpacity={0.85}>
+                    <Text style={[styles.seeAllText, { color: colors.primaryColor1 }]}>
+                      See All Transactions
+                    </Text>
+                    <Ionicons name="arrow-forward" size={16} color={colors.primaryColor1} />
+                  </TouchableOpacity>
+                )}
+              </>
             )}
           </View>
         )}
@@ -820,6 +833,21 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     marginBottom: spacing.lg,
+  },
+  seeAllBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  seeAllText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    lineHeight: 22,
   },
 
   // Transactions
