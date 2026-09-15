@@ -88,6 +88,7 @@ const TransactionsDetails = ({ route, navigation }) => {
             tran_service_type:  'Bills',
             tran_desc:          raw.service_title || raw.service_type,
             trans_method:       'Wallet',
+            acct_number:        raw.tag_id || '',
             payment_proof_url:  '',
           });
         } else {
