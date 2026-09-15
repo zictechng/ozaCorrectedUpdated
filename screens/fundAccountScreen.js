@@ -463,7 +463,7 @@ const FundAccountScreen = ({ navigation }) => {
                       value={note}
                       onChangeText={setNote}
                       multiline
-                      numberOfLines={3}
+                      numberOfLines={2}
                       textAlignVertical="top"
                       maxLength={200}
                       onFocus={() => {
@@ -554,7 +554,7 @@ const FundAccountScreen = ({ navigation }) => {
                       value={usdNote}
                       onChangeText={setUsdNote}
                       multiline
-                      numberOfLines={3}
+                      numberOfLines={2}
                       textAlignVertical="top"
                       maxLength={200}
                       onFocus={() => {
@@ -807,8 +807,8 @@ const styles = StyleSheet.create({
   currencySymbol: { fontFamily: '_bold', fontSize: typography.xl, marginRight: spacing.sm },
   inputField: { flex: 1, fontFamily: '_semiBold', fontSize: typography.xl, paddingVertical: 0 },
   inputHint: { fontFamily: '_regular', fontSize: typography.base, marginTop: spacing.xs, lineHeight: 22 },
-  noteContainer: { borderWidth: 1.5, borderRadius: radius.lg, padding: spacing.md, minHeight: 90 },
-  noteField: { fontFamily: '_regular', fontSize: typography.base, lineHeight: 22, textAlignVertical: 'top' },
+    noteContainer: { borderWidth: 1.5, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  noteField: { fontFamily: '_regular', fontSize: typography.base, lineHeight: 22, textAlignVertical: 'top', maxHeight: 72 },
 
   // Quick Amounts
   quickLabel: { fontFamily: '_semiBold', fontSize: typography.base, marginBottom: spacing.sm, lineHeight: 22 },
