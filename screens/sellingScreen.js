@@ -254,24 +254,7 @@ const SellingScreen = ({ navigation, route }) => {
               </View>
             </LinearGradient>
 
-            {/* ── Wallet Balance ────────────────── */}
-            <View style={[styles.balanceCard, {
-              backgroundColor: colors.bgCard,
-              borderColor: colors.dividerColor,
-            }]}>
-              <View style={[styles.balanceIconBox, { backgroundColor: '#FEE2E2' }]}>
-                <Ionicons name="wallet-outline" size={20} color="#EF4444" />
-              </View>
-              <View style={styles.balanceInfo}>
-                <Text style={[styles.balanceLabel, { color: colors.textSecColor }]}>
-                  Wallet Balance
-                </Text>
-                <Text style={[styles.balanceValue, { color: colors.textBlack }]}>
-                  ₦{walletBalance.toLocaleString()}
-                </Text>
-              </View>
-            </View>
-
+            
             {/* ── Select Asset ──────────────────── */}
             <View style={[styles.sectionCard, { backgroundColor: colors.bgCard }]}>
               <Text style={[styles.sectionTitle, { color: colors.textBlack }]}>

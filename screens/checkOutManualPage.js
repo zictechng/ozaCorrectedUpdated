@@ -80,24 +80,27 @@ const CheckOutManualPage = ({ route, navigation }) => {
     initCheckout();
   }, []);
 
-  const initCheckout = async () => {
+    const initCheckout = async () => {
     setIsLoading(true);
     try {
       const res = await client.post(
-        '/api/initiate_selling',
+        '/api/fundPurchase_funding',
         {
-          asset,
-          amount,
-          rate,
-          ngnAmount,
-          rateId,
-          userId: userInfo?.userData?._id,
-          currency,
+          myId:            userInfo?.userData?._id,
+          sell_amt:        amount,
+          serviceName:     assetLabel,
+          serviceCategory: 'Sell',
+          serviceType:     'Sell',
+          sell_note:       `${assetLabel} sell request — ${amount} ${currency} at rate ₦${rate}`,
+          method:          'Manual',
+          total_money:     ngnAmount,
+          payId:           null,
         },
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (res.data.msg === '200') {
-        setCheckoutData(res.data.checkoutData);
+        // Backend returns transaction ID as feedback
+        setCheckoutData({ _id: res.data.feedback, transId: res.data.feedback });
       } else {
         Toast.show({
           type: ALERT_TYPE.DANGER,
@@ -111,8 +114,8 @@ const CheckOutManualPage = ({ route, navigation }) => {
     } catch (error) {
       Toast.show({
         type: ALERT_TYPE.DANGER,
-        title: 'Network Error',
-        textBody: 'Could not connect. Please check your internet connection.',
+        title: 'Error',
+        textBody: 'Could not submit sell request. Please try again.',
         titleStyle: noticeData[0].errorTitleStyle,
         textBodyStyle: noticeData[0].errorMessageStyle,
       });
@@ -137,41 +140,25 @@ const CheckOutManualPage = ({ route, navigation }) => {
   };
 
   // ── Confirm payment sent ──────────────────────
-  const handleConfirm = async () => {
+    const handleConfirm = async () => {
     setIsConfirming(true);
     try {
-      const res = await client.post(
-        '/api/confirm_selling',
-        {
-          checkoutId: checkoutData?._id,
-          userId: userInfo?.userData?._id,
-        },
-        { headers: { 'Authorization': 'Bearer ' + userToken } }
-      );
-      if (res.data.msg === '200') {
-        Dialog.show({
-          type: ALERT_TYPE.SUCCESS,
-          title: 'Confirmed!',
-          textBody: 'Your payment has been confirmed. We will process your order and credit your wallet shortly.',
-          button: 'Done',
-          titleStyle: noticeData[0].errorTitleStyle,
-          textBodyStyle: noticeData[0].errorMessageStyle,
-          onHide: () => navigation.replace('Home'),
-        });
-      } else {
-        Toast.show({
-          type: ALERT_TYPE.DANGER,
-          title: 'Failed',
-          textBody: res.data.message || 'Could not confirm payment. Please try again.',
-          titleStyle: noticeData[0].errorTitleStyle,
-          textBodyStyle: noticeData[0].errorMessageStyle,
-        });
-      }
+      // Sell request already submitted on initCheckout
+      // This button confirms the user has sent the asset
+      Dialog.show({
+        type: ALERT_TYPE.SUCCESS,
+        title: 'Request Submitted!',
+        textBody: `Your ${assetLabel} sell request has been logged. Reference: ${checkoutData?.transId || ''}. We will credit your wallet once payment is confirmed.`,
+        button: 'Done',
+        titleStyle: noticeData[0].errorTitleStyle,
+        textBodyStyle: noticeData[0].errorMessageStyle,
+        onHide: () => navigation.replace('Home'),
+      });
     } catch (error) {
       Toast.show({
         type: ALERT_TYPE.DANGER,
-        title: 'Error',
-        textBody: 'Something went wrong. Please try again.',
+        title: 'Failed',
+        textBody: 'Could not confirm. Please try again.',
         titleStyle: noticeData[0].errorTitleStyle,
         textBodyStyle: noticeData[0].errorMessageStyle,
       });
