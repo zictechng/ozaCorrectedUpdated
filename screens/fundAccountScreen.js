@@ -323,14 +323,16 @@ const FundAccountScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.bgColor} />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+              <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior="padding"
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
             ref={scrollRef}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive">
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: 150 }]}
+            keyboardShouldPersistTaps="handled">
 
             {/* ── Header ──────────────────────── */}
             <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
@@ -463,16 +465,14 @@ const FundAccountScreen = ({ navigation }) => {
                       value={note}
                       onChangeText={setNote}
                       multiline
-                      numberOfLines={2}
+                      numberOfLines={3}
                       textAlignVertical="top"
                       maxLength={200}
                       onFocus={() => {
                         setNoteFocused(true);
                         setTimeout(() => {
-                          noteInputRef.current?.measureInWindow((x, y) => {
-                            scrollRef.current?.scrollTo({ y: y - 100, animated: true });
-                          });
-                        }, 300);
+                          scrollRef.current?.scrollToEnd({ animated: true });
+                        }, 150);
                       }}
                       onBlur={() => setNoteFocused(false)}
                     />
@@ -554,15 +554,13 @@ const FundAccountScreen = ({ navigation }) => {
                       value={usdNote}
                       onChangeText={setUsdNote}
                       multiline
-                      numberOfLines={2}
+                      numberOfLines={3}
                       textAlignVertical="top"
                       maxLength={200}
-                      onFocus={() => {
+                     onFocus={() => {
                         setTimeout(() => {
-                          usdNoteInputRef.current?.measureInWindow((x, y) => {
-                            scrollRef.current?.scrollTo({ y: y - 100, animated: true });
-                          });
-                        }, 300);
+                          scrollRef.current?.scrollToEnd({ animated: true });
+                        }, 150);
                       }}
                     />
                   </View>
@@ -807,8 +805,8 @@ const styles = StyleSheet.create({
   currencySymbol: { fontFamily: '_bold', fontSize: typography.xl, marginRight: spacing.sm },
   inputField: { flex: 1, fontFamily: '_semiBold', fontSize: typography.xl, paddingVertical: 0 },
   inputHint: { fontFamily: '_regular', fontSize: typography.base, marginTop: spacing.xs, lineHeight: 22 },
-    noteContainer: { borderWidth: 1.5, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  noteField: { fontFamily: '_regular', fontSize: typography.base, lineHeight: 22, textAlignVertical: 'top', maxHeight: 72 },
+  noteContainer: { borderWidth: 1.5, borderRadius: radius.lg, padding: spacing.md, minHeight: 90 },
+  noteField: { fontFamily: '_regular', fontSize: typography.base, lineHeight: 22, textAlignVertical: 'top' },
 
   // Quick Amounts
   quickLabel: { fontFamily: '_semiBold', fontSize: typography.base, marginBottom: spacing.sm, lineHeight: 22 },
