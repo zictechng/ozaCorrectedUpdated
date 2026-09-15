@@ -168,13 +168,13 @@ const UploadPaymentProof = ({ route, navigation }) => {
             Reference: <Text style={{ color: colors.primaryColor1, fontFamily: '_bold' }}>{trackId}</Text>
           </Text>
           <Text style={[styles.successDesc, { color: colors.textSecColor }]}>
-            Our team will verify your payment within 1–24 hours and credit your NGN wallet.
+            Our team will verify your payment within 1–24 hours and credit your bank account.
           </Text>
 
           <View style={styles.successBtns}>
             <TouchableOpacity
               style={[styles.successBtnSecondary, { borderColor: colors.primaryColor1 }]}
-              onPress={() => navigation.navigate('historyPage')}
+              onPress={() => navigation.navigate('History')}
               activeOpacity={0.85}>
               <Text style={[styles.successBtnSecondaryText, { color: colors.primaryColor1 }]}>
                 View History
