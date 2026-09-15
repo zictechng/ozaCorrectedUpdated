@@ -106,9 +106,17 @@ const PhoneInput = ({ value, onChangeText, onUseMine }) => {
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
         />
-        <TouchableOpacity onPress={onUseMine} style={[styles.useMineBtn, { backgroundColor: colors.bgLight }]}>
-          <Text style={[styles.useMineBtnText, { color: colors.primaryColor1 }]}>Use Mine</Text>
-        </TouchableOpacity>
+        {value.length > 0 ? (
+          <TouchableOpacity
+            onPress={() => onChangeText('')}
+            style={[styles.useMineBtn, { backgroundColor: colors.bgLight }]}>
+            <Ionicons name="close-circle" size={18} color={colors.textSecColor} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity onPress={onUseMine} style={[styles.useMineBtn, { backgroundColor: colors.bgLight }]}>
+            <Text style={[styles.useMineBtnText, { color: colors.primaryColor1 }]}>Use Mine</Text>
+          </TouchableOpacity>
+        )}
       </View>
       <Text style={[styles.inputHint, { color: colors.textSecColor }]}>Enter 11-digit Nigerian mobile number</Text>
     </View>
@@ -295,7 +303,7 @@ const AirtimeScreen = ({ navigation }) => {
                     (!selectedNetwork || !phoneNumber || !amount) && { opacity: 0.6 },
                   ]}
                   onPress={handleProceed}
-                  disabled={isCheckingStatus || !selectedNetwork || !phoneNumber || !amount}
+                  disabled={isCheckingStatus || !selectedNetwork || phoneNumber.length < 10 || !amount}
                   activeOpacity={0.85}>
                   {isCheckingStatus ? (
                     <ActivityIndicator color="#fff" size={22} />
