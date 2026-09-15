@@ -48,21 +48,26 @@ const PayPalWebviewScreen = ({ route, navigation }) => {
     }).start();
   }, [progress]);
 
-  const handleNavigationStateChange = (navState) => {
+    const handleNavigationStateChange = (navState) => {
     if (navState.title) setPageTitle(navState.title);
-
     const url = navState.url || '';
-    if (baseUrl && url.includes(`${baseUrl}/api/success`)) {
+
+    // Detect success — URL contains /api/success regardless of domain
+    if (url.includes('/api/success') || url.includes('PayerID=')) {
       navigation.replace('Home');
       Dialog.show({
         type: ALERT_TYPE.SUCCESS,
-        title: 'Payment Successful!',
+        title: 'Payment Successful! 🎉',
         button: 'Done',
-        textBody: `Your PayPal payment of $${amount} has been received. Your NGN wallet will be credited shortly.`,
+        textBody: `Your PayPal payment of $${amount} ${currency} has been received. Your NGN wallet will be credited shortly.`,
         titleStyle: noticeData[0].errorTitleStyle,
         textBodyStyle: noticeData[0].errorMessageStyle,
       });
-    } else if (baseUrl && url.includes(`${baseUrl}/api/cancel`)) {
+      return;
+    }
+
+    // Detect cancel
+    if (url.includes('/api/cancel')) {
       navigation.goBack();
       Toast.show({
         type: ALERT_TYPE.WARNING,
@@ -168,7 +173,32 @@ const PayPalWebviewScreen = ({ route, navigation }) => {
           onNavigationStateChange={handleNavigationStateChange}
           onLoadStart={() => setIsLoading(true)}
           onLoadProgress={({ nativeEvent }) => setProgress(nativeEvent.progress)}
-          onLoadEnd={() => { setIsLoading(false); setProgress(1); }}
+          onLoadEnd={(syntheticEvent) => {
+            setIsLoading(false);
+            setProgress(1);
+            // Check URL on load end as backup
+            const { url } = syntheticEvent.nativeEvent;
+            if (url?.includes('/api/success') || url?.includes('PayerID=')) {
+              navigation.replace('Home');
+              Dialog.show({
+                type: ALERT_TYPE.SUCCESS,
+                title: 'Payment Successful! 🎉',
+                button: 'Done',
+                textBody: `Your PayPal payment of $${amount} ${currency} has been received. Your NGN wallet will be credited shortly.`,
+                titleStyle: noticeData[0].errorTitleStyle,
+                textBodyStyle: noticeData[0].errorMessageStyle,
+              });
+            } else if (url?.includes('/api/cancel')) {
+              navigation.goBack();
+              Toast.show({
+                type: ALERT_TYPE.WARNING,
+                title: 'Payment Cancelled',
+                textBody: 'Your PayPal payment was cancelled.',
+                titleStyle: noticeData[0].errorTitleStyle,
+                textBodyStyle: noticeData[0].errorMessageStyle,
+              });
+            }
+          }}
           startInLoadingState
           renderLoading={() => (
             <View style={[styles.loadingOverlay, { backgroundColor: colors.bgColor }]}>
