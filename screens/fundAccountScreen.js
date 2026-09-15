@@ -216,16 +216,6 @@ const FundAccountScreen = ({ navigation }) => {
               </View>
             </LinearGradient>
 
-            {/* ── Balance Card ──────────────────── */}
-            <View style={[styles.balanceCard, { backgroundColor: colors.bgCard, borderColor: colors.dividerColor }]}>
-              <Text style={[styles.balanceLabel, { color: colors.textSecColor }]}>
-                Current Wallet Balance
-              </Text>
-              <Text style={[styles.balanceValue, { color: colors.primaryColor1 }]}>
-                ₦{Number(userInfo?.userData?.tran_account || 0).toLocaleString()}
-              </Text>
-            </View>
-
             {/* ── Form Card ────────────────────── */}
             <View style={[styles.formCard, { backgroundColor: colors.bgCard }]}>
               <Text style={[styles.formTitle, { color: colors.textBlack }]}>

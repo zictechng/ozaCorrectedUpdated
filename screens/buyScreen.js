@@ -210,7 +210,7 @@ const BuyScreen = ({ navigation, route }) => {
     return (Number(amount) / Number(selectedRate.rate)).toFixed(2);
   };
 
-  // ── Validate ──────────────────────────────────
+  // ── Validate
   const validate = () => {
     if (!selectedAsset) {
       Toast.show({ type: ALERT_TYPE.WARNING, title: 'Select Asset', textBody: 'Please select a digital asset you want to buy.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
@@ -299,7 +299,7 @@ const BuyScreen = ({ navigation, route }) => {
         serviceName:     selectedAsset.label,
         serviceCategory: 'Exchange',
         method:          'Paystack Checkout',
-        total_money:     Number(amount) * 100,
+        total_money:     Number(amount),
         serviceType:     'Buy',
         buy_note:        '',
       },

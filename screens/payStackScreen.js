@@ -24,6 +24,9 @@ const PayStackScreen = ({route, navigation}) => {
     const [show, setShow] = useState(true);
     const [payStackPaymentStatus, setPayStackPaymentStatus] = useState('');
 
+
+    const amountInKobo = Number(routeName?.total_money) * 100;
+
     // Read Paystack key from context (already loaded by userProvider)
     // Fallback to AsyncStorage if context not yet loaded
     const [payStackToken, setPayStackToken] = useState(
@@ -54,7 +57,7 @@ const PayStackScreen = ({route, navigation}) => {
         buy_amt: routeName.buy_amt,
         buy_note: routeName.sell_note,
         serviceName: routeName.serviceName,
-        serviceCategory: 'Exchange',
+        serviceCategory: 'Exchange | Buy',
         method: 'Paystack Checkout',
         buy_note: routeName.buy_note,
         total_money: routeName.total_money,

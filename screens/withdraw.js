@@ -33,7 +33,7 @@ const WithdrawScreen = ({ navigation }) => {
   const [pinFocused, setPinFocused] = useState(false);
   const [pinSecure, setPinSecure] = useState(true);
 
-  const walletBalance = Number(userInfo?.userData?.tran_account || 0);
+  const walletBalance = Number(userInfo?.userData?.amount || 0);
   const userId = userInfo?.userData?._id;
 
   // ── Fetch user bank details ───────────────────
@@ -190,67 +190,7 @@ const WithdrawScreen = ({ navigation }) => {
               </View>
             </View>
 
-            {/* ── Bank Account Card ─────────────── */}
-            {isFetchingBank ? (
-              <View style={[styles.bankLoadCard, { backgroundColor: colors.bgCard }]}>
-                <ActivityIndicator color={colors.primaryColor1} />
-                <Text style={[styles.bankLoadText, { color: colors.textSecColor }]}>
-                  Loading bank details...
-                </Text>
-              </View>
-            ) : bankDetails ? (
-              <View style={[styles.bankCard, { backgroundColor: colors.bgCard, borderColor: colors.dividerColor }]}>
-                <View style={styles.bankCardHeader}>
-                  <View style={[styles.bankIconBox, { backgroundColor: '#EEF2FF' }]}>
-                    <Ionicons name="business-outline" size={20} color={colors.primaryColor1} />
-                  </View>
-                  <View style={styles.bankCardInfo}>
-                    <Text style={[styles.bankCardTitle, { color: colors.textBlack }]}>
-                      Withdrawal Account
-                    </Text>
-                    <Text style={[styles.bankCardSub, { color: colors.textSecColor }]}>
-                      Funds will be sent to this account
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('BankDetails')}
-                    style={[styles.changeBankBtn, { backgroundColor: colors.bgLight }]}>
-                    <Text style={[styles.changeBankText, { color: colors.primaryColor1 }]}>
-                      Change
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={[styles.bankDivider, { backgroundColor: colors.dividerColor }]} />
-                <Text style={[styles.bankDetailName, { color: colors.textBlack }]}>
-                  {bankDetails.bank_acct_name}
-                </Text>
-                <Text style={[styles.bankDetailNumber, { color: colors.primaryColor1 }]}>
-                  {bankDetails.bank_acct_number}
-                </Text>
-                <Text style={[styles.bankDetailBank, { color: colors.textSecColor }]}>
-                  {bankDetails.bank_name}
-                </Text>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={[styles.noBankCard, {
-                  backgroundColor: colors.warningLight,
-                  borderColor: '#FDE68A',
-                }]}
-                onPress={() => navigation.navigate('BankDetails')}
-                activeOpacity={0.85}>
-                <Ionicons name="alert-circle-outline" size={22} color={colors.warningColor} />
-                <View style={styles.noBankInfo}>
-                  <Text style={[styles.noBankTitle, { color: colors.textBlack }]}>
-                    No Bank Account Found
-                  </Text>
-                  <Text style={[styles.noBankDesc, { color: colors.textSecColor }]}>
-                    Tap here to add your bank account before withdrawing
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.warningColor} />
-              </TouchableOpacity>
-            )}
+            
 
             {/* ── Form Card ────────────────────── */}
             <View style={[styles.formCard, { backgroundColor: colors.bgCard }]}>
@@ -396,6 +336,69 @@ const WithdrawScreen = ({ navigation }) => {
                 )}
               </TouchableOpacity>
             </View>
+
+
+            {/* ── Bank Account Card ─────────────── */}
+            {isFetchingBank ? (
+              <View style={[styles.bankLoadCard, { backgroundColor: colors.bgCard }]}>
+                <ActivityIndicator color={colors.primaryColor1} />
+                <Text style={[styles.bankLoadText, { color: colors.textSecColor }]}>
+                  Loading bank details...
+                </Text>
+              </View>
+            ) : bankDetails ? (
+              <View style={[styles.bankCard, { backgroundColor: colors.bgCard, borderColor: colors.dividerColor }]}>
+                <View style={styles.bankCardHeader}>
+                  <View style={[styles.bankIconBox, { backgroundColor: '#EEF2FF' }]}>
+                    <Ionicons name="business-outline" size={20} color={colors.primaryColor1} />
+                  </View>
+                  <View style={styles.bankCardInfo}>
+                    <Text style={[styles.bankCardTitle, { color: colors.textBlack }]}>
+                      Withdrawal Account
+                    </Text>
+                    <Text style={[styles.bankCardSub, { color: colors.textSecColor }]}>
+                      Funds will be sent to this account
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('BankDetails')}
+                    style={[styles.changeBankBtn, { backgroundColor: colors.bgLight }]}>
+                    <Text style={[styles.changeBankText, { color: colors.primaryColor1 }]}>
+                      Change
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={[styles.bankDivider, { backgroundColor: colors.dividerColor }]} />
+                <Text style={[styles.bankDetailName, { color: colors.textBlack }]}>
+                  {bankDetails.bank_acct_name}
+                </Text>
+                <Text style={[styles.bankDetailNumber, { color: colors.primaryColor1 }]}>
+                  {bankDetails.bank_acct_number}
+                </Text>
+                <Text style={[styles.bankDetailBank, { color: colors.textSecColor }]}>
+                  {bankDetails.bank_name}
+                </Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.noBankCard, {
+                  backgroundColor: colors.warningLight,
+                  borderColor: '#FDE68A',
+                }]}
+                onPress={() => navigation.navigate('BankDetails')}
+                activeOpacity={0.85}>
+                <Ionicons name="alert-circle-outline" size={22} color={colors.warningColor} />
+                <View style={styles.noBankInfo}>
+                  <Text style={[styles.noBankTitle, { color: colors.textBlack }]}>
+                    No Bank Account Found
+                  </Text>
+                  <Text style={[styles.noBankDesc, { color: colors.textSecColor }]}>
+                    Tap here to add your bank account before withdrawing
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.warningColor} />
+              </TouchableOpacity>
+            )}
 
             {/* ── Processing Notice ─────────────── */}
             <View style={[styles.notice, {
