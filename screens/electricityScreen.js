@@ -491,7 +491,7 @@ const ElectricityScreen = ({ navigation }) => {
     if (!validateInputs()) return;
     const isActive = await preFlightCheck();
     if (!isActive) return;
-    setShowSummary(true);
+    handleConfirmPay();
   };
 
   // ── Handle Confirm & Pay ──────────────────────
@@ -642,59 +642,7 @@ const ElectricityScreen = ({ navigation }) => {
             )}
 
             {/* ── Order Summary ────────────────── */}
-            {showSummary && serviceStatus !== 'paused' && (
-              <View style={[styles.summaryCard, { backgroundColor: colors.bgCard }]}>
-                <Text style={[styles.summaryTitle, { color: colors.textBlack }]}>Order Summary</Text>
-                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
-                <SummaryRow label="DISCO" value={selectedDisco?.label} />
-                <SummaryRow label="Meter Type" value={meterType} />
-                <SummaryRow label="Meter Number" value={meterNumber} />
-                <SummaryRow label="Customer Name" value={verifiedName} />
-                <SummaryRow
-                  label="Amount"
-                  value={`₦${Number(amount).toLocaleString()}`}
-                />
-                <SummaryRow label="Service Fee" value="₦0.00" />
-                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
-                <SummaryRow
-                  label="Total"
-                  value={`₦${Number(amount).toLocaleString()}`}
-                  isTotal
-                />
-
-                <TouchableOpacity
-                  style={[
-                    styles.confirmBtn,
-                    { backgroundColor: '#F59E0B' },
-                    isProcessing && { opacity: 0.7 },
-                  ]}
-                  onPress={handleConfirmPay}
-                  disabled={isProcessing}
-                  activeOpacity={0.85}>
-                  {isProcessing ? (
-                    <ActivityIndicator color="#fff" size={22} />
-                  ) : (
-                    <>
-                      <Ionicons
-                        name="checkmark-circle-outline"
-                        size={20}
-                        color="#fff"
-                        style={{ marginRight: spacing.sm }}
-                      />
-                      <Text style={gs.primaryButtonText}>
-                        Confirm & Pay ₦{Number(amount).toLocaleString()}
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={() => setShowSummary(false)}>
-                  <Text style={[styles.editBtnText, { color: colors.textSecColor }]}>Edit Order</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            
 
             {/* ── Rewards Tips ─────────────────── */}
             <RewardsTipsCard

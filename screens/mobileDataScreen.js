@@ -425,15 +425,9 @@ const MobileDataScreen = ({ navigation }) => {
     return true;
   };
 
-  const handleProceed = async () => {
+    const handleProceed = async () => {
     Keyboard.dismiss();
     if (!validateInputs()) return;
-    const isActive = await preFlightCheck();
-    if (!isActive) return;
-    setShowSummary(true);
-  };
-
-  const handleConfirmPay = async () => {
     const isActive = await preFlightCheck();
     if (!isActive) return;
     setIsProcessing(true);
@@ -471,7 +465,8 @@ const MobileDataScreen = ({ navigation }) => {
   };
 
   const categoryMeta = getCategoryMeta(selectedCategory?.type);
-  const cleanPlanLabel = selectedPlan?.label
+    const cleanPlanLabel = selectedPlan?.label
+    ?.replace(new RegExp(`^${selectedNetwork?.label}\\s+`, 'i'), '')
     ?.replace(/^(MTN|Airtel|Glo|9mobile)\s+/i, '')
     ?.replace(/\s*\(\d+\s*days?\)\s*validity/i, '')
     ?.trim() || selectedPlan?.label;
@@ -662,7 +657,7 @@ const MobileDataScreen = ({ navigation }) => {
             )}
 
             {/* ── Order Summary ─────────────────────── */}
-            {showSummary && serviceStatus !== 'paused' && (
+            {/* {showSummary && serviceStatus !== 'paused' && (
               <View style={[styles.summaryCard, { backgroundColor: colors.bgCard }]}>
                 <Text style={[styles.summaryTitle, { color: colors.textBlack }]}>Order Summary</Text>
                 <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
@@ -707,7 +702,7 @@ const MobileDataScreen = ({ navigation }) => {
                   <Text style={[styles.editBtnText, { color: colors.textSecColor }]}>Edit Order</Text>
                 </TouchableOpacity>
               </View>
-            )}
+            )} */}
 
             <RewardsTipsCard colors={colors} />
             <View style={{ height: spacing.xxxl }} />

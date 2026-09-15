@@ -436,7 +436,7 @@ const ExamCardsScreen = ({ navigation, route }) => {
     if (!validateInputs()) return;
     const isActive = await preFlightCheck();
     if (!isActive) return;
-    setShowSummary(true);
+   handleConfirmPay();
   };
 
   // ── Handle Confirm & Pay ──────────────────────
@@ -646,95 +646,7 @@ const ExamCardsScreen = ({ navigation, route }) => {
             )}
 
             {/* ── Order Summary ─────────────────── */}
-            {showSummary && serviceStatus !== 'paused' && (
-              <View style={[styles.summaryCard, { backgroundColor: colors.bgCard }]}>
-                <Text style={[styles.summaryTitle, { color: colors.textBlack }]}>Order Summary</Text>
-                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
-
-                <SummaryRow label="Exam Type" value={selectedExam?.label} />
-                <SummaryRow
-                  label="Full Name"
-                  value={selectedExam?.fullName}
-                />
-                <SummaryRow
-                  label="Quantity"
-                  value={`${quantity} ${quantity === 1 ? 'Pin' : 'Pins'}`}
-                />
-                <SummaryRow
-                  label="Unit Price"
-                  value={`₦${unitPrice.toLocaleString()}`}
-                />
-                <SummaryRow label="Phone Number" value={phoneNumber} />
-                <SummaryRow label="Email" value={email} />
-                <SummaryRow
-                  label="Delivery"
-                  value={selectedExam?.deliveryMethod}
-                />
-                <SummaryRow label="Service Fee" value="₦0.00" />
-
-                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
-
-                <SummaryRow
-                  label="Total"
-                  value={`₦${totalPrice.toLocaleString()}`}
-                  isTotal
-                  valueColor={selectedExam?.color}
-                />
-
-                {/* Wallet Balance Check */}
-                <View style={[styles.balanceCheckRow, { backgroundColor: colors.bgLight }]}>
-                  <Ionicons
-                    name={
-                      totalPrice <= Number(walletBalance)
-                        ? 'checkmark-circle'
-                        : 'close-circle'
-                    }
-                    size={18}
-                    color={
-                      totalPrice <= Number(walletBalance)
-                        ? colors.successColor
-                        : colors.dangerColor
-                    }
-                  />
-                  <Text style={[styles.balanceCheckText, { color: colors.textBlack }]}>
-                    Wallet Balance: ₦{Number(walletBalance).toLocaleString()}
-                  </Text>
-                </View>
-
-                {/* Confirm Button */}
-                <TouchableOpacity
-                  style={[
-                    styles.confirmBtn,
-                    { backgroundColor: selectedExam?.color },
-                    isProcessing && { opacity: 0.7 },
-                  ]}
-                  onPress={handleConfirmPay}
-                  disabled={isProcessing}
-                  activeOpacity={0.85}>
-                  {isProcessing ? (
-                    <ActivityIndicator color="#fff" size={22} />
-                  ) : (
-                    <>
-                      <Ionicons
-                        name="checkmark-circle-outline"
-                        size={20}
-                        color="#fff"
-                        style={{ marginRight: spacing.sm }}
-                      />
-                      <Text style={gs.primaryButtonText}>
-                        Confirm & Pay ₦{totalPrice.toLocaleString()}
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={() => setShowSummary(false)}>
-                  <Text style={[styles.editBtnText, { color: colors.textSecColor }]}>Edit Order</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            
 
             {/* ── Rewards Tips ─────────────────── */}
             <RewardsTipsCard examLabel={selectedExam?.label || 'exam'} />
@@ -784,11 +696,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
+    borderColor: '#E5E7EB',
     borderRadius: radius.lg,
     paddingHorizontal: spacing.md,
     height: 56,
+    backgroundColor: '#FFFFFF',
   },
   inputContainerFocused: {
+    borderColor: '#4C5FD5',
   },
   inputIcon: {
     marginRight: spacing.sm,
@@ -851,6 +766,7 @@ const styles = StyleSheet.create({
   examCheckText: {
     fontSize: 12,
     fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   examIconBox: {
     width: 56,
@@ -914,7 +830,7 @@ const styles = StyleSheet.create({
   examInfoDesc: {
     fontFamily: '_regular',
     fontSize: typography.base,
-    
+    color: '#374151',
     lineHeight: 22,
     marginBottom: spacing.xs,
   },
@@ -938,11 +854,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     marginBottom: spacing.md,
   },
-  quantityBtn: {
+    quantityBtn: {
     width: 44,
     height: 44,
     borderRadius: radius.full,
-    
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     ...shadows.sm,
@@ -1002,14 +918,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  priceCalcDivider: {
+    priceCalcDivider: {
     width: 1,
+    backgroundColor: '#E5E7EB',
     marginHorizontal: spacing.sm,
   },
   priceCalcLabel: {
     fontFamily: '_regular',
     fontSize: typography.sm,
-    
+    color: '#6B7280',
     marginBottom: 4,
     lineHeight: 20,
   },

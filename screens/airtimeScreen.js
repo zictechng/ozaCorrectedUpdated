@@ -195,24 +195,11 @@ const AirtimeScreen = ({ navigation }) => {
     return true;
   };
 
-  // ── Handle Proceed ────────────────────────────
-  const handleProceed = async () => {
+    const handleProceed = async () => {
     Keyboard.dismiss();
     if (!validateInputs()) return;
-
-    // Pre-flight status check before navigating
     const isActive = await preFlightCheck();
     if (!isActive) return;
-
-    setShowSummary(true);
-  };
-
-  // ── Handle Confirm & Pay ──────────────────────
-  const handleConfirmPay = async () => {
-    // Second pre-flight check right before payment
-    const isActive = await preFlightCheck();
-    if (!isActive) return;
-
     setIsProcessing(true);
     try {
       navigation.navigate('BillsConfirm', {
@@ -329,56 +316,8 @@ const AirtimeScreen = ({ navigation }) => {
             )}
 
             {/* ── Order Summary ────────────────── */}
-            {showSummary && serviceStatus !== 'paused' && (
-              <View style={[styles.summaryCard, { backgroundColor: colors.bgCard }]}>
-                <Text style={[styles.summaryTitle, { color: colors.textBlack }]}>Order Summary</Text>
-                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
-                <SummaryRow label="Network" value={selectedNetwork} />
-                <SummaryRow label="Phone Number" value={phoneNumber} />
-                <SummaryRow
-                  label="Amount"
-                  value={`₦${Number(amount).toLocaleString()}`}
-                />
-                <SummaryRow label="Service Fee" value="₦0.00" />
-                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
-                <SummaryRow
-                  label="Total"
-                  value={`₦${Number(amount).toLocaleString()}`}
-                  isTotal
-                />
-
-                {/* Confirm Pay Button */}
-                <TouchableOpacity
-                  style={[styles.confirmBtn, isProcessing && { opacity: 0.7 }]}
-                  onPress={handleConfirmPay}
-                  disabled={isProcessing}
-                  activeOpacity={0.85}>
-                  {isProcessing ? (
-                    <ActivityIndicator color="#fff" size={22} />
-                  ) : (
-                    <>
-                      <Ionicons
-                        name="checkmark-circle-outline"
-                        size={20}
-                        color="#fff"
-                        style={{ marginRight: spacing.sm }}
-                      />
-                      <Text style={gs.primaryButtonText}>
-                        Confirm & Pay ₦{Number(amount).toLocaleString()}
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-
-                {/* Edit Order */}
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={() => setShowSummary(false)}>
-                  <Text style={[styles.editBtnText, { color: colors.textSecColor }]}>Edit Order</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
+            
+  
             {/* ── Info Tips ────────────────────── */}
             <RewardsTipsCard
               serviceType="digital_services"
