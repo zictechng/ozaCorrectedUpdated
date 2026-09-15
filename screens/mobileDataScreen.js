@@ -134,10 +134,11 @@ const CategoryCard = ({ category, onSelect, networkColor }) => {
 const PlanCard = ({ plan, isSelected, onSelect, networkColor }) => {
   const { colors } = useThemeStyles();
 
-  // Clean up label — remove network prefix if present (e.g. "MTN 1GB (30 days) validity" → "1GB")
+  // Strip ALL network prefixes from plan name — provider labels with MTN
+  // regardless of actual network bought. Show just the data size.
   const cleanLabel = plan.label
-    ?.replace(/^(MTN|Airtel|Glo|9mobile)\s+/i, '')
-    ?.replace(/\s*\(\d+\s*days?\)\s*validity/i, '')
+    ?.replace(/^(MTN|Airtel|Glo|9mobile|Etisalat)\s+/i, '')
+    ?.replace(/\s*\(\d+\s*days?\)\s*(validity)?/i, '')
     ?.trim() || plan.label;
 
   const cleanValidity = plan.validity
@@ -440,7 +441,7 @@ const MobileDataScreen = ({ navigation }) => {
         phone:        phoneNumber,
         service_id:   selectedCategory?.service_id,
         plan_code:    selectedPlan.apiCode,
-        plan_name:    selectedPlan.label,
+        plan_name:    cleanPlanLabel,
         validity:     selectedPlan.validity,
         amount:       selectedPlan.price,
         fee:          '0',
@@ -450,7 +451,8 @@ const MobileDataScreen = ({ navigation }) => {
         summaryItems: [
           { label: 'Network',      value: selectedNetwork?.label },
           { label: 'Type',         value: getCategoryMeta(selectedCategory?.type).label },
-          { label: 'Data Plan',    value: selectedPlan.label },
+          { label: 'Network',       value: selectedNetwork?.label },
+          { label: 'Data Plan',     value: cleanPlanLabel },
           { label: 'Validity',     value: selectedPlan.validity },
           { label: 'Phone Number', value: phoneNumber },
           { label: 'Amount',       value: `₦${Number(selectedPlan.price).toLocaleString()}` },
