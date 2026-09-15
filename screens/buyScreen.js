@@ -285,11 +285,12 @@ const BuyScreen = ({ navigation, route }) => {
     }
   };
 
-  // ── Paystack Checkout ─────────────────────────
     // ── Paystack Checkout ─────────────────────────
   const handlePaystackCheckout = () => {
     setShowMethodModal(false);
     // payStackScreen reads route.params?.amt as nested object
+    // total_money must be in kobo (NGN × 100) for Paystack SDK
+    // buy_amt is the USD equivalent
     navigation.navigate('Paystack_checkout', {
       amt: {
         tag_id:          userInfo?.userData?.tag_id,
@@ -298,7 +299,7 @@ const BuyScreen = ({ navigation, route }) => {
         serviceName:     selectedAsset.label,
         serviceCategory: 'Exchange',
         method:          'Paystack Checkout',
-        total_money:     Number(amount),
+        total_money:     Number(amount) * 100,
         serviceType:     'Buy',
         buy_note:        '',
       },
