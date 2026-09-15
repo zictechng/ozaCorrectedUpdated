@@ -353,7 +353,7 @@ const TVSubscriptionScreen = ({ navigation }) => {
     if (!validateInputs()) return;
     const isActive = await preFlightCheck();
     if (!isActive) return;
-    setShowSummary(true);
+    handleConfirmPay();
   };
 
   const handleConfirmPay = async () => {
@@ -427,20 +427,39 @@ const TVSubscriptionScreen = ({ navigation }) => {
                   }}
                 />
 
+                                {/* Step 1 — Enter smartcard and verify FIRST */}
                 {selectedProvider && (
+                  <SmartCardInput
+                    provider={selectedProvider}
+                    value={smartCardNumber}
+                    onChangeText={(text) => {
+                      setSmartCardNumber(text);
+                      setVerifiedName('');
+                      setBouquets([]);
+                      setSelectedBouquet(null);
+                    }}
+                    onVerify={handleVerifySmartCard}
+                    isVerifying={isVerifying}
+                    verifiedName={verifiedName}
+                  />
+                )}
+
+                {/* Step 2 — Bouquets appear after verification */}
+                {selectedProvider && verifiedName && (
                   <View style={styles.sectionContainer}>
                     <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>
                       Select {selectedProvider.label} Bouquet
                     </Text>
                     <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
-                      Choose a subscription plan that suits you
+                      Choose a subscription plan for {verifiedName}
                     </Text>
-                    {isLoadingBouquets ? (
-                      <ActivityIndicator
-                        size="large"
-                        color={selectedProvider.color}
-                        style={{ marginVertical: spacing.xl }}
-                      />
+                    {bouquets.length === 0 ? (
+                      <View style={[styles.emptyBouquets, { backgroundColor: colors.bgLight }]}>
+                        <Ionicons name="tv-outline" size={32} color={colors.textSecColor} />
+                        <Text style={[styles.emptyBouquetsText, { color: colors.textSecColor }]}>
+                          No packages found. Try verifying again.
+                        </Text>
+                      </View>
                     ) : (
                       <View style={styles.bouquetGrid}>
                         {bouquets.map((bouquet, index) => (
@@ -457,18 +476,7 @@ const TVSubscriptionScreen = ({ navigation }) => {
                   </View>
                 )}
 
-                {selectedProvider && selectedBouquet && (
-                  <SmartCardInput
-                    provider={selectedProvider}
-                    value={smartCardNumber}
-                    onChangeText={(text) => { setSmartCardNumber(text); setVerifiedName(''); }}
-                    onVerify={handleVerifySmartCard}
-                    isVerifying={isVerifying}
-                    verifiedName={verifiedName}
-                  />
-                )}
-
-                {selectedProvider && selectedBouquet && (
+                {selectedProvider && verifiedName && selectedBouquet && (
                   <View style={[styles.selectedStrip, {
                     backgroundColor: colors.bgLight,
                     borderLeftColor: selectedProvider.color,
@@ -508,63 +516,6 @@ const TVSubscriptionScreen = ({ navigation }) => {
                     )}
                   </TouchableOpacity>
                 )}
-              </View>
-            )}
-
-            {showSummary && serviceStatus !== 'paused' && (
-              <View style={[styles.summaryCard, { backgroundColor: colors.bgCard }]}>
-                <Text style={[styles.summaryTitle, { color: colors.textBlack }]}>Order Summary</Text>
-                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
-                <SummaryRow label="Provider" value={selectedProvider?.label} />
-                <SummaryRow label="Bouquet" value={selectedBouquet?.label} />
-                <SummaryRow label={selectedProvider?.verifyLabel} value={smartCardNumber} />
-                <SummaryRow label="Customer" value={verifiedName} />
-                <SummaryRow label="Validity" value={selectedBouquet?.validity} />
-                <SummaryRow label="Amount" value={`₦${Number(selectedBouquet?.price).toLocaleString()}`} />
-                <SummaryRow label="Service Fee" value="₦0.00" />
-                <View style={[styles.summaryDivider, { backgroundColor: colors.dividerColor }]} />
-                <SummaryRow
-                  label="Total"
-                  value={`₦${Number(selectedBouquet?.price).toLocaleString()}`}
-                  isTotal
-                  valueColor={selectedProvider?.color}
-                />
-
-                <View style={[styles.balanceCheckRow, { backgroundColor: colors.bgLight }]}>
-                  <Ionicons
-                    name={Number(selectedBouquet?.price) <= Number(walletBalance) ? 'checkmark-circle' : 'close-circle'}
-                    size={18}
-                    color={Number(selectedBouquet?.price) <= Number(walletBalance) ? colors.successColor : colors.dangerColor}
-                  />
-                  <Text style={[styles.balanceCheckText, { color: colors.textBlack }]}>
-                    Wallet Balance: ₦{Number(walletBalance).toLocaleString()}
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  style={[
-                    styles.confirmBtn,
-                    { backgroundColor: selectedProvider?.color },
-                    isProcessing && { opacity: 0.7 },
-                  ]}
-                  onPress={handleConfirmPay}
-                  disabled={isProcessing}
-                  activeOpacity={0.85}>
-                  {isProcessing ? (
-                    <ActivityIndicator color="#fff" size={22} />
-                  ) : (
-                    <>
-                      <Ionicons name="checkmark-circle-outline" size={20} color="#fff" style={{ marginRight: spacing.sm }} />
-                      <Text style={gs.primaryButtonText}>
-                        Confirm & Pay ₦{Number(selectedBouquet?.price).toLocaleString()}
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.editBtn} onPress={() => setShowSummary(false)}>
-                  <Text style={[styles.editBtnText, { color: colors.textSecColor }]}>Edit Order</Text>
-                </TouchableOpacity>
               </View>
             )}
 
@@ -808,6 +759,19 @@ const styles = StyleSheet.create({
   editBtnText: {
     fontFamily: '_semiBold',
     fontSize: typography.base,
+    lineHeight: 22,
+  },
+   emptyBouquets: {
+    alignItems: 'center',
+    padding: spacing.xl,
+    borderRadius: radius.lg,
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  emptyBouquetsText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    textAlign: 'center',
     lineHeight: 22,
   },
   tipsCard: {
