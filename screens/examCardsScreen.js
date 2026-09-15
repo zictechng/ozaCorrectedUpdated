@@ -66,18 +66,6 @@ const ExamTypeCard = ({ exam, isSelected, onSelect }) => {
         {exam.fullName}
       </Text>
 
-      <View style={[
-        styles.examPriceTag,
-        { backgroundColor: isSelected ? exam.color : colors.bgLight },
-      ]}>
-        <Text style={[
-          styles.examPriceText,
-          { color: isSelected ? '#fff' : colors.primaryColor1 },
-        ]}>
-          from ₦{Number(exam.buyPrice).toLocaleString()}
-        </Text>
-      </View>
-
     </TouchableOpacity>
   );
 };
@@ -347,15 +335,32 @@ const ExamCardsScreen = ({ navigation, route }) => {
   const walletBalance = userInfo?.userData?.amount || '0';
   const userPhone = userInfo?.userData?.phone || '';
   const userEmail = userInfo?.userData?.email || '';
+  const [examNetworks, setExamNetworks] = useState({});
 
   useEffect(() => {
     if (isFocused) {
       fetchServiceStatus();
-      // Auto fill user details
       if (userPhone) setPhoneNumber(userPhone);
       if (userEmail) setEmail(userEmail);
+      // Fetch real service_ids for exam types from backend
+      client.get('/api/bills/networks/exam_cards', {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      }).then(res => {
+        if (res.data.msg === '200' && res.data.networks?.length > 0) {
+          const map = {};
+          res.data.networks.forEach(n => {
+            // network_name matches exam id (waec, neco, jamb, nabteb)
+            map[n.id?.toLowerCase()] = n.service_id;
+          });
+          setExamNetworks(map);
+        }
+      }).catch(() => {});
     }
   }, [isFocused]);
+
+  // Get real service_id for selected exam
+  const getServiceId = (exam) =>
+  examNetworks[exam?.id?.toLowerCase()] || exam?.apiCode;
 
   // ── Calculate Total ────────────────────────────
   const [livePrice, setLivePrice] = useState(null);
@@ -366,7 +371,7 @@ const ExamCardsScreen = ({ navigation, route }) => {
     setLivePrice(null); // reset while loading
     const fetchPrice = async () => {
       try {
-        const res = await client.get(`/api/bills/exam_price/${selectedExam.apiCode}`, {
+        const res = await client.get(`/api/bills/exam_price/${getServiceId(selectedExam)}`, {
           headers: { 'Authorization': 'Bearer ' + userToken },
         });
         if (res.data.msg === '200' && res.data.price) {
@@ -456,7 +461,7 @@ const ExamCardsScreen = ({ navigation, route }) => {
       navigation.navigate('BillsConfirm', {
         serviceType:  'exam_cards',
         serviceTitle: `${selectedExam.label} Scratch Card`,
-        service_id:   selectedExam.apiCode,
+        service_id:   getServiceId(selectedExam),
         exam_type:    selectedExam.id,
         exam_label:   selectedExam.label,
         quantity,
@@ -549,11 +554,23 @@ const ExamCardsScreen = ({ navigation, route }) => {
                 </View>
 
                 {/* Selected Exam Info Banner */}
+                
+               {/* Price Calculation */}
                 {selectedExam && (
+                  <>
+                  {livePrice && Number(livePrice) !== Number(selectedExam.buyPrice) && (
+                    <View style={[styles.priceNote, { backgroundColor: colors.bgLight }]}>
+                      <Ionicons name="information-circle-outline" size={14} color={colors.primaryColor1} />
+                      <Text style={[styles.priceNoteText, { color: colors.textSecColor }]}>
+                        Current market price: ₦{Number(livePrice).toLocaleString()} per pin
+                      </Text>
+                    </View>
+                  )}
                   <View style={[
-                    styles.examInfoBanner,
-                    { backgroundColor: selectedExam.bgColor, borderColor: selectedExam.color },
+                    styles.priceCalcRow,
+                    { borderColor: selectedExam.color },
                   ]}>
+                  
                     <Text style={styles.examInfoLogo}>{selectedExam.logo}</Text>
                     <View style={styles.examInfoContent}>
                       <Text style={[styles.examInfoLabel, { color: selectedExam.color }]}>
@@ -567,6 +584,7 @@ const ExamCardsScreen = ({ navigation, route }) => {
                       </Text>
                     </View>
                   </View>
+                 </>
                 )}
 
                 {/* Quantity Selector */}
@@ -914,6 +932,20 @@ const styles = StyleSheet.create({
   },
 
   // Price Calculation
+    priceNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  priceNoteText: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    lineHeight: 20,
+    flex: 1,
+  },
   priceCalcRow: {
     flexDirection: 'row',
     
