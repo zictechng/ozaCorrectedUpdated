@@ -1,8 +1,8 @@
 ﻿import React, { useState, useRef, useEffect, useContext } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+    View, Text, StyleSheet, TouchableOpacity, ScrollView,
   StatusBar, TextInput, ActivityIndicator, Platform,
-  KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Modal,
+  KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
@@ -40,7 +40,7 @@ const QuickAmount = ({ amount, selected, onSelect, colors }) => (
   </TouchableOpacity>
 );
 
-const QUICK_AMOUNTS = ['1000', '2000', '5000', '10000', '20000', '50000'];
+const QUICK_AMOUNTS = ['1500', '2000', '5000', '10000', '20000', '50000'];
 
 // ── USD Asset Button ──────────────────────────────
 const UsdAssetBtn = ({ asset, isSelected, onSelect, colors }) => (
@@ -80,6 +80,7 @@ const FundAccountScreen = ({ navigation }) => {
   const { userToken, userInfo, appSettingDetails } = useContext(AuthContext);
 
   const refCheckoutSheet = useRef();
+  const refUsdSheet = useRef();
 
   // ── Tab state ─────────────────────────────────
   const [activeTab, setActiveTab] = useState('naira');
@@ -100,7 +101,6 @@ const FundAccountScreen = ({ navigation }) => {
   const [usdAmount, setUsdAmount] = useState('');
   const [usdNote, setUsdNote] = useState('');
   const [usdAmountFocused, setUsdAmountFocused] = useState(false);
-  const [showUsdModal, setShowUsdModal] = useState(false);
   const [isUsdPaypalLoading, setIsUsdPaypalLoading] = useState(false);
   const [isUsdManualLoading, setIsUsdManualLoading] = useState(false);
 
@@ -231,10 +231,10 @@ const FundAccountScreen = ({ navigation }) => {
   };
 
   // ── USD: Proceed ──────────────────────────────
-  const handleUsdProceed = () => {
+ const handleUsdProceed = () => {
     Keyboard.dismiss();
     if (!validateUsd()) return;
-    setShowUsdModal(true);
+    refUsdSheet.current.open();
   };
 
   // ── USD: PayPal Checkout ──────────────────────
@@ -253,7 +253,7 @@ const FundAccountScreen = ({ navigation }) => {
         method:          'Paypal Checkout',
       }, { headers: { 'Authorization': 'Bearer ' + userToken } });
 
-      setShowUsdModal(false);
+      refUsdSheet.current.close();
       if (res.data?.approvalUrl) {
         navigation.navigate('paypalWebview', {
           uri:         res.data.approvalUrl,
@@ -266,7 +266,7 @@ const FundAccountScreen = ({ navigation }) => {
         Toast.show({ type: ALERT_TYPE.DANGER, title: 'PayPal Error', textBody: 'Could not initiate PayPal. Try manual transfer.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       }
     } catch {
-      setShowUsdModal(false);
+      refUsdSheet.current.close();
       Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Could not connect. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
     } finally {
       setIsUsdPaypalLoading(false);
@@ -285,7 +285,7 @@ const FundAccountScreen = ({ navigation }) => {
         note:        usdNote,
       }, { headers: { 'Authorization': 'Bearer ' + userToken } });
 
-      setShowUsdModal(false);
+      refUsdSheet.current.close();
       if (res.data.msg === '200') {
         navigation.navigate('CheckManual', {
           asset:           usdAsset.id,
@@ -653,61 +653,75 @@ const FundAccountScreen = ({ navigation }) => {
         </View>
       </RBSheet>
 
-      {/* ── USD: Payment Method Modal ─────────────── */}
-      <Modal
-        visible={showUsdModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowUsdModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: colors.bgCard }]}>
-            <Text style={[styles.modalTitle, { color: colors.textBlack }]}>Choose Funding Method</Text>
-            <Text style={[styles.modalDesc, { color: colors.textSecColor }]}>
-              {usdAsset?.id === 'paypal'
-                ? 'Pay via PayPal checkout or transfer manually and upload proof.'
-                : `Transfer via ${usdAsset?.label} manually and upload your proof of payment.`}
-            </Text>
+    {/* ── USD: Checkout Bottom Sheet ───────────── */}
+      <RBSheet
+        ref={refUsdSheet}
+        closeOnDragDown
+        closeOnPressMask
+        openDuration={400}
+        closeDuration={300}
+        height={usdAsset?.id === 'paypal' ? 380 : 300}
+        closeOnPressBack
+        customStyles={{
+          container: {
+            backgroundColor: colors.bgColor,
+            borderTopLeftRadius: radius.xl,
+            borderTopRightRadius: radius.xl,
+          },
+          draggableIcon: { backgroundColor: colors.dividerColor },
+        }}>
+        <View style={styles.sheetContent}>
+          <Text style={[styles.sheetTitle, { color: colors.textBlack }]}>
+            Choose Funding Method
+          </Text>
+          <Text style={[styles.sheetDesc, { color: colors.textSecColor }]}>
+            {usdAsset?.id === 'paypal'
+              ? 'Pay via PayPal checkout or transfer manually and upload proof.'
+              : `Transfer via ${usdAsset?.label} manually and upload your proof of payment.`}
+          </Text>
+          <View style={[styles.sheetDivider, { backgroundColor: colors.dividerColor }]} />
 
-            <View style={styles.modalBtns}>
-              {usdAsset?.id === 'paypal' && (
-                <TouchableOpacity
-                  style={[styles.modalBtn, { backgroundColor: '#003087' }]}
-                  onPress={handleUsdPaypalCheckout}
-                  disabled={isUsdPaypalLoading}
-                  activeOpacity={0.85}>
-                  {isUsdPaypalLoading
-                    ? <ActivityIndicator color="#fff" size={20} />
-                    : <>
-                        <Ionicons name="logo-paypal" size={20} color="#fff" />
-                        <Text style={styles.modalBtnText}>Pay With PayPal</Text>
-                      </>
-                  }
-                </TouchableOpacity>
+          {/* PayPal — only for PayPal method */}
+          {usdAsset?.id === 'paypal' && (
+            <TouchableOpacity
+              style={[styles.sheetBtn, { backgroundColor: '#003087' }]}
+              onPress={handleUsdPaypalCheckout}
+              disabled={isUsdPaypalLoading}
+              activeOpacity={0.85}>
+              {isUsdPaypalLoading ? <ActivityIndicator color="#fff" size={22} /> : (
+                <>
+                  <Ionicons name="logo-paypal" size={22} color="#fff" />
+                  <View style={styles.sheetBtnInfo}>
+                    <Text style={styles.sheetBtnText}>Pay With PayPal</Text>
+                    <Text style={styles.sheetBtnSub}>Instant • Secured by PayPal</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.8)" />
+                </>
               )}
+            </TouchableOpacity>
+          )}
 
-              <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: '#10B981' }]}
-                onPress={handleUsdManualTransfer}
-                disabled={isUsdManualLoading}
-                activeOpacity={0.85}>
-                {isUsdManualLoading
-                  ? <ActivityIndicator color="#fff" size={20} />
-                  : <>
-                      <Ionicons name="swap-horizontal-outline" size={20} color="#fff" />
-                      <Text style={styles.modalBtnText}>Manual Transfer</Text>
-                    </>
-                }
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.modalCancel}
-                onPress={() => setShowUsdModal(false)}>
-                <Text style={[styles.modalCancelText, { color: colors.textSecColor }]}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          {/* Manual Transfer — always shown */}
+          <TouchableOpacity
+            style={[styles.sheetBtn, { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#10B981' }]}
+            onPress={handleUsdManualTransfer}
+            disabled={isUsdManualLoading}
+            activeOpacity={0.85}>
+            {isUsdManualLoading ? <ActivityIndicator color="#10B981" size={22} /> : (
+              <>
+                <Ionicons name="swap-horizontal-outline" size={22} color="#10B981" />
+                <View style={styles.sheetBtnInfo}>
+                  <Text style={[styles.sheetBtnText, { color: '#10B981' }]}>Manual Transfer</Text>
+                  <Text style={[styles.sheetBtnSub, { color: colors.textSecColor }]}>
+                    Transfer and upload proof • 1–24 hours
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#10B981" />
+              </>
+            )}
+          </TouchableOpacity>
         </View>
-      </Modal>
+      </RBSheet>
 
       {/* ── Gateway Unavailable Modal ─────────────── */}
       <ShowLogoutModal
