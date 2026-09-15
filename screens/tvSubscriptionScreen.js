@@ -295,43 +295,14 @@ const TVSubscriptionScreen = ({ navigation }) => {
     if (isFocused) fetchServiceStatus();
   }, [isFocused]);
 
-  useEffect(() => {
+    useEffect(() => {
     if (!selectedProvider) {
       setBouquets([]);
       setSelectedBouquet(null);
       setSmartCardNumber('');
       setVerifiedName('');
-      return;
     }
-    loadBouquets(selectedProvider.id);
   }, [selectedProvider]);
-
-  const loadBouquets = async (providerId) => {
-    setIsLoadingBouquets(true);
-    setSelectedBouquet(null);
-    try {
-        const res = await client.get(
-        `/api/bills/plans/tv_subscription/${providerId}`,
-        { headers: { 'Authorization': 'Bearer ' + userToken } }
-      );
-      if (res.data.msg === '200' && res.data.plans?.length > 0) {
-        setBouquets(res.data.plans.map((p, index) => ({
-          id:       p.plan_code || p.code || p.id || `bouquet_${index}`,
-          label:    p.plan_name || p.name || p.label || '',
-          price:    String(p.plan_amount || p.price || p.amount || '0'),
-          validity: p.month_validate || p.validity || p.duration || '1 Month',
-          apiCode:  p.plan_code || p.code || p.id || `bouquet_${index}`,
-        })));
-      } else {
-        // Fallback to local constants if API returns nothing
-        setBouquets(getBouquets(providerId));
-      }
-    } catch (error) {
-      setBouquets(getBouquets(providerId));
-    } finally {
-      setIsLoadingBouquets(false);
-    }
-  };
 
   const handleVerifySmartCard = async () => {
     if (!selectedProvider) return;
@@ -342,8 +313,20 @@ const TVSubscriptionScreen = ({ navigation }) => {
         { service_id: selectedProvider.apiCode, smartcard_number: smartCardNumber, phone: userInfo?.userData?.phone || '08000000000' },
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
-      if (res.data.msg === '200') {
+        if (res.data.msg === '200') {
         setVerifiedName(res.data.customer_name);
+        // Load real bouquets from verify response
+        if (res.data.bouquets?.length > 0) {
+          setBouquets(res.data.bouquets.map((p, index) => ({
+            id:       p.plan_code || p.code || p.id || `bouquet_${index}`,
+            label:    p.plan_name || p.name || p.allowance || p.label || '',
+            price:    String(p.plan_amount || p.price || p.amount || '0'),
+            validity: p.month_validate || p.validity || p.duration || '1 Month',
+            apiCode:  p.plan_code || p.code || p.id || `bouquet_${index}`,
+          })));
+        } else {
+          setBouquets(getBouquets(selectedProvider.id));
+        }
         Toast.show({ type: ALERT_TYPE.SUCCESS, title: 'Verified', textBody: `Customer: ${res.data.customer_name}` });
       } else {
         Toast.show({ type: ALERT_TYPE.DANGER, title: 'Verification Failed', textBody: 'Could not verify your smartcard number.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
