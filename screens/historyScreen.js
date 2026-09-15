@@ -510,6 +510,7 @@ const loadBills = async (reset = false) => {
             item={item}
             onPress={() => navigation.navigate('TranDetails', {
               record_id: item._id,
+              is_bills: activeTab === 4,
             })}
           />
         )}

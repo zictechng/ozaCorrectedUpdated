@@ -50,7 +50,8 @@ const TransactionsDetails = ({ route, navigation }) => {
   const isFocused = useIsFocused();
   const { S, colors, isDark } = useThemeStyles();
   const { userToken } = useContext(AuthContext);
-  const tPayId = route.params?.record_id;
+  const tPayId  = route.params?.record_id;
+  const isBills = route.params?.is_bills || false;
 
   const [dataDetails, setDataDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,12 +62,37 @@ const TransactionsDetails = ({ route, navigation }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await client.get(
-        `/api/getTransactionInfo/${tPayId}`,
-        { headers: { 'Authorization': 'Bearer ' + userToken } }
-      );
+      // Use bills endpoint for bills transactions, standard endpoint for others
+      const url = isBills
+        ? `/api/bills/transaction/${tPayId}`
+        : `/api/getTransactionInfo/${tPayId}`;
+
+      const res = await client.get(url, {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      });
+
       if (res.data.msg === '200') {
-        setDataDetails(res.data.dataInfo);
+        const raw = res.data.dataInfo;
+        // Normalise bills transaction fields to match display expectations
+        if (isBills) {
+          setDataDetails({
+            ...raw,
+            transac_nature:     raw.service_title || raw.service_type || 'Bill Payment',
+            transac_category:   raw.service_type  || 'Bills',
+            tran_type:          'Debit',
+            transaction_status: raw.status === 'success' ? 'Completed'
+                                : raw.status === 'failed'  ? 'Failed' : 'Pending',
+            tid:                raw.reference,
+            creditOn:           raw.createdAt,
+            currency_level:     '1',
+            tran_service_type:  'Bills',
+            tran_desc:          raw.service_title || raw.service_type,
+            trans_method:       raw.provider || 'VTUGate',
+            payment_proof_url:  '',
+          });
+        } else {
+          setDataDetails(raw);
+        }
       } else {
         setError('Transaction not found. Please try again.');
       }
@@ -76,7 +102,7 @@ const TransactionsDetails = ({ route, navigation }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [tPayId, userToken]);
+  }, [tPayId, isBills, userToken]);
 
   useEffect(() => {
     loadTransactionDetails();
