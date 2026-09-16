@@ -174,24 +174,23 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
     }
   };
 
-   const verifyOTP = async () => {
+     const verifyOTP = async () => {
     if (!otpCode || otpCode.length !== 6) {
       Toast.show({ type: ALERT_TYPE.WARNING, title: 'Enter OTP', textBody: 'Please enter the 6-digit code sent to your email.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       return;
     }
     setIsVerifyingOtp(true);
     try {
-      // Verify OTP against stored code on user profile
-      const res = await client.get(
-        `/api/userProfileMobile/${userInfo?.userData?._id}`,
+      const res = await client.post(
+        '/api/user_verify2fa_code',
+        { userId: userInfo?.userData?._id, otp_code: otpCode.trim() },
         { headers: { Authorization: 'Bearer ' + userToken } }
       );
-      const storedOtp = String(res.data?.userData?.verify2fa_code || '');
-      if (storedOtp && storedOtp === otpCode.trim()) {
+      if (res.data.msg === '200') {
         setOtpVerified(true);
         Toast.show({ type: ALERT_TYPE.SUCCESS, title: 'OTP Verified ✅', textBody: 'Code confirmed. Please take your selfie now.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       } else {
-        Toast.show({ type: ALERT_TYPE.DANGER, title: 'Wrong Code', textBody: 'The code you entered is incorrect. Please check your email and try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+        Toast.show({ type: ALERT_TYPE.DANGER, title: 'Wrong Code', textBody: res.data.message || 'Incorrect code. Please check your email and try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       }
     } catch {
       Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Could not verify code. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
@@ -362,8 +361,8 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
           {/* Preview / placeholder */}
           <TouchableOpacity
             style={styles.selfiePreviewArea}
-            onPress={() => navigation.navigate('OpeCamera')}
-            disabled={!otpSend}
+            onPress={() => otpVerified && navigation.navigate('OpeCamera')}
+            disabled={!otpVerified}
             activeOpacity={0.85}>
             {image ? (
               <Image source={{ uri: image }} style={styles.selfieImage} />
@@ -498,7 +497,7 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
         </View>
 
         {/* ── Upload Button ─────────────────────── */}
-        {(newPhoto || image) && (
+        {(newPhoto || image) && otpVerified && (
           <TouchableOpacity
             style={[styles.uploadBtn, { backgroundColor: colors.primaryColor1 }]}
             onPress={upload2FADocument}
