@@ -2,7 +2,7 @@
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   StatusBar, TextInput, ActivityIndicator, Linking, Keyboard,
-  Modal, TouchableWithoutFeedback,
+  Modal, TouchableWithoutFeedback, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -353,7 +353,7 @@ const TICKET_SUBJECTS = [
                 ]}>
                   <TextInput
                     style={[styles.messageField, { color: colors.textBlack }]}
-                    placeholder="Describe your issue in detail. Include any relevant transaction IDs or screenshots..."
+                    placeholder="Describe your issue in detail. Include any relevant transaction IDs..."
                     placeholderTextColor={colors.textSecColor2}
                     value={message}
                     onChangeText={setMessage}

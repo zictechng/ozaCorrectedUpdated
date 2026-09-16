@@ -1,8 +1,9 @@
 ﻿import React, { useContext, useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  Image, ScrollView, StatusBar, ActivityIndicator,
+  Image, ScrollView, StatusBar, ActivityIndicator, TextInput,
 } from 'react-native';
+import { Dialog } from 'react-native-alert-notification';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -88,6 +89,9 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
   const [documentType, setDocumentType] = useState('');
   const [imageValue, setImageValue] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
   useEffect(() => {
     if (isFocused) {
@@ -170,6 +174,32 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
     }
   };
 
+   const verifyOTP = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Enter OTP', textBody: 'Please enter the 6-digit code sent to your email.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      return;
+    }
+    setIsVerifyingOtp(true);
+    try {
+      // Verify OTP against stored code on user profile
+      const res = await client.get(
+        `/api/userProfileMobile/${userInfo?.userData?._id}`,
+        { headers: { Authorization: 'Bearer ' + userToken } }
+      );
+      const storedOtp = String(res.data?.userData?.verify2fa_code || '');
+      if (storedOtp && storedOtp === otpCode.trim()) {
+        setOtpVerified(true);
+        Toast.show({ type: ALERT_TYPE.SUCCESS, title: 'OTP Verified ✅', textBody: 'Code confirmed. Please take your selfie now.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      } else {
+        Toast.show({ type: ALERT_TYPE.DANGER, title: 'Wrong Code', textBody: 'The code you entered is incorrect. Please check your email and try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      }
+    } catch {
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Could not verify code. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
   const deleteImageId = async (data) => {
     try {
       await client.post('/api/deleteUploaded_image', { userId: myId, delete_url: data }, {
@@ -242,6 +272,8 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
 
   const resetOtpSending = () => {
     setOtpSend(false);
+    setOtpVerified(false);
+    setOtpCode('');
     setImage(null);
   };
 
@@ -356,9 +388,9 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
                 </View>
                 <Text style={[
                   styles.selfiePlaceholderText,
-                  { color: otpSend ? colors.primaryColor1 : colors.textSecColor },
-                ]}>
-                  {otpSend ? 'Tap to take your selfie' : 'Waiting for OTP verification'}
+                  { color: otpVerified ? colors.primaryColor1 : colors.textSecColor },
+                  ]}>
+                  {otpVerified ? 'Tap to take your selfie' : otpSend ? 'Enter the OTP code below' : 'Waiting for OTP verification'}
                 </Text>
                 {!otpSend && (
                   <Text style={[styles.selfiePlaceholderSub, { color: colors.textSecColor }]}>
@@ -385,9 +417,49 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
                 disabled={isDisableBtn}
                 activeOpacity={0.85}>
                 <Ionicons name="mail-outline" size={18} color="#fff" />
-                <Text style={[styles.actionBtnText, { color: '#fff' }]}>Get Started</Text>
+                <Text style={[styles.actionBtnText, { color: '#fff' }]}>Get Started — Send OTP</Text>
               </TouchableOpacity>
+            ) : !otpVerified ? (
+              // OTP sent — show input to verify
+              <View style={styles.otpInputSection}>
+                <Text style={[styles.otpInputLabel, { color: colors.textSecColor }]}>
+                  Enter the 6-digit code sent to{' '}
+                  <Text style={{ color: colors.primaryColor1, fontFamily: '_bold' }}>
+                    {userInfo?.userData?.email}
+                  </Text>
+                </Text>
+                <View style={[styles.otpInputRow, { borderColor: colors.dividerColor, backgroundColor: colors.bgLight }]}>
+                  <Ionicons name="key-outline" size={20} color={colors.textSecColor} style={{ marginRight: spacing.sm }} />
+                  <TextInput
+                    style={[styles.otpInput, { color: colors.textBlack }]}
+                    placeholder="Enter 6-digit code"
+                    placeholderTextColor={colors.textSecColor2}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    value={otpCode}
+                    onChangeText={setOtpCode}
+                  />
+                </View>
+                <TouchableOpacity
+                  style={[styles.actionBtn, {
+                    backgroundColor: otpCode.length === 6 ? colors.primaryColor1 : colors.bgLight,
+                    borderWidth: otpCode.length === 6 ? 0 : 1,
+                    borderColor: colors.dividerColor,
+                  }]}
+                  onPress={verifyOTP}
+                  disabled={isVerifyingOtp || otpCode.length !== 6}
+                  activeOpacity={0.85}>
+                  {isVerifyingOtp
+                    ? <ActivityIndicator size={18} color={otpCode.length === 6 ? '#fff' : colors.primaryColor1} />
+                    : <Ionicons name="checkmark-circle-outline" size={18} color={otpCode.length === 6 ? '#fff' : colors.textSecColor} />
+                  }
+                  <Text style={[styles.actionBtnText, { color: otpCode.length === 6 ? '#fff' : colors.textSecColor }]}>
+                    Verify Code
+                  </Text>
+                </TouchableOpacity>
+              </View>
             ) : image ? (
+              // OTP verified + photo taken — retake option
               <TouchableOpacity
                 style={[styles.actionBtn, { backgroundColor: colors.bgLight, borderWidth: 1, borderColor: colors.dividerColor }]}
                 onPress={() => {
@@ -398,7 +470,16 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
                 <Ionicons name="camera-reverse-outline" size={18} color={colors.primaryColor1} />
                 <Text style={[styles.actionBtnText, { color: colors.primaryColor1 }]}>Retake Photo</Text>
               </TouchableOpacity>
-            ) : null}
+            ) : (
+              // OTP verified — take selfie
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: colors.primaryColor1 }]}
+                onPress={() => navigation.navigate('OpeCamera')}
+                activeOpacity={0.85}>
+                <Ionicons name="camera-outline" size={18} color="#fff" />
+                <Text style={[styles.actionBtnText, { color: '#fff' }]}>Take Selfie Now</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* OTP resend */}
@@ -417,7 +498,7 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
         </View>
 
         {/* ── Upload Button ─────────────────────── */}
-        {newPhoto && (
+        {(newPhoto || image) && (
           <TouchableOpacity
             style={[styles.uploadBtn, { backgroundColor: colors.primaryColor1 }]}
             onPress={upload2FADocument}
@@ -753,10 +834,38 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     marginBottom: spacing.sm,
   },
-  laterText: {
+    laterText: {
     fontFamily: '_semiBold',
     fontSize: typography.base,
   },
+
+  // OTP Input
+  otpInputSection: {
+    gap: spacing.md,
+  },
+  otpInputLabel: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  otpInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    height: 52,
+  },
+  otpInput: {
+    flex: 1,
+    fontFamily: '_bold',
+    fontSize: typography.xxl,
+    letterSpacing: 8,
+    textAlign: 'center',
+    paddingVertical: 0,
+  },
+
 });
 
 export default Verify2faAccountScreen;  
