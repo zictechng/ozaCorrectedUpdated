@@ -14,7 +14,6 @@ import { spacing, radius, typography, shadows } from '../styles';
 import useThemeStyles from '../hooks/useThemeStyles';
 import { AuthContext } from '../contextAPI/authContext';
 import { noticeData } from '../components/errorNotice';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import client from '../contextAPI/client';
 
 const UploadProfileImageScreen = ({ navigation }) => {
@@ -79,87 +78,81 @@ const UploadProfileImageScreen = ({ navigation }) => {
   };
 
   // ── Upload photo ──────────────────────────────
-    // ── Upload image to Cloudinary ────────────────
-  const uploadToCloudinary = async (image) => {
-    const uri      = image.uri;
-    const filename = uri.split('/').pop();
-    const ext      = filename.split('.').pop()?.toLowerCase();
-    const mimeType = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' : 'image/png';
-    const form     = new FormData();
-    form.append('file', { uri, name: filename, type: mimeType });
-    form.append('upload_preset', 'oza_mobile');
-    const res  = await fetch(
-      'https://api.cloudinary.com/v1_1/ddm1owlon/image/upload',
-      { method: 'POST', body: form }
-    );
-    const data = await res.json();
-    if (!data.secure_url) throw new Error('Cloudinary upload failed');
-    return { secure_url: data.secure_url, public_id: data.public_id };
-  };
-
-  // ── Upload document side to backend ───────────
-  const uploadDocSide = async (image, side) => {
-    const { secure_url, public_id } = await uploadToCloudinary(image);
-    const res = await client.post(
-      '/api/user_uploadDocument_mobile',
-      {
-        userId:        userInfo?.userData?._id,
-        image_url:     secure_url,
-        document_name: selectedDocType.label,
-        document_side: side,
-        public_id,
-      },
-      { headers: { 'Authorization': 'Bearer ' + userToken } }
-    );
-    if (res.data.msg !== '201') {
-      throw new Error(res.data.message || 'Backend save failed');
-    }
-    return res.data;
-  };
-
-  // ── Main Upload Handler ───────────────────────
   const handleUpload = async () => {
-    if (!validate()) return;
-    setIsUploading(true);
-    try {
-      // Upload front side
-      const frontResult = await uploadDocSide(frontImage, 'front');
-
-      // Upload back side if required and provided
-      if (needsBack && backImage) {
-        await uploadDocSide(backImage, 'back');
-      }
-
-      // Update local user state
-      const updatedInfo = {
-        ...userInfo,
-        userData: { ...userInfo.userData, ...frontResult.userData },
-      };
-      await AsyncStorage.setItem('userInfo', JSON.stringify(updatedInfo));
-      setUserInfo(updatedInfo);
-
-      Dialog.show({
-        type: ALERT_TYPE.SUCCESS,
-        title: 'Documents Uploaded! 🎉',
-        textBody: 'Your KYC documents have been submitted. We will review and verify them within 24 hours.',
-        button: 'Done',
+    if (!selectedImage) {
+      Toast.show({
+        type: ALERT_TYPE.WARNING,
+        title: 'No Image Selected',
+        textBody: 'Please select or take a photo before uploading.',
         titleStyle: noticeData[0].errorTitleStyle,
         textBodyStyle: noticeData[0].errorMessageStyle,
-        onHide: () => navigation.navigate('SignupSteps'),
       });
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      const filename = selectedImage.uri.split('/').pop();
+      const ext = filename.split('.').pop()?.toLowerCase();
+      const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
+
+      formData.append('profile_photo', {
+        uri: selectedImage.uri,
+        name: filename,
+        type: mimeType,
+      });
+      formData.append('userId', userInfo?.userData?._id);
+
+      const res = await client.post(
+        '/api/uploadProfilePhoto_mobile',
+        formData,
+        {
+          headers: {
+            'Authorization': 'Bearer ' + userToken,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (res.data.msg === '200') {
+        const updatedInfo = {
+          ...userInfo,
+          userData: {
+            ...userInfo.userData,
+            profile_photo: res.data.photo_url,
+          },
+        };
+        await AsyncStorage.setItem('userInfo', JSON.stringify(updatedInfo));
+        setUserInfo(updatedInfo);
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Photo Updated!',
+          textBody: 'Your profile photo has been updated successfully.',
+          button: 'Done',
+          titleStyle: noticeData[0].errorTitleStyle,
+          textBodyStyle: noticeData[0].errorMessageStyle,
+          onHide: () => navigation.goBack(),
+        });
+      } else {
+        Toast.show({
+          type: ALERT_TYPE.DANGER,
+          title: 'Upload Failed',
+          textBody: res.data.message || 'Could not upload photo. Please try again.',
+          titleStyle: noticeData[0].errorTitleStyle,
+          textBodyStyle: noticeData[0].errorMessageStyle,
+        });
+      }
     } catch (error) {
-      console.log('Upload error:', error.message);
       Toast.show({
         type: ALERT_TYPE.DANGER,
-        title: 'Upload Failed',
-        textBody: 'Could not upload documents. Please check your connection and try again.',
+        title: 'Error',
+        textBody: 'Something went wrong. Please check your connection and try again.',
         titleStyle: noticeData[0].errorTitleStyle,
         textBodyStyle: noticeData[0].errorMessageStyle,
       });
     } finally {
       setIsUploading(false);
     }
-
   };
 
   return (

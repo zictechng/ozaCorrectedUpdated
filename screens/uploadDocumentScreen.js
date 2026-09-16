@@ -13,6 +13,7 @@ import { spacing, radius, typography, shadows } from '../styles';
 import useThemeStyles from '../hooks/useThemeStyles';
 import { AuthContext } from '../contextAPI/authContext';
 import { noticeData } from '../components/errorNotice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import client from '../contextAPI/client';
 
 // ── Document types accepted ───────────────────────
@@ -181,60 +182,85 @@ const UploadDocumentScreen = ({ navigation }) => {
   };
 
   // ── Upload ────────────────────────────────────
+    // ── Upload single image to Cloudinary ─────────
+  const uploadToCloudinary = async (image) => {
+    const uri      = image.uri;
+    const filename = uri.split('/').pop();
+    const ext      = filename.split('.').pop()?.toLowerCase();
+    const mimeType = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' : 'image/png';
+    const form     = new FormData();
+    form.append('file', { uri, name: filename, type: mimeType });
+    form.append('upload_preset', 'oza_mobile');
+    const res  = await fetch(
+      'https://api.cloudinary.com/v1_1/ddm1owlon/image/upload',
+      { method: 'POST', body: form }
+    );
+    const data = await res.json();
+    if (!data.secure_url) throw new Error('Cloudinary upload failed');
+    return { secure_url: data.secure_url, public_id: data.public_id };
+  };
+
+  // ── Upload one side to backend ─────────────────
+  const uploadDocSide = async (image, side) => {
+    const { secure_url, public_id } = await uploadToCloudinary(image);
+    const res = await client.post(
+      '/api/user_uploadDocument_mobile',
+      {
+        userId:        userInfo?.userData?._id,
+        image_url:     secure_url,
+        document_name: selectedDocType.label,
+        document_side: side,
+        public_id,
+      },
+      { headers: { 'Authorization': 'Bearer ' + userToken } }
+    );
+    if (res.data.msg !== '201') {
+      throw new Error(res.data.message || 'Backend save failed');
+    }
+    return res.data;
+  };
+
+  // ── Main Upload Handler ───────────────────────
   const handleUpload = async () => {
     if (!validate()) return;
     setIsUploading(true);
     try {
-      const formData = new FormData();
+      // Upload front
+      const frontResult = await uploadDocSide(frontImage, 'front');
 
-      const frontFilename = frontImage.uri.split('/').pop();
-      const frontExt = frontFilename.split('.').pop()?.toLowerCase();
-      formData.append('front_image', {
-        uri: frontImage.uri,
-        name: frontFilename,
-        type: frontExt === 'jpg' || frontExt === 'jpeg' ? 'image/jpeg' : 'image/png',
+      // Upload back if needed
+      if (needsBack && backImage) {
+        await uploadDocSide(backImage, 'back');
+      }
+
+      // Update local user state
+      if (frontResult?.userData) {
+        const updatedInfo = {
+          ...userInfo,
+          userData: { ...userInfo.userData, ...frontResult.userData },
+        };
+        await AsyncStorage.setItem('userInfo', JSON.stringify(updatedInfo));
+        setUserInfo(updatedInfo);
+      }
+
+      Dialog.show({
+        type: ALERT_TYPE.SUCCESS,
+        title: 'Documents Uploaded! 🎉',
+        textBody: 'Your KYC documents have been submitted for review. This usually takes 24 hours.',
+        button: 'Done',
+        titleStyle: noticeData[0].errorTitleStyle,
+        textBodyStyle: noticeData[0].errorMessageStyle,
+        onHide: () => navigation.navigate('SignupSteps'),
       });
-
-      if (backImage) {
-        const backFilename = backImage.uri.split('/').pop();
-        const backExt = backFilename.split('.').pop()?.toLowerCase();
-        formData.append('back_image', {
-          uri: backImage.uri,
-          name: backFilename,
-          type: backExt === 'jpg' || backExt === 'jpeg' ? 'image/jpeg' : 'image/png',
-        });
-      }
-
-      formData.append('doc_type', selectedDocType.id);
-      formData.append('doc_label', selectedDocType.label);
-      formData.append('userId', userInfo?.userData?._id);
-
-      const res = await client.post(
-        '/api/uploadKYCDocument_mobile',
-        formData,
-        {
-          headers: {
-            'Authorization': 'Bearer ' + userToken,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      if (res.data.msg === '200') {
-        Dialog.show({
-          type: ALERT_TYPE.SUCCESS,
-          title: 'Documents Uploaded!',
-          textBody: 'Your KYC documents have been submitted. We will review and verify them within 24 hours.',
-          button: 'Done',
-          titleStyle: noticeData[0].errorTitleStyle,
-          textBodyStyle: noticeData[0].errorMessageStyle,
-          onHide: () => navigation.goBack(),
-        });
-      } else {
-        Toast.show({ type: ALERT_TYPE.DANGER, title: 'Upload Failed', textBody: res.data.message || 'Could not upload documents. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
-      }
     } catch (error) {
-      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Something went wrong. Please check your connection and try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      console.log('Upload error:', error.message);
+      Toast.show({
+        type: ALERT_TYPE.DANGER,
+        title: 'Upload Failed',
+        textBody: 'Could not upload documents. Please check your connection and try again.',
+        titleStyle: noticeData[0].errorTitleStyle,
+        textBodyStyle: noticeData[0].errorMessageStyle,
+      });
     } finally {
       setIsUploading(false);
     }
@@ -430,7 +456,7 @@ const UploadDocumentScreen = ({ navigation }) => {
             'All text on the document must be clearly visible',
             'Take photos in good lighting — avoid shadows and glare',
             'Documents are reviewed within 24 hours',
-            'Your documents are encrypted and stored securely',
+            'Your documents are stored securely',
           ].map((tip, i) => (
             <View key={i} style={styles.tipRow}>
               <Ionicons name="checkmark-circle" size={16} color={colors.successColor} />
