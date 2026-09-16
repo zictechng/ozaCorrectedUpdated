@@ -2,6 +2,7 @@
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar,
 } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -51,13 +52,14 @@ const DocumentScreen = ({ navigation }) => {
   const { colors, isDark } = useThemeStyles();
   const { userInfo } = useContext(AuthContext);
 
+  const isFocused = useIsFocused();
   const [documentUploaded, setDocumentUploaded] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
 
   useEffect(() => {
-    if (userInfo?.userData?.reg_stage4 === 'Yes') setDocumentUploaded(true);
-    if (userInfo?.userData?.acct_approved_status === 'Approved') setIsApproved(true);
-  }, []);
+    setDocumentUploaded(userInfo?.userData?.reg_stage4 === 'Yes');
+    setIsApproved(userInfo?.userData?.acct_approved_status === 'Approved');
+  }, [isFocused, userInfo]);
 
   // ── Determine overall status ──────────────────
   const overallStatus = isApproved
@@ -440,3 +442,4 @@ const styles = StyleSheet.create({
 });
 
 export default DocumentScreen;
+

@@ -26,6 +26,9 @@ const UploadProfileImageScreen = ({ navigation }) => {
   const currentPhoto = userInfo?.userData?.profile_photo;
   const userName = userInfo?.userData?.display_name || 'User';
 
+  const CLOUDINARY_ACCOUNT_NAME = process.env.CLOUDINARY_ACCOUNT_NAME;
+  const CLOUDINARY_PRESET_NAME = process.env.CLOUDINARY_PRESET_NAME;
+
   // ── Pick from gallery ─────────────────────────
   const pickFromGallery = async () => {
     try {
@@ -89,63 +92,71 @@ const UploadProfileImageScreen = ({ navigation }) => {
       });
       return;
     }
-    setIsUploading(true);
+   setIsUploading(true);
     try {
-      const formData = new FormData();
-      const filename = selectedImage.uri.split('/').pop();
-      const ext = filename.split('.').pop()?.toLowerCase();
-      const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
+      // Step 1 — Upload to Cloudinary
+      const uri      = selectedImage.uri;
+      const filename = uri.split('/').pop();
+      const ext      = filename.split('.').pop()?.toLowerCase();
+      const mimeType = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' : 'image/png';
 
-      formData.append('profile_photo', {
-        uri: selectedImage.uri,
-        name: filename,
-        type: mimeType,
-      });
-      formData.append('userId', userInfo?.userData?._id);
+      const cloudForm = new FormData();
+      cloudForm.append('file', { uri, name: filename, type: mimeType });
+      cloudForm.append('upload_preset', CLOUDINARY_PRESET_NAME);
+
+      const cloudRes  = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_ACCOUNT_NAME}/image/upload`,
+        { method: 'POST', body: cloudForm }
+      );
+      const cloudData = await cloudRes.json();
+
+      if (!cloudData.secure_url) {
+        throw new Error('Cloudinary upload failed');
+      }
 
       const res = await client.post(
-        '/api/uploadProfilePhoto_mobile',
-        formData,
+        '/api/user_uploadPhoto',
         {
-          headers: {
-            'Authorization': 'Bearer ' + userToken,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
+          userId:    userInfo?.userData?._id,
+          image_url: cloudData.secure_url,
+        },
+        { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
 
-      if (res.data.msg === '200') {
+      if (res.data.msg === '200' || res.data.msg === '201') {
         const updatedInfo = {
           ...userInfo,
           userData: {
             ...userInfo.userData,
-            profile_photo: res.data.photo_url,
+            profile_photo: cloudData.secure_url,
+            reg_stage3:    'Yes',
           },
         };
         await AsyncStorage.setItem('userInfo', JSON.stringify(updatedInfo));
         setUserInfo(updatedInfo);
         Dialog.show({
           type: ALERT_TYPE.SUCCESS,
-          title: 'Photo Updated!',
-          textBody: 'Your profile photo has been updated successfully.',
+          title: 'Photo Updated! 🎉',
+          textBody: 'Your profile photo has been updated and saved successfully.',
           button: 'Done',
           titleStyle: noticeData[0].errorTitleStyle,
           textBodyStyle: noticeData[0].errorMessageStyle,
-          onHide: () => navigation.goBack(),
+          onHide: () => navigation.navigate('SignupSteps'),
         });
       } else {
         Toast.show({
           type: ALERT_TYPE.DANGER,
-          title: 'Upload Failed',
-          textBody: res.data.message || 'Could not upload photo. Please try again.',
+          title: 'Save Failed',
+          textBody: res.data.message || 'Photo uploaded but could not save. Please try again.',
           titleStyle: noticeData[0].errorTitleStyle,
           textBodyStyle: noticeData[0].errorMessageStyle,
         });
       }
     } catch (error) {
+      console.log('Profile photo upload error:', error.message);
       Toast.show({
         type: ALERT_TYPE.DANGER,
-        title: 'Error',
+        title: 'Upload Failed',
         textBody: 'Something went wrong. Please check your connection and try again.',
         titleStyle: noticeData[0].errorTitleStyle,
         textBodyStyle: noticeData[0].errorMessageStyle,
@@ -162,7 +173,7 @@ const UploadProfileImageScreen = ({ navigation }) => {
         backgroundColor={colors.bgColor}
       />
 
-      {/* ── Header ──────────────────────────────── */}
+      {/* ── Header  */}
       <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
         <TouchableOpacity
           style={[styles.backBtn, { backgroundColor: colors.bgLight }]}
