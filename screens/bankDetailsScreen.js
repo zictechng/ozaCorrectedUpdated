@@ -19,37 +19,7 @@ import { noticeData } from '../components/errorNotice';
 import client from '../contextAPI/client';
 
 // ── Nigerian Banks — static list (Paystack-verified) ─
-const NIGERIAN_BANKS = [
-  { name: 'Access Bank', code: '044' },
-  { name: 'Citibank Nigeria', code: '023' },
-  { name: 'Ecobank Nigeria', code: '050' },
-  { name: 'Fidelity Bank', code: '070' },
-  { name: 'First Bank of Nigeria', code: '011' },
-  { name: 'First City Monument Bank', code: '214' },
-  { name: 'Globus Bank', code: '00103' },
-  { name: 'Guaranty Trust Bank', code: '058' },
-  { name: 'Heritage Bank', code: '030' },
-  { name: 'Jaiz Bank', code: '301' },
-  { name: 'Keystone Bank', code: '082' },
-  { name: 'Kuda Bank', code: '090267' },
-  { name: 'Moniepoint MFB', code: '50515' },
-  { name: 'OPay Digital Services', code: '999992' },
-  { name: 'PalmPay', code: '999991' },
-  { name: 'Parallex Bank', code: '526' },
-  { name: 'Polaris Bank', code: '076' },
-  { name: 'Providus Bank', code: '101' },
-  { name: 'Stanbic IBTC Bank', code: '221' },
-  { name: 'Standard Chartered Bank', code: '068' },
-  { name: 'Sterling Bank', code: '232' },
-  { name: 'SunTrust Bank', code: '100' },
-  { name: 'Titan Trust Bank', code: '102' },
-  { name: 'Union Bank of Nigeria', code: '032' },
-  { name: 'United Bank for Africa', code: '033' },
-  { name: 'Unity Bank', code: '215' },
-  { name: 'VFD Microfinance Bank', code: '566' },
-  { name: 'Wema Bank', code: '035' },
-  { name: 'Zenith Bank', code: '057' },
-];
+const NIGERIAN_BANKS = [];
 
 // ── Bank Picker Item ──────────────────────────────
 const BankPickerItem = ({ bank, onSelect, colors }) => (
@@ -100,10 +70,30 @@ const BankDetailsScreen = ({ navigation }) => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isFetchingExisting, setIsFetchingExisting] = useState(true);
+  const [banks, setBanks] = useState([]);
+  const [isLoadingBanks, setIsLoadingBanks] = useState(false);
 
   useEffect(() => {
     if (isFocused) fetchExistingDetails();
+     fetchBanks();
   }, [isFocused]);
+
+  const fetchBanks = async () => {
+    setIsLoadingBanks(true);
+    try {
+      const res = await client.get('/api/fetch_banks', {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      });
+      if (res.data.msg === '200') {
+        setBanks(res.data.banks);
+        setFilteredBanks(res.data.banks);
+      }
+    } catch {
+      // Keep existing filtered banks (empty fallback)
+    } finally {
+      setIsLoadingBanks(false);
+    }
+  };
 
   // ── Fetch existing details ────────────────────
   const fetchExistingDetails = async () => {
@@ -140,8 +130,8 @@ const BankDetailsScreen = ({ navigation }) => {
   // ── Bank search ───────────────────────────────
   const handleBankSearch = (text) => {
     setBankSearch(text);
-    if (!text.trim()) { setFilteredBanks(NIGERIAN_BANKS); return; }
-    setFilteredBanks(NIGERIAN_BANKS.filter(b =>
+    if (!text.trim()) { setFilteredBanks(banks); return; }
+    setFilteredBanks(banks.filter(b =>
       b.name.toLowerCase().includes(text.toLowerCase())
     ));
   };
@@ -357,7 +347,10 @@ const BankDetailsScreen = ({ navigation }) => {
                     <Text style={[styles.bankSelectorText, { color: bankName ? colors.textBlack : colors.textSecColor2 }]}>
                       {bankName || 'Select your bank'}
                     </Text>
-                    <Ionicons name="chevron-down" size={18} color={colors.textSecColor} />
+                    {isLoadingBanks
+                      ? <ActivityIndicator size={16} color={colors.primaryColor1} />
+                      : <Ionicons name="chevron-down" size={18} color={colors.textSecColor} />
+                    }
                   </TouchableOpacity>
                 </View>
 
@@ -573,7 +566,7 @@ const BankDetailsScreen = ({ navigation }) => {
                 autoFocus
               />
               {bankSearch.length > 0 && (
-                <TouchableOpacity onPress={() => { setBankSearch(''); setFilteredBanks(NIGERIAN_BANKS); }}>
+                <TouchableOpacity onPress={() => { setBankSearch(''); setFilteredBanks(banks); }}>
                   <Ionicons name="close-circle" size={18} color={colors.textSecColor} />
                 </TouchableOpacity>
               )}
