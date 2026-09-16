@@ -379,12 +379,26 @@ const BankDetailsScreen = ({ navigation }) => {
                       onFocus={() => setAccountFocused(true)}
                       onBlur={() => setAccountFocused(false)}
                     />
-                    {isVerifying && <ActivityIndicator size={16} color={colors.primaryColor1} />}
-                    {accountNumber.length === 10 && !isVerifying && !accountName && bankCode && (
-                      <TouchableOpacity onPress={() => verifyAccount(accountNumber, bankCode)}>
-                        <Text style={[styles.verifyText, { color: colors.primaryColor1 }]}>Verify</Text>
-                      </TouchableOpacity>
-                    )}
+                    {isVerifying
+                      ? <ActivityIndicator size={16} color={colors.primaryColor1} />
+                      : accountNumber.length > 0
+                        ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                            {accountNumber.length === 10 && !accountName && bankCode && (
+                              <TouchableOpacity onPress={() => verifyAccount(accountNumber, bankCode)}>
+                                <Text style={[styles.verifyText, { color: colors.primaryColor1 }]}>Verify</Text>
+                              </TouchableOpacity>
+                            )}
+                            <TouchableOpacity onPress={() => {
+                              setAccountNumber('');
+                              setAccountName('');
+                            }}>
+                              <Ionicons name="close-circle" size={20} color={colors.textSecColor} />
+                            </TouchableOpacity>
+                          </View>
+                        )
+                        : null
+                    }
                   </View>
                   <Text style={[styles.inputHint, { color: colors.textSecColor }]}>
                     Enter your 10-digit NUBAN account number
