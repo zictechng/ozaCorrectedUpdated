@@ -168,7 +168,7 @@ const SignupStepScreen = ({ navigation }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // ── Refresh user from API ─────────────────────
-  const refreshUserDetails = async () => {
+    const refreshUserDetails = async () => {
     setIsRefreshing(true);
     try {
       const res = await client.get(
@@ -176,8 +176,11 @@ const SignupStepScreen = ({ navigation }) => {
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (res.data.msg === '200') {
-        AsyncStorage.setItem('userInfo', JSON.stringify(res.data));
+        // Update AsyncStorage and context
+        await AsyncStorage.setItem('userInfo', JSON.stringify(res.data));
         setUserInfo(res.data);
+        // Immediately update stages from fresh data — don't wait for context re-render
+        checkStages(res.data);
       }
     } catch (error) {
       console.log('Refresh user error:', error.message);
