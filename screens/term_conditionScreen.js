@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { WebView } from 'react-native-webview';
+import client from '../contextAPI/client';
 
 import { spacing, radius, typography, shadows } from '../styles';
 import useThemeStyles from '../hooks/useThemeStyles';
@@ -20,6 +21,108 @@ const TermsConditionsScreen = () => {
 
   const [fetchLoading, setFetchLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [fetchInfo, setFetchInfo] = useState({});
+
+
+  useEffect(() => {
+    loadTerms_condition();
+  }, []);
+
+  const loadTerms_condition = async () => {
+    setFetchLoading(true);
+    setHasError(false);
+    try {
+      const res = await client.get('/api/fetchAboutCompany');
+      if (res.data.msg === '200') {
+        setFetchInfo(res.data.infoData);
+        console.log("Terms: ", res.data.infoData.company_term_conditions)
+      } else {
+        setHasError(true);
+      }
+    } catch (error) {
+      console.log('Server error occurred:', error.message);
+      setHasError(true);
+    } finally {
+      setFetchLoading(false);
+    }
+  };
+
+  // ── Check if policy content is available ──────
+  const isPolicyAvailable =
+    !fetchLoading &&
+    fetchInfo?.company_term_conditions != null &&
+    fetchInfo?.term_status === 'Active';
+
+  const isPolicyEmpty =
+    !fetchLoading &&
+    (fetchInfo?.company_term_conditions == null ||
+      fetchInfo?.term_status !== 'Active');
+
+  // ── Build HTML content for WebView ───────────
+  const buildHtmlContent = (content) => `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 15px;
+            line-height: 1.7;
+            padding: 16px;
+            background-color: ${isDark ? '#1E2132' : '#ffffff'};
+            color: ${isDark ? '#E5E7EB' : '#1F2937'};
+          }
+          h1, h2, h3, h4, h5, h6 {
+            color: ${isDark ? '#F9FAFB' : '#111827'};
+            margin-bottom: 12px;
+            margin-top: 20px;
+            line-height: 1.4;
+          }
+          p {
+            margin-bottom: 14px;
+            color: ${isDark ? '#D1D5DB' : '#374151'};
+          }
+          ul, ol {
+            margin-left: 20px;
+            margin-bottom: 14px;
+          }
+          li {
+            margin-bottom: 8px;
+            color: ${isDark ? '#D1D5DB' : '#374151'};
+          }
+          a {
+            color: ${isDark ? '#818CF8' : '#4C5FD5'};
+            text-decoration: none;
+          }
+          strong, b {
+            color: ${isDark ? '#F9FAFB' : '#111827'};
+          }
+          hr {
+            border: none;
+            border-top: 1px solid ${isDark ? '#374151' : '#E5E7EB'};
+            margin: 20px 0;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+          }
+          td, th {
+            border: 1px solid ${isDark ? '#374151' : '#E5E7EB'};
+            padding: 8px 12px;
+            color: ${isDark ? '#D1D5DB' : '#374151'};
+          }
+          th {
+            background-color: ${isDark ? '#2D3250' : '#F3F4F6'};
+            color: ${isDark ? '#F9FAFB' : '#111827'};
+          }
+        </style>
+      </head>
+      <body>${content}</body>
+    </html>
+  `;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
@@ -63,6 +166,19 @@ const TermsConditionsScreen = () => {
 
       {/* ── WebView Content ──────────────────────── */}
       <View style={[styles.webviewCard, { backgroundColor: colors.bgCard }]}>
+
+        {/* Loading State */}
+          {fetchLoading && (
+            <View style={styles.centerState}>
+              <View style={[styles.loadingBox, { backgroundColor: colors.bgLight }]}>
+                <ActivityIndicator color={colors.primaryColor1} size="large" />
+                <Text style={[styles.loadingText, { color: colors.textSecColor }]}>
+                  Loading...
+                </Text>
+              </View>
+            </View>
+          )}
+  
         {hasError ? (
           // ── Error State ────────────────────────
           <View style={styles.emptyState}>
@@ -84,9 +200,10 @@ const TermsConditionsScreen = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          <WebView
+            isPolicyAvailable && (
+            <WebView
             originWhitelist={['*']}
-            source={{ uri: 'https://ozaapp.com/mobiletc' }}
+            source={{ html: buildHtmlContent(fetchInfo.company_term_conditions) }}
             javaScriptEnabled={true}
             domStorageEnabled={true}
             startInLoadingState={true}
@@ -135,6 +252,7 @@ const TermsConditionsScreen = () => {
               true;
             ` : undefined}
           />
+            )
         )}
       </View>
 
@@ -227,7 +345,26 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.85)',
     lineHeight: 20,
   },
-
+  // Center States (loading, error, empty)
+  centerState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+    gap: spacing.md,
+  },
+  loadingBox: {
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    alignItems: 'center',
+    gap: spacing.md,
+    ...shadows.card,
+  },
+  loadingText: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 22,
+  },
   // WebView Card
   webviewCard: {
     flex: 1,

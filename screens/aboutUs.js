@@ -6,12 +6,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-
+import { useNavigation } from '@react-navigation/native';
 import { spacing, radius, typography, shadows } from '../styles';
 import useThemeStyles from '../hooks/useThemeStyles';
 import { applicationDetails } from '../components/controls';
 
-// ── Feature Card ──────────────────────────────────
+// ── Feature Card
 const FeatureCard = ({ icon, iconBg, iconColor, title, desc, colors }) => (
   <View style={[styles.featureCard, {
     backgroundColor: colors.bgCard,
@@ -27,7 +27,7 @@ const FeatureCard = ({ icon, iconBg, iconColor, title, desc, colors }) => (
   </View>
 );
 
-// ── Stat Item ─────────────────────────────────────
+// ── Stat Item
 const StatItem = ({ value, label }) => (
   <View style={styles.statItem}>
     <Text style={styles.statValue}>{value}</Text>
@@ -35,19 +35,29 @@ const StatItem = ({ value, label }) => (
   </View>
 );
 
-// ── Link Row ──────────────────────────────────────
-const LinkRow = ({ icon, label, url, colors }) => (
-  <TouchableOpacity
-    style={[styles.linkRow, { borderBottomColor: colors.dividerColor }]}
-    onPress={() => url && Linking.openURL(url)}
-    activeOpacity={0.8}>
-    <View style={[styles.linkIconBox, { backgroundColor: colors.bgLight }]}>
-      <Ionicons name={icon} size={18} color={colors.primaryColor1} />
-    </View>
-    <Text style={[styles.linkLabel, { color: colors.textBlack }]}>{label}</Text>
-    <Ionicons name="chevron-forward" size={16} color={colors.textSecColor} />
-  </TouchableOpacity>
-);
+// ── Link Row 
+const LinkRow = ({ icon, label, screen, url, colors }) => {
+  const navigation = useNavigation();
+
+  return (
+    <TouchableOpacity
+      style={[styles.linkRow, { borderBottomColor: colors.dividerColor }]}
+      onPress={() => {
+        if (screen) {
+          navigation.navigate(screen); // Navigate to internal screen
+        } else if (url) {
+          Linking.openURL(url); // Open external link
+        }
+      }}
+      activeOpacity={0.8}>
+      <View style={[styles.linkIconBox, { backgroundColor: colors.bgLight }]}>
+        <Ionicons name={icon} size={18} color={colors.primaryColor1} />
+      </View>
+      <Text style={[styles.linkLabel, { color: colors.textBlack }]}>{label}</Text>
+      <Ionicons name="chevron-forward" size={16} color={colors.textSecColor} />
+    </TouchableOpacity>
+  );
+};
 
 const FEATURES = [
   {
@@ -64,13 +74,7 @@ const FEATURES = [
     title: 'Bill Payments',
     desc: 'Pay electricity, airtime, data, TV subscriptions and exam cards instantly.',
   },
-  {
-    icon: 'shield-checkmark-outline',
-    iconBg: '#D1FAE5',
-    iconColor: '#10B981',
-    title: 'Secure & Reliable',
-    desc: 'Bank-level security with end-to-end encryption protecting your funds and data.',
-  },
+  
   {
     icon: 'gift-outline',
     iconBg: '#FFF3CD',
@@ -92,6 +96,13 @@ const FEATURES = [
     title: '24/7 Support',
     desc: 'Our support team is always available to help you via WhatsApp, Email or Telegram.',
   },
+  {
+    icon: 'shield-checkmark-outline',
+    iconBg: '#D1FAE5',
+    iconColor: '#10B981',
+    title: 'Secure & Reliable',
+    desc: 'Bank-level security with end-to-end encryption protecting your funds and data.',
+  },
 ];
 
 // ── Main About Screen ─────────────────────────────
@@ -106,7 +117,7 @@ const AboutUsScreen = ({ navigation }) => {
   }, []);
 
   const appName = appInfo?.app_name || 'OtaMobile';
-  const appVersion = appInfo?.app_version || '2.0.1';
+  const appVersion = appInfo?.app_version || '1.0.0';
   const appDesc = appInfo?.app_desc || 'Nigeria\'s most trusted platform for digital asset trading and instant bill payments. Fast, secure and reliable.';
 
   return (
@@ -132,50 +143,54 @@ const AboutUsScreen = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}>
 
         {/* ── Brand Hero ───────────────────────── */}
-        <LinearGradient
-          colors={[colors.primaryColor1, colors.primaryColor1b]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.heroBanner}>
-          <View style={styles.heroCircle1} />
-          <View style={styles.heroCircle2} />
+         <LinearGradient
+            colors={[colors.primaryColor1, colors.primaryColor1b]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroBanner}>
+            <View style={styles.heroCircle1} />
+            <View style={styles.heroCircle2} />
 
-          <View style={[styles.logoBox, { backgroundColor: 'rgba(255,255,255,0.95)' }]}>
-            <Ionicons name="swap-horizontal" size={36} color={colors.primaryColor1} />
-          </View>
-          <Text style={styles.brandName}>{appName}</Text>
-          <Text style={styles.brandTagline}>
-            Trade • Pay • Earn
-          </Text>
-          <Text style={styles.brandDesc}>{appDesc}</Text>
+            <View style={[styles.logoBox, { backgroundColor: 'rgba(255,255,255,0.95)' }]}>
+              {/* Updated to a people icon */}
+              <Ionicons name="people" size={36} color={colors.primaryColor1} />
+            </View>
+            <Text style={styles.brandName}>{appName}</Text>
+            <Text style={styles.brandTagline}>
+              Trade • Pay • Earn
+            </Text>
+            <Text style={styles.brandDesc}>{appDesc}</Text>
 
-          {/* Stats */}
-          <View style={[styles.statsRow, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
-            <StatItem value="50K+" label="Users" />
-            <View style={styles.statDivider} />
-            <StatItem value="₦1B+" label="Traded" />
-            <View style={styles.statDivider} />
-            <StatItem value="4.8★" label="Rating" />
-            <View style={styles.statDivider} />
-            <StatItem value="24/7" label="Support" />
-          </View>
-        </LinearGradient>
+            {/* Stats */}
+            <View style={[styles.statsRow, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+              <StatItem value="100%" label="Secure" />
+              <View style={styles.statDivider} />
+              <StatItem value="Instant" label="Payouts" />
+              <View style={styles.statDivider} />
+              <StatItem value="Low" label="Fees" />
+              <View style={styles.statDivider} />
+              <StatItem value="24/7" label="Support" />
+            </View>
+          </LinearGradient>
 
         {/* ── Mission Card ──────────────────────── */}
+       {/* ── Mission Card ──────────────────────── */}
         <View style={[styles.missionCard, { backgroundColor: colors.bgCard }]}>
           <View style={styles.missionHeader}>
             <View style={[styles.missionIconBox, { backgroundColor: '#EEF2FF' }]}>
-              <Ionicons name="rocket-outline" size={22} color={colors.primaryColor1} />
+              {/* Changed to shield-checkmark to highlight safety and trust */}
+              <Ionicons name="shield-checkmark-outline" size={22} color={colors.primaryColor1} />
             </View>
             <Text style={[styles.missionTitle, { color: colors.textBlack }]}>
               Our Mission
             </Text>
           </View>
           <Text style={[styles.missionText, { color: colors.textSecColor }]}>
-            To make digital finance accessible, affordable and reliable for every Nigerian — from buying and selling digital currencies to paying everyday bills at the cheapest rates available.
+            To provide a fully secure and registered platform where you can buy and sell 
+            virtual funds quickly with a competitive rate, completely eliminating the risk of losing money to untrusted online agents.
           </Text>
           <Text style={[styles.missionText, { color: colors.textSecColor }]}>
-            We believe everyone deserves access to fast, transparent and secure financial services — regardless of location or bank status.
+            We also make everyday life easier by offering fast, low-cost payments for electricity, TV subscriptions, airtime, data, and education cards all in one place.
           </Text>
         </View>
 
@@ -197,7 +212,7 @@ const AboutUsScreen = ({ navigation }) => {
         ))}
 
         {/* ── Values Card ───────────────────────── */}
-        <View style={[styles.valuesCard, { backgroundColor: colors.bgCard }]}>
+        <View style={[styles.valuesCard, { backgroundColor: colors.bgCard, marginTop:'15'}]}>
           <Text style={[styles.valuesTitle, { color: colors.textBlack }]}>
             Our Core Values
           </Text>
@@ -232,34 +247,32 @@ const AboutUsScreen = ({ navigation }) => {
           <LinkRow
             icon="document-text-outline"
             label="Terms & Conditions"
-            url={null}
+            screen="Terms_Conditions"
             colors={colors}
           />
           <LinkRow
             icon="shield-outline"
             label="Privacy Policy"
-            url={null}
+            screen="Privacy_Policy"
             colors={colors}
           />
           <LinkRow
             icon="help-circle-outline"
             label="Help Centre"
-            url={null}
+            screen="contacts"
             colors={colors}
           />
           <LinkRow
             icon="globe-outline"
             label="Visit Our Website"
-            url={appInfo?.app_website || 'https://ozaapp.com'}
+            url={''}
             colors={colors}
           />
         </View>
 
         {/* ── App Version ───────────────────────── */}
         <View style={styles.versionBlock}>
-          <View style={[styles.versionIconBox, { backgroundColor: colors.bgLight }]}>
-            <Ionicons name="swap-horizontal" size={24} color={colors.primaryColor1} />
-          </View>
+          
           <Text style={[styles.versionApp, { color: colors.textBlack }]}>
             {appName}
           </Text>
@@ -268,9 +281,6 @@ const AboutUsScreen = ({ navigation }) => {
           </Text>
           <Text style={[styles.versionCopyright, { color: colors.textSecColor }]}>
             © {new Date().getFullYear()} {appName}. All rights reserved.
-          </Text>
-          <Text style={[styles.versionMade, { color: colors.textSecColor }]}>
-            Made with ❤️ in Nigeria
           </Text>
         </View>
 

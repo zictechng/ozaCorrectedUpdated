@@ -68,8 +68,8 @@ const FAQS = [
     answer: 'Withdrawals are processed within 24 hours on business days. Ensure your bank details are correct before submitting.',
   },
   {
-    question: 'How do I sell PayPal or Payoneer?',
-    answer: 'Go to Transactions → Sell Assets, select the asset, enter the amount and our wallet address. Send the exact amount and click "I\'ve Sent Payment" to confirm.',
+  "question": "How do I sell PayPal, Bitcoin, or Payoneer funds?",
+  "answer": "Go to Transactions → Sell Assets, select the asset, and enter the amount. Choose your checkout method: for manual checkout, transfer the exact amount to the provided address, click 'I've Sent Payment', and upload your proof of transfer. If you use the virtual gateway, your transaction will process automatically and quickly."
   },
   {
     question: 'Why is my account restricted?',
@@ -117,13 +117,13 @@ const ContactUsScreen = ({ navigation }) => {
     setIsSending(true);
     try {
       const res = await client.post(
-        '/api/contactUs_mobile',
+        '/api/submit_ticketMobile',
         {
           subject: subject.trim(),
-          message: message.trim(),
-          userId: userInfo?.userData?._id,
-          userEmail: userInfo?.userData?.email,
-          userName: userInfo?.userData?.display_name,
+          ticket_message: message.trim(),
+          createdBy: userInfo?.userData?._id,
+          email: userInfo?.userData?.email,
+          sender_name: userInfo?.userData?.display_name,
         },
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
@@ -138,6 +138,7 @@ const ContactUsScreen = ({ navigation }) => {
           onHide: () => {
             setSubject('');
             setMessage('');
+            navigation.goBack()
           },
         });
       } else {
@@ -151,7 +152,7 @@ const ContactUsScreen = ({ navigation }) => {
   };
 
   const openEmail = () => {
-    const email = appInfo?.support_email || 'support@ozaapp.com';
+    const email = appInfo?.app_email || 'support@ozaapp.com';
     Linking.openURL(`mailto:${email}?subject=Support Request`);
   };
 
@@ -257,7 +258,7 @@ const ContactUsScreen = ({ navigation }) => {
               iconBg="#EEF2FF"
               iconColor={colors.primaryColor1}
               title="Email Support"
-              subtitle={appInfo?.support_email || 'support@ozaapp.com'}
+              subtitle={appInfo?.app_email || 'support@ozaapp.com'}
               onPress={openEmail}
               colors={colors}
             />
@@ -348,7 +349,7 @@ const ContactUsScreen = ({ navigation }) => {
                   />
                 </View>
                 <Text style={[styles.charCount, { color: colors.textSecColor }]}>
-                  {message.length}/1000
+                  {message.length}/5000
                 </Text>
               </View>
 
@@ -649,3 +650,4 @@ const styles = StyleSheet.create({
 });
 
 export default ContactUsScreen;
+

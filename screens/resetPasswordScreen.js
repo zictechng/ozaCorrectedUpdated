@@ -72,6 +72,7 @@ const ResetPasswordScreen = ({ navigation }) => {
         },
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
+
       if (res.data.msg === '201') {
         setNewPassword('');
         setConfirmPassword('');
@@ -80,13 +81,20 @@ const ResetPasswordScreen = ({ navigation }) => {
           'Your password has been reset successfully. Please use your new password to sign in.',
           [{ text: 'Go Home', onPress: () => navigation.navigate('Home') }]
         );
-      } else if (res.data.status === '401') {
+      } else if (res.data.msg === '401') {
         Toast.show({
           type: ALERT_TYPE.DANGER,
           title: 'Access Denied',
           textBody: 'You are not authorized to perform this action.',
         });
-      } else {
+      } else if (res.data.status === 404) {
+        Toast.show({
+          type: ALERT_TYPE.WARNING,
+          title: 'User Not Found',
+          textBody: res.data.message || 'Account does not exist.',
+        });
+      } 
+      else {
         Toast.show({
           type: ALERT_TYPE.DANGER,
           title: 'Failed',
@@ -290,7 +298,7 @@ const ResetPasswordScreen = ({ navigation }) => {
                     name={newPassword === confirmPassword
                       ? 'checkmark-circle'
                       : 'close-circle'}
-                    size={14}
+                    size={20}
                     color={newPassword === confirmPassword ? '#10B981' : '#EF4444'}
                   />
                   <Text style={[
@@ -528,7 +536,7 @@ const styles = StyleSheet.create({
   },
   strengthLabel: {
     fontFamily: '_semiBold',
-    fontSize: typography.xs,
+    fontSize: typography.sm,
     lineHeight: 16,
     minWidth: 40,
   },
@@ -542,7 +550,7 @@ const styles = StyleSheet.create({
   },
   matchText: {
     fontFamily: '_regular',
-    fontSize: typography.xs,
+    fontSize: typography.md,
     lineHeight: 16,
   },
 

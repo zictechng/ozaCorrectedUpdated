@@ -161,8 +161,8 @@ const ProfileScreen = ({ navigation }) => {
         <Text style={[styles.headerTitle, { color: colors.textBlack }]}>My Profile</Text>
         <TouchableOpacity
           style={[styles.headerBtn, { backgroundColor: colors.bgLight }]}
-          onPress={() => navigation.navigate('settingScreen')}>
-          <Ionicons name="settings-outline" size={22} color={colors.primaryColor1} />
+          onPress={() => navigation.navigate('messages')}>
+          <Ionicons name="notifications-outline" size={22} color={colors.primaryColor1} />
         </TouchableOpacity>
       </View>
 
@@ -399,59 +399,7 @@ const ProfileScreen = ({ navigation }) => {
         </View>
 
         {/* ── Settings & Support ────────────────── */}
-        <View style={[styles.sectionCard, { backgroundColor: colors.bgCard }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textBlack, borderBottomColor: colors.dividerColor }]}>
-            Settings & Support
-          </Text>
-          <MenuItem
-            icon="lock-closed-outline"
-            label="Security & Privacy"
-            subtitle="Change PIN, password and security settings"
-            iconBg="#FEE2E2"
-            iconColor={colors.dangerColor}
-            onPress={() => navigation.navigate('settingScreen')}
-          />
-          <MenuItem
-            icon="notifications-outline"
-            label="Notifications"
-            subtitle="Manage your notification preferences"
-            iconBg="#FFEDD5"
-            iconColor={colors.warningColor}
-            onPress={() => navigation.navigate('messages')}
-          />
-          <MenuItem
-            icon="chatbox-outline"
-            label="Contact Support"
-            subtitle="Get help from our support team"
-            iconBg="#ECFDF5"
-            iconColor={colors.successColor}
-            onPress={() => navigation.navigate('contacts')}
-          />
-          <MenuItem
-            icon="information-circle-outline"
-            label="About Us"
-            subtitle="Learn more about OtaMobile"
-            iconBg={colors.bgLight}
-            iconColor={colors.primaryColor1}
-            onPress={() => navigation.navigate('About')}
-          />
-          <MenuItem
-            icon="shield-outline"
-            label="Privacy Policy"
-            subtitle="Read our privacy policy"
-            iconBg={colors.bgLight}
-            iconColor={colors.textSecColor}
-            onPress={() => navigation.navigate('Privacy_Policy')}
-          />
-          <MenuItem
-            icon="document-text-outline"
-            label="Terms & Conditions"
-            subtitle="Read our terms of service"
-            iconBg={colors.bgLight}
-            iconColor={colors.textSecColor}
-            onPress={() => navigation.navigate('Terms_Conditions')}
-          />
-        </View>
+        
 
         <Text style={[styles.appVersion, { color: colors.textSecColor }]}>
           {appSettingDetails?.app_name || 'Ota Mobile'} • v{appSettingDetails?.app_version || '1.0.1'}

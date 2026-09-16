@@ -383,8 +383,8 @@ const SettingScreen = () => {
         <SectionCard title="Danger Zone">
           <MenuItem
             icon="ban-outline"
-            label="Block Account"
-            subtitle="Temporarily disable your account access"
+            label="Delete Account"
+            subtitle="This will delete your account permanently"
             iconBg="#FEE2E2"
             iconColor={colors.dangerColor}
             onPress={confirmBlockAccount}
