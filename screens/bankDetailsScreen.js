@@ -543,6 +543,7 @@ const BankDetailsScreen = ({ navigation }) => {
         animationOutTiming={300}
         backdropOpacity={0.6}
         onBackdropPress={() => setShowBankModal(false)}
+        avoidKeyboard
         style={styles.modal}>
         <View style={[styles.modalCard, { backgroundColor: colors.bgCard }]}>
           <LinearGradient colors={[colors.primaryColor1, colors.primaryColor1b]} style={styles.modalHeader}>
@@ -563,7 +564,6 @@ const BankDetailsScreen = ({ navigation }) => {
                 placeholderTextColor={colors.textSecColor2}
                 value={bankSearch}
                 onChangeText={handleBankSearch}
-                autoFocus
               />
               {bankSearch.length > 0 && (
                 <TouchableOpacity onPress={() => { setBankSearch(''); setFilteredBanks(banks); }}>
@@ -575,7 +575,7 @@ const BankDetailsScreen = ({ navigation }) => {
 
           <FlatList
             data={filteredBanks}
-            keyExtractor={(item) => item.code}
+            keyExtractor={(item, index) => `${item.code}_${index}`}
             renderItem={({ item }) => (
               <BankPickerItem bank={item} onSelect={handleSelectBank} colors={colors} />
             )}
