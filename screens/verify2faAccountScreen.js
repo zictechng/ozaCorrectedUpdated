@@ -311,7 +311,9 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
         <View style={[styles.noticeCard, { backgroundColor: colors.bgLight, borderColor: colors.dividerColor }]}>
           <Ionicons name="information-circle-outline" size={18} color={colors.primaryColor1} />
           <Text style={[styles.noticeText, { color: colors.textSecColor }]}>
-            We'll send a one-time code to your email. Then take a selfie to verify it's really you — takes under a minute.
+            We'll send a one-time code to your email. Write the code{' '}
+            <Text style={{ fontWeight: 'bold', color: colors.textBlack }}>clearly</Text> on a paper, then{' '}
+            <Text style={{ fontWeight: 'bold', color: colors.textBlack }}>take a selfie</Text> with it to verify it's really you — takes under a minute.
           </Text>
         </View>
 

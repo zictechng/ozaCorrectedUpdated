@@ -423,7 +423,7 @@ const SendFundScreen = ({ navigation }) => {
                     value={note}
                     onChangeText={setNote}
                     multiline
-                    numberOfLines={2}
+                    numberOfLines={3}
                     textAlignVertical="top"
                     maxLength={200}
                   />
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
   sourceCheck: { position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
 
   // Note
-  noteContainer: { borderWidth: 1.5, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  noteContainer: { borderWidth: 1.5, borderRadius: radius.lg, padding: spacing.md, minHeight: 90 },
   noteField: { fontFamily: '_regular', fontSize: typography.base, lineHeight: 22, textAlignVertical: 'top', maxHeight: 72 },
 
   // Send Button

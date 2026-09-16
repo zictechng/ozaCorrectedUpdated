@@ -1,9 +1,8 @@
 ﻿import React, { useState, useContext, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  StatusBar, TextInput, ActivityIndicator, Platform,
-  KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard,
-  Linking,
+  StatusBar, TextInput, ActivityIndicator, Linking, Keyboard,
+  Modal, TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -95,6 +94,7 @@ const ContactUsScreen = ({ navigation }) => {
   const [isSending, setIsSending] = useState(false);
   const [subjectFocused, setSubjectFocused] = useState(false);
   const [messageFocused, setMessageFocused] = useState(false);
+  const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [appInfo, setAppInfo] = useState(null);
 
   useEffect(() => {
@@ -103,11 +103,29 @@ const ContactUsScreen = ({ navigation }) => {
     });
   }, []);
 
+  // ── Ticket Subjects — matches user portal exactly ─
+const TICKET_SUBJECTS = [
+  'Account Funding',
+  'Account Profile Update',
+  'Account Approval',
+  'Bounces Issues',
+  'Document Upload',
+  'Closing Account',
+  'Foreign Social Medial Account Opening',
+  'Funds Sending',
+  'Funds Withdrawal',
+  'Payment Issues',
+  'Paypal Account Opening',
+  'Transactions Issues',
+  '2FA Issues',
+  'Others',
+];
+
   // ── Send message ──────────────────────────────
   const handleSend = async () => {
     Keyboard.dismiss();
-    if (!subject.trim()) {
-      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Subject Required', textBody: 'Please enter a subject for your message.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      if (!subject) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Subject Required', textBody: 'Please select a subject for your message.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       return;
     }
     if (!message.trim() || message.trim().length < 10) {
@@ -119,7 +137,8 @@ const ContactUsScreen = ({ navigation }) => {
       const res = await client.post(
         '/api/submit_ticketMobile',
         {
-          subject: subject.trim(),
+          subject:        subject,
+          ticket_type:    subject,
           ticket_message: message.trim(),
           createdBy: userInfo?.userData?._id,
           email: userInfo?.userData?.email,
@@ -292,34 +311,32 @@ const ContactUsScreen = ({ navigation }) => {
               </Text>
 
               {/* Subject */}
+                            
               <View style={styles.inputGroup}>
                 <Text style={[styles.inputLabel, { color: colors.textSecColor }]}>
-                  Subject
+                  Subject *
                 </Text>
-                <View style={[
-                  styles.inputContainer,
-                  {
-                    borderColor: subjectFocused ? colors.primaryColor1 : colors.dividerColor,
-                    backgroundColor: subjectFocused ? colors.primaryColor1 + '10' : colors.bgLight,
-                  },
-                ]}>
+                <TouchableOpacity
+                  style={[styles.inputContainer, {
+                    borderColor: subject ? colors.primaryColor1 : colors.dividerColor,
+                    backgroundColor: subject ? colors.primaryColor1 + '10' : colors.bgLight,
+                  }]}
+                  onPress={() => setShowSubjectModal(true)}
+                  activeOpacity={0.8}>
                   <Ionicons
-                    name="text-outline"
+                    name="list-outline"
                     size={20}
-                    color={subjectFocused ? colors.primaryColor1 : colors.textSecColor}
+                    color={subject ? colors.primaryColor1 : colors.textSecColor}
                     style={styles.inputIcon}
                   />
-                  <TextInput
-                    style={[styles.inputField, { color: colors.textBlack }]}
-                    placeholder="What is your message about?"
-                    placeholderTextColor={colors.textSecColor2}
-                    value={subject}
-                    onChangeText={setSubject}
-                    maxLength={100}
-                    onFocus={() => setSubjectFocused(true)}
-                    onBlur={() => setSubjectFocused(false)}
-                  />
-                </View>
+                  <Text style={[
+                    styles.inputField,
+                    { color: subject ? colors.textBlack : colors.textSecColor2 }
+                  ]}>
+                    {subject || 'Select a subject'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={18} color={colors.textSecColor} />
+                </TouchableOpacity>
               </View>
 
               {/* Message */}
@@ -394,6 +411,60 @@ const ContactUsScreen = ({ navigation }) => {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+    
+    {/* ── Subject Picker Modal ─────────────────── */}
+      <Modal
+        visible={showSubjectModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowSubjectModal(false)}>
+        <TouchableWithoutFeedback onPress={() => setShowSubjectModal(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={[styles.modalCard, { backgroundColor: colors.bgCard }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={[styles.modalTitle, { color: colors.textBlack }]}>
+                    Select Subject
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.modalCloseBtn, { backgroundColor: colors.bgLight }]}
+                    onPress={() => setShowSubjectModal(false)}>
+                    <Ionicons name="close" size={20} color={colors.textBlack} />
+                  </TouchableOpacity>
+                </View>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  {TICKET_SUBJECTS.map((item) => (
+                    <TouchableOpacity
+                      key={item}
+                      style={[
+                        styles.subjectItem,
+                        { borderBottomColor: colors.dividerColor },
+                        subject === item && { backgroundColor: colors.primaryColor1 + '15' },
+                      ]}
+                      onPress={() => {
+                        setSubject(item);
+                        setShowSubjectModal(false);
+                      }}
+                      activeOpacity={0.7}>
+                      <Text style={[
+                        styles.subjectItemText,
+                        { color: subject === item ? colors.primaryColor1 : colors.textBlack },
+                        subject === item && { fontFamily: '_bold' },
+                      ]}>
+                        {item}
+                      </Text>
+                      {subject === item && (
+                        <Ionicons name="checkmark-circle" size={20} color={colors.primaryColor1} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -589,13 +660,60 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     minHeight: 140,
   },
-  messageField: {
+    messageField: {
     fontFamily: '_regular',
     fontSize: typography.base,
     lineHeight: 22,
     textAlignVertical: 'top',
-    minHeight: 120,
+    minHeight: 100,
   },
+
+  // Subject Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    borderTopLeftRadius: radius.xxl,
+    borderTopRightRadius: radius.xxl,
+    padding: spacing.xl,
+    maxHeight: '75%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  modalTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.xl,
+  },
+  modalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  subjectItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderBottomWidth: 1,
+    borderRadius: radius.md,
+    marginBottom: 2,
+  },
+  subjectItemText: {
+    fontFamily: '_semiBold',
+    fontSize: typography.base,
+    lineHeight: 22,
+    flex: 1,
+  },
+
   charCount: {
     fontFamily: '_regular',
     fontSize: typography.base,

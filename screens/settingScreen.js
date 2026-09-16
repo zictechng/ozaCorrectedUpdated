@@ -186,11 +186,11 @@ const SettingScreen = () => {
 
   const confirmBlockAccount = () => {
     Alert.alert(
-      'Block Account',
-      'Are you sure you want to block your account?',
+      'Delete Account',
+      `Are you sure you want to delete your account?\nThis will permanently delete your profile account`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Block', style: 'destructive', onPress: blockMyAccount },
+        { text: 'Delete', style: 'destructive', onPress: blockMyAccount },
       ]
     );
   };

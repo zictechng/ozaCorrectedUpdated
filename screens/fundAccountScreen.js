@@ -587,14 +587,7 @@ const FundAccountScreen = ({ navigation }) => {
               ))}
             </View>
 
-            {/* ── Security Notice ───────────────── */}
-            <View style={[styles.securityNotice, { backgroundColor: colors.bgLight, borderColor: colors.dividerColor }]}>
-              <Ionicons name="shield-checkmark-outline" size={18} color={colors.successColor} />
-              <Text style={[styles.securityText, { color: colors.textSecColor }]}>
-                All transactions are secured with bank-level encryption. Your funds are protected at all times.
-              </Text>
-            </View>
-
+            
             <View style={{ height: spacing.xxxl }} />
           </ScrollView>
         </TouchableWithoutFeedback>
