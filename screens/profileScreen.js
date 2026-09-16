@@ -18,6 +18,7 @@ import { AuthContext } from '../contextAPI/authContext';
 import {
   CheckRegistrationStage,
   ShowLogoutModal,
+  LogoutModal,
 } from '../components/controls';
 import FirstWord from '../components/firstWord';
 import client from '../contextAPI/client';
@@ -34,7 +35,7 @@ const ProfileScreen = ({ navigation }) => {
     userInfo, setUserInfo,
     userToken,
     logoutAction,
-    completeRegData, setCompleteRegData,
+    completeRegData, setCompleteRegData, appSettingDetails,
   } = useContext(AuthContext);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -106,9 +107,10 @@ const ProfileScreen = ({ navigation }) => {
 
   const copyReferralCode = async () => {
     try {
-      const appName = 'OtaMobile';
+      const appName = appSettingDetails?.app_name || 'OtaMobile';
+      const downloadLink = appSettingDetails?.app_download_link || 'https://zictech-ng.com';
       const bonus = businessRate?.signup_bonus_rate ? `$${businessRate.signup_bonus_rate}` : 'a bonus';
-      const message = `${appName} — earn ${bonus} instantly!\nUse my referral code: ${userInfo?.userData?.tag_id}\nDownload: https://ozaapp.com`;
+      const message = `${appName} — earn ${bonus} instantly!\nUse my referral code: ${userInfo?.userData?.tag_id}\nDownload: ${downloadLink}`;
       await Clipboard.setStringAsync(message);
       if (Platform.OS === 'android') {
         ToastAndroid.show('Referral code copied! Share it to earn rewards 🎉', ToastAndroid.SHORT);
@@ -130,6 +132,11 @@ const ProfileScreen = ({ navigation }) => {
     } finally {
       setIsLoggingOut(false);
     }
+  };
+
+  const signMeOut = () => {
+    logoutAction();
+    setShowLogoutModal(false);
   };
 
   const coinNgnValue = coinSettings?.coin_ngn_value || 1;
@@ -446,6 +453,11 @@ const ProfileScreen = ({ navigation }) => {
           />
         </View>
 
+        <Text style={[styles.appVersion, { color: colors.textSecColor }]}>
+          {appSettingDetails?.app_name || 'Ota Mobile'} • v{appSettingDetails?.app_version || '1.0.1'}
+          </Text>
+        <View style={{ height: spacing.xxxl }} />
+
         {/* ── Logout Button ─────────────────────── */}
         <TouchableOpacity
           style={[styles.logoutBtn, {
@@ -465,20 +477,18 @@ const ProfileScreen = ({ navigation }) => {
           )}
         </TouchableOpacity>
 
-        <Text style={[styles.appVersion, { color: colors.textSecColor }]}>OtaMobile v2.0.1</Text>
-        <View style={{ height: spacing.xxxl }} />
+        
       </ScrollView>
 
-      <ShowLogoutModal
-        openModal={showLogoutModal}
-        modalTitle="Sign Out"
-        ModalDesc="Are you sure you want to sign out of your account?"
-        closeBtn={() => setShowLogoutModal(false)}
-        logoutBtn={handleLogout}
-        modalBgColor="rgba(0,0,0,0.5)"
-        animationType="fade"
-        bntYesText="Sign Out"
-      />
+      {/* Logout Modal */}
+        <LogoutModal
+          openModal={showLogoutModal}
+          modalTitle="Sign Out"
+          ModalDesc="Are you sure you want to sign out?"
+          closeBtn={() => setShowLogoutModal(false)}
+          logoutBtn={signMeOut}
+          bntYesText="Sign Out"
+        />
     </SafeAreaView>
   );
 };
@@ -593,6 +603,23 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     gap: 4,
   },
+
+  logoutBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 52,
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.md,
+    borderWidth: 1.5,
+    marginTop: 25,
+  },
+  logoutBtnText: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+  },
+
   verifiedPillText: {
     fontFamily: '_semiBold',
     fontSize: typography.sm,

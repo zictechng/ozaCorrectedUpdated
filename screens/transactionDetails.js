@@ -403,9 +403,17 @@ const TransactionsDetails = ({ route, navigation }) => {
           <InfoRow
             icon="checkmark-circle-outline"
             label="Approved Date"
-            value={dataDetails.approved_date
-              ? moment(dataDetails.approved_date).format('DD MMM YYYY • hh:mm:ss A')
-              : 'Pending approval'}
+            value={
+              // Transfers are instant — no approval needed
+              dataDetails.transac_category === 'Account Funding' ||
+              dataDetails.transac_category === 'Fund Transfer' ||
+              dataDetails.transac_category === 'In-app Credit' ||
+              dataDetails.transac_category === 'Wallet Transfer'
+                ? moment(dataDetails.creditOn).format('DD MMM YYYY • hh:mm:ss A')
+                : dataDetails.approved_date
+                  ? moment(dataDetails.approved_date).format('DD MMM YYYY • hh:mm:ss A')
+                  : 'Pending approval'
+            }
           />
         </SectionCard>
 

@@ -405,7 +405,7 @@ const SendFundScreen = ({ navigation }) => {
                   }]}>
                     {Number(amount) > currentBalance
                       ? `Insufficient — balance is ${currencySymbol}${currentBalance.toLocaleString()}`
-                      : `Remaining: ${currencySymbol}${(currentBalance - Number(amount)).toLocaleString()}`}
+                      : `Balance: ${currencySymbol}${(currentBalance + Number(amount)).toLocaleString()}`}
                   </Text>
                 )}
               </View>

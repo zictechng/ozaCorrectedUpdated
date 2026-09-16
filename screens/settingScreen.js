@@ -51,6 +51,8 @@ const SettingScreen = () => {
   const [pinValue, setPinValue] = useState('');
   const [pinSecure, setPinSecure] = useState(true);
 
+  const [showPin, setShowPin] = useState(false);
+
   const myId = userInfo?.userData?._id;
 
   const RefreshUserDetails = useCallback(async () => {
@@ -593,11 +595,35 @@ const SettingScreen = () => {
                 label="Bank Name"
                 value={userBankInfo?.bank_name}
               />
-              <InfoRow
-                icon="keypad-outline"
-                label="Account PIN"
-                value={userInfo?.userData?.acct_cot_pin ? '••••' : 'Not set'}
-              />
+              
+              {/* Account PIN Row with Toggle */}
+              <View style={[styles.infoRowContainer, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                  <Ionicons name="keypad-outline" size={20} color={colors.textSecColor2} style={{ marginRight: 12 }} />
+                  <View>
+                    <Text style={[styles.infoRowLabel, { color: colors.textSecColor }]}>Account PIN</Text>
+                    <Text style={[styles.infoRowValue, { color: colors.textBlack, fontWeight: '600', marginTop: 2 }]}>
+                      {userInfo?.userData?.acct_cot_pin 
+                        ? (showPin ? userInfo.userData.acct_cot_pin : '••••') 
+                        : 'Not set'}
+                    </Text>
+                  </View>
+                </View>
+
+                {userInfo?.userData?.acct_cot_pin && (
+                  <TouchableOpacity 
+                    onPress={() => setShowPin(!showPin)}
+                    style={{ padding: 8 }}
+                  >
+                    <Ionicons 
+                      name={showPin ? "eye-off-outline" : "eye-outline"} 
+                      size={20} 
+                      color={colors.primaryColor1} 
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
+
               <InfoRow
                 icon="pricetag-outline"
                 label="Tag ID"
