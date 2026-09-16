@@ -225,11 +225,11 @@ const UploadDocumentScreen = ({ navigation }) => {
     if (!validate()) return;
     setIsUploading(true);
     try {
-      // Upload front
+      // Upload front side
       const frontResult = await uploadDocSide(frontImage, 'front');
 
-      // Upload back if needed
-      if (needsBack && backImage) {
+      // Upload back side if this doc type needs it and back image selected
+      if (backImage) {
         await uploadDocSide(backImage, 'back');
       }
 
