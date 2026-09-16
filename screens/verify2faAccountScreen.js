@@ -192,7 +192,8 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
     data.append('upload_preset', CLOUDINARY_PRESET_NAME);
     data.append('upload_name', CLOUDINARY_ACCOUNT_NAME);
     try {
-      const response = await fetch('https://api.cloudinary.com/v1_1/ddm1owlon/image/upload', { method: 'POST', body: data });
+      const response = await fetch('https://api.cloudinary.com/v1_1/ddm1owlon/image/upload', 
+        { method: 'POST', body: data });
       const result = await response.json();
       setImageValue(result.public_id);
       if (result.secure_url) {
@@ -214,12 +215,19 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
         { headers: { Authorization: 'Bearer ' + userToken } }
       );
       if (res.data.msg === '201') {
-        AsyncStorage.setItem('userInfo', JSON.stringify(res.data));
+        const updatedInfo = {
+          ...userInfo,
+          userData: res.data.userData,
+        };
+        await AsyncStorage.setItem('userInfo', JSON.stringify(updatedInfo));
+        setUserInfo(updatedInfo);
+
         FetchLocalStorage();
         setCompleteRegData(false);
         setImage(null);
+
         Toast.show({ type: ALERT_TYPE.SUCCESS, title: 'Success', textBody: 'Verification uploaded successfully', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
-        navigation.navigate('UploadProofAddress');
+        navigation.navigate('DocumentView');
       } else {
         Toast.show({ type: ALERT_TYPE.DANGER, title: 'Failed', textBody: res.data.message || 'Something went wrong', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
         deleteImageId(imageValue);

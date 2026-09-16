@@ -110,8 +110,12 @@ const UploadDocumentScreen = ({ navigation }) => {
   const [backImage, setBackImage] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  const CLOUDINARY_ACCOUNT_NAME = process.env.CLOUDINARY_ACCOUNT_NAME;
+  const CLOUDINARY_PRESET_NAME = process.env.CLOUDINARY_PRESET_NAME;
+
   const needsBack = selectedDocType?.id === 'national_id' ||
     selectedDocType?.id === 'drivers_license';
+
 
   // ── Pick image ────────────────────────────────
   const pickImage = async (side) => {
@@ -181,7 +185,7 @@ const UploadDocumentScreen = ({ navigation }) => {
     return true;
   };
 
-  // ── Upload ────────────────────────────────────
+
     // ── Upload single image to Cloudinary ─────────
   const uploadToCloudinary = async (image) => {
     const uri      = image.uri;
@@ -190,9 +194,9 @@ const UploadDocumentScreen = ({ navigation }) => {
     const mimeType = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' : 'image/png';
     const form     = new FormData();
     form.append('file', { uri, name: filename, type: mimeType });
-    form.append('upload_preset', 'oza_mobile');
+    form.append('upload_preset', CLOUDINARY_PRESET_NAME);
     const res  = await fetch(
-      'https://api.cloudinary.com/v1_1/ddm1owlon/image/upload',
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_ACCOUNT_NAME}/image/upload`,
       { method: 'POST', body: form }
     );
     const data = await res.json();
@@ -220,7 +224,7 @@ const UploadDocumentScreen = ({ navigation }) => {
     return res.data;
   };
 
-  // ── Main Upload Handler ───────────────────────
+  // ── Main Upload Handler
   const handleUpload = async () => {
     if (!validate()) return;
     setIsUploading(true);

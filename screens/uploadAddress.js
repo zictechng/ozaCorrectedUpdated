@@ -13,7 +13,9 @@ import { spacing, radius, typography, shadows } from '../styles';
 import useThemeStyles from '../hooks/useThemeStyles';
 import { AuthContext } from '../contextAPI/authContext';
 import { noticeData } from '../components/errorNotice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import client from '../contextAPI/client';
+
 
 // ── Accepted document types ───────────────────────
 const PROOF_TYPES = [
@@ -86,13 +88,16 @@ const ProofTypeCard = ({ proof, isSelected, onSelect, colors }) => (
 // ── Main Upload Address Screen ────────────────────
 const UploadProofAddress = ({ navigation }) => {
   const { colors, isDark } = useThemeStyles();
-  const { userToken, userInfo } = useContext(AuthContext);
+  const { userToken, userInfo, setUserInfo } = useContext(AuthContext);
 
   const [selectedProofType, setSelectedProofType] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // ── Pick from gallery ─────────────────────────
+  const CLOUDINARY_ACCOUNT_NAME = process.env.CLOUDINARY_ACCOUNT_NAME;
+  const CLOUDINARY_PRESET_NAME = process.env.CLOUDINARY_PRESET_NAME;
+
+  // ── Pick from gallery
   const pickFromGallery = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -113,7 +118,7 @@ const UploadProofAddress = ({ navigation }) => {
     }
   };
 
-  // ── Take photo ────────────────────────────────
+  // ── Take photo 
   const takePhoto = async () => {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -133,42 +138,76 @@ const UploadProofAddress = ({ navigation }) => {
     }
   };
 
-  // ── Upload ────────────────────────────────────
+ 
+
+// ── Upload single image to Cloudinary ─────────
+const uploadToCloudinary = async (image) => {
+  const uri = image.uri;
+  const filename = uri.split('/').pop();
+  const ext = filename.split('.').pop()?.toLowerCase();
+  const mimeType = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' : 'image/png';
+  
+  const form = new FormData();
+  form.append('file', { uri, name: filename, type: mimeType });
+  form.append('upload_preset', CLOUDINARY_PRESET_NAME);
+  
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_ACCOUNT_NAME}/image/upload`,
+    { method: 'POST', body: form }
+  );
+  
+  const data = await res.json();
+  if (!data.secure_url) throw new Error('Cloudinary upload failed');
+  return { secure_url: data.secure_url, public_id: data.public_id };
+};
+
+
+  // ── Upload 
   const handleUpload = async () => {
     if (!selectedProofType) {
       Toast.show({ type: ALERT_TYPE.WARNING, title: 'Select Document Type', textBody: 'Please select the type of proof of address document.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       return;
     }
     if (!selectedImage) {
-      Toast.show({ type: ALERT_TYPE.WARNING, title: 'No Document Selected', textBody: 'Please select or take a photo of your proof of address document.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'No Document Selected', textBody: 'Please select or take a photo of your proof of address document.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       return;
     }
     setIsUploading(true);
     try {
+      const { secure_url, public_id } = await uploadToCloudinary(selectedImage);
+
       const formData = new FormData();
       const filename = selectedImage.uri.split('/').pop();
       const ext = filename.split('.').pop()?.toLowerCase();
-      formData.append('address_proof', {
+      
+     formData.append('FileAddress', {
         uri: selectedImage.uri,
         name: filename,
         type: ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png',
       });
+      
       formData.append('proof_type', selectedProofType.id);
       formData.append('proof_label', selectedProofType.label);
       formData.append('userId', userInfo?.userData?._id);
+      formData.append('image_url', secure_url);
 
       const res = await client.post(
-        '/api/uploadProofAddress_mobile',
+        '/api/user_uploadProof_address',
         formData,
         {
           headers: {
             'Authorization': 'Bearer ' + userToken,
-            'Content-Type': 'multipart/form-data',
           },
         }
       );
+      if (res.data.msg === '201') {
+        const updatedInfo = {
+          ...userInfo,
+          userData: res.data.userData,
+        };
+        await AsyncStorage.setItem('userInfo', JSON.stringify(updatedInfo));
+        setUserInfo(updatedInfo);
 
-      if (res.data.msg === '200') {
         Dialog.show({
           type: ALERT_TYPE.SUCCESS,
           title: 'Document Uploaded!',
@@ -182,7 +221,8 @@ const UploadProofAddress = ({ navigation }) => {
         Toast.show({ type: ALERT_TYPE.DANGER, title: 'Upload Failed', textBody: res.data.message || 'Could not upload document. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       }
     } catch (error) {
-      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Something went wrong. Please check your connection.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+      console.log("Upload error:", error.response?.data || error.message);
+      Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: error.message || 'Something went wrong. Please check your connection.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
     } finally {
       setIsUploading(false);
     }
