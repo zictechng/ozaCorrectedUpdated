@@ -103,7 +103,7 @@ const ImagePreviewCard = ({ image, label, onRemove, colors }) => (
 // ── Main Upload Document Screen ───────────────────
 const UploadDocumentScreen = ({ navigation }) => {
   const { colors, isDark } = useThemeStyles();
-  const { userToken, userInfo } = useContext(AuthContext);
+  const { userToken, userInfo, setUserInfo  } = useContext(AuthContext);
 
   const [selectedDocType, setSelectedDocType] = useState(null);
   const [frontImage, setFrontImage] = useState(null);
