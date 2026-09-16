@@ -222,7 +222,12 @@ const BankDetailsScreen = ({ navigation }) => {
           button: 'Done',
           titleStyle: noticeData[0].errorTitleStyle,
           textBodyStyle: noticeData[0].errorMessageStyle,
-          onHide: () => fetchExistingDetails(),
+          onHide: () => {
+            // Reset state then re-fetch fresh data from backend
+            setExistingBank(null);
+            setAccountName('');
+            setTimeout(() => fetchExistingDetails(), 500);
+          },
         });
       } else {
         Toast.show({ type: ALERT_TYPE.DANGER, title: 'Save Failed', textBody: res.data.message || 'Could not save details. Please try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
