@@ -544,7 +544,7 @@ const BankDetailsScreen = ({ navigation }) => {
             <View style={[styles.notice, { backgroundColor: colors.bgLight, borderColor: colors.dividerColor }]}>
               <Ionicons name="shield-checkmark-outline" size={18} color={colors.successColor} />
               <Text style={[styles.noticeText, { color: colors.textSecColor }]}>
-                Your payment details are encrypted and stored securely. We only use them to process your withdrawals and payments.
+                Your payment details are stored securely. We only use them to process your withdrawals and payments.
               </Text>
             </View>
 

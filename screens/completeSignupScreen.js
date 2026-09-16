@@ -123,10 +123,47 @@ const CompleteSignupScreen = ({ navigation }) => {
   const handleBlur = (field) => setFocused(prev => ({ ...prev, [field]: false }));
   const handleChange = (field, val) => setForm(prev => ({ ...prev, [field]: val }));
 
+  // ── Pre-fill existing user data ───────────────
+  useEffect(() => {
+    if (isFocused) {
+      const u = userInfo?.userData;
+      if (!u) return;
+      // Pre-fill personal info
+      if (u.gender) setGender(u.gender);
+      if (u.dob) setDob(u.dob);
+      // Pre-fill form fields from user profile
+      setForm(prev => ({
+        ...prev,
+        state:   u.state   || prev.state,
+        address: u.address || prev.address,
+        country: u.country || prev.country,
+        city:    u.city    || prev.city,
+      }));
+      // Pre-fill bank details from userBankDetails if available
+      client.get(`/api/user_bankDetails/${u._id}`, {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      }).then(res => {
+        if (res.data.msg === '200' && res.data.bankDetail) {
+          const b = res.data.bankDetail;
+          setForm(prev => ({
+            ...prev,
+            acct_name:        b.bank_acct_name    || prev.acct_name,
+            acct_number:      String(b.bank_acct_number || prev.acct_number),
+            bank_name:        b.bank_name         || prev.bank_name,
+            paypal_address:   b.paypal_address    || prev.paypal_address,
+            payoneer_address: b.payoneer_address  || prev.payoneer_address,
+            btc_address:      b.btc_address       || prev.btc_address,
+          }));
+        }
+      }).catch(() => {});
+    }
+  }, [isFocused]);
+
   // ── Redirect if already complete ──────────────
   useEffect(() => {
     if (isFocused && userInfo?.userData?.reg_stage2 === 'Yes') {
-      navigation.navigate('Home');
+      // Don't redirect — let user update their details
+      // navigation.navigate('Home');
     }
   }, [isFocused]);
 
