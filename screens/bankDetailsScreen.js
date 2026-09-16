@@ -194,7 +194,7 @@ const BankDetailsScreen = ({ navigation }) => {
     try {
       const res = await client.post(
         '/api/complete_registration',
-        {
+          {
           userId,
           bank_name:        bankName,
           acct_name:        accountName,
@@ -202,17 +202,17 @@ const BankDetailsScreen = ({ navigation }) => {
           paypal_address:   paypalAddress,
           payoneer_address: payoneerAddress,
           btc_address:      btcAddress,
-          // Pass existing personal info unchanged
-          sex:     userInfo?.userData?.gender     || '',
-          dob:     userInfo?.userData?.dob         || '',
-          state:   userInfo?.userData?.state       || '',
-          address: userInfo?.userData?.address     || '',
-          country: userInfo?.userData?.country     || '',
-          city:    userInfo?.userData?.city        || '',
+          // Send existing user profile to avoid overwriting with empty values
+          sex:     userInfo?.userData?.gender  || '',
+          dob:     userInfo?.userData?.dob     || '',
+          state:   userInfo?.userData?.state   || '',
+          address: userInfo?.userData?.address || '',
+          country: userInfo?.userData?.country || '',
+          city:    userInfo?.userData?.city    || '',
         },
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
-      if (res.data.msg === '200') {
+      if (res.data.msg === '200' || res.data.msg === '201') {
         Dialog.show({
           type: ALERT_TYPE.SUCCESS,
           title: 'Details Saved!',
