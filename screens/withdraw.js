@@ -153,7 +153,8 @@ const WithdrawScreen = ({ navigation }) => {
               <View style={styles.backBtn} />
             </View>
 
-            {/* ── Hero Banner with Balance ─────── */}
+            {/* ── Hero Banner ──────────────────── */}
+                        {/* ── Hero Banner with Balance ─────── */}
             <LinearGradient
               colors={['#F59E0B', '#D97706']}
               start={{ x: 0, y: 0 }}
@@ -175,18 +176,12 @@ const WithdrawScreen = ({ navigation }) => {
               </View>
 
               {/* Balance row — matching bill screen style */}
-              <View style={styles.heroBalanceRow}>
-                <View style={styles.heroBalanceItem}>
-                  <Text style={styles.heroBalanceLabel}>Bonus Wallet</Text>
-                  <Text style={styles.heroBalanceAmount}>
+                            
+              <View style={styles.balanceRow}>
+                <View style={styles.balanceBox}>
+                  <Text style={styles.balanceLabel}>Bonus Wallet Balance</Text>
+                  <Text style={styles.balanceAmount}>
                     ₦{walletBalance.toLocaleString()}
-                  </Text>
-                </View>
-                <View style={styles.heroBalanceDivider} />
-                <View style={styles.heroBalanceItem}>
-                  <Text style={styles.heroBalanceLabel}>Main Wallet</Text>
-                  <Text style={styles.heroBalanceAmount}>
-                    ₦{Number(userInfo?.userData?.amount || 0).toLocaleString()}
                   </Text>
                 </View>
               </View>
@@ -209,6 +204,8 @@ const WithdrawScreen = ({ navigation }) => {
                 </Text>
               </View>
             </View>
+
+            
 
             {/* ── Form Card ────────────────────── */}
             <View style={[styles.formCard, { backgroundColor: colors.bgCard }]}>
@@ -355,6 +352,7 @@ const WithdrawScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
+
             {/* ── Bank Account Card ─────────────── */}
             {isFetchingBank ? (
               <View style={[styles.bankLoadCard, { backgroundColor: colors.bgCard }]}>
@@ -460,39 +458,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-    heroTop: {
+      heroTop: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
-  heroBalanceRow: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: radius.lg,
+  balanceRow: {
+    marginTop: spacing.md,
+  },
+  balanceBox: {
+    backgroundColor: 'rgba(0,0,0,0.18)',
+    borderRadius: radius.md,
     padding: spacing.md,
+    alignSelf: 'flex-start',
   },
-  heroBalanceItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  heroBalanceLabel: {
+  balanceLabel: {
     fontFamily: '_regular',
-    fontSize: typography.xs,
-    color: 'rgba(255,255,255,0.8)',
+    fontSize: typography.sm,
+    color: 'rgba(255,255,255,0.75)',
     marginBottom: 2,
   },
-  heroBalanceAmount: {
+  balanceAmount: {
     fontFamily: '_bold',
-    fontSize: typography.lg,
-    color: '#fff',
+    fontSize: typography.xl,
+    color: '#FFFFFF',
   },
-  heroBalanceDivider: {
-    width: 1,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    marginHorizontal: spacing.sm,
-  },
-
+  
   // Hero Banner
   heroBanner: {
     marginHorizontal: spacing.xl,
