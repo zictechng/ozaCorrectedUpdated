@@ -285,7 +285,7 @@ const ProfileScreen = ({ navigation }) => {
             </View>
             <TouchableOpacity
               style={styles.coinsHistoryBtn}
-              onPress={() => navigation.navigate('referrals')}>
+              onPress={() => navigation.navigate('CoinsHistory')}>
               <Text style={[styles.coinsHistoryBtnText, { color: colors.primaryColor1 }]}>History</Text>
               <Ionicons name="chevron-forward" size={14} color={colors.primaryColor1} />
             </TouchableOpacity>

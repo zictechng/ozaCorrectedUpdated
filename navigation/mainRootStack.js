@@ -27,6 +27,7 @@ import CheckOutManualPage from '../screens/checkOutManualPage';
 import PayPaypalScreen from '../screens/payPaypal';
 import PayoneerCheckOutScreen from '../screens/payoneerCheckout';
 import PayBitcoinCheckoutScreen from '../screens/payBitcoinCheckout';
+import CoinsHistoryScreen from '../screens/coinsHistoryScreen';
 import PayStackScreen from '../screens/payStackScreen';
 import PayPalWebviewScreen from '../screens/payPalWebviewScreen';
 
@@ -213,6 +214,11 @@ const MainRootStack = () => {
       <Stack.Screen
         name="BitcoinCheckout"
         component={PayBitcoinCheckoutScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="CoinsHistory"
+        component={CoinsHistoryScreen}
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen
