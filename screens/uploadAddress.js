@@ -176,29 +176,16 @@ const uploadToCloudinary = async (image) => {
     try {
       const { secure_url, public_id } = await uploadToCloudinary(selectedImage);
 
-      const formData = new FormData();
-      const filename = selectedImage.uri.split('/').pop();
-      const ext = filename.split('.').pop()?.toLowerCase();
-      
-     formData.append('FileAddress', {
-        uri: selectedImage.uri,
-        name: filename,
-        type: ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png',
-      });
-      
-      formData.append('proof_type', selectedProofType.id);
-      formData.append('proof_label', selectedProofType.label);
-      formData.append('userId', userInfo?.userData?._id);
-      formData.append('image_url', secure_url);
-
       const res = await client.post(
         '/api/user_uploadProof_address',
-        formData,
         {
-          headers: {
-            'Authorization': 'Bearer ' + userToken,
-          },
-        }
+          userId:     userInfo?.userData?._id,
+          image_url:  secure_url,
+          proof_type: selectedProofType.id,
+          proof_label:selectedProofType.label,
+          public_id,
+        },
+        { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (res.data.msg === '201') {
         const updatedInfo = {

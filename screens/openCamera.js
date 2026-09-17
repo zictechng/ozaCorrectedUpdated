@@ -127,7 +127,7 @@ export default function OpenCamera({ navigation }) {
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.9, skipProcessing: false });
       // Hand off to parent / navigation as needed
-      navigation?.navigate('ReviewCapture', { photo });
+      navigation?.navigate('Verify2faces', { userPhoto: photo.uri });
     } catch (e) {
       console.log('Capture error:', e.message);
     } finally {

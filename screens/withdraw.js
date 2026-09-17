@@ -153,26 +153,6 @@ const WithdrawScreen = ({ navigation }) => {
               balanceLabel="Bonus Wallet Balance"
             />
 
-            {/* ── Balance Card ──────────────────── */}
-            <View style={[styles.balanceCard, {
-              backgroundColor: colors.bgCard,
-              borderColor: colors.dividerColor,
-            }]}>
-              <View style={[styles.balanceIconBox, { backgroundColor: '#FEF3C7' }]}>
-                <Ionicons name="wallet-outline" size={20} color="#F59E0B" />
-              </View>
-              <View style={styles.balanceInfo}>
-                <Text style={[styles.balanceLabel, { color: colors.textSecColor }]}>
-                  Available Balance
-                </Text>
-                <Text style={[styles.balanceValue, { color: colors.textBlack }]}>
-                  ₦{walletBalance.toLocaleString()}
-                </Text>
-              </View>
-            </View>
-
-            
-
             {/* ── Form Card ────────────────────── */}
             <View style={[styles.formCard, { backgroundColor: colors.bgCard }]}>
 
