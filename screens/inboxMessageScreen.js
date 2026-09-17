@@ -130,7 +130,7 @@ const InboxMessageScreen = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, isListEnd, currentPage, userInfo, userToken]);
+  }, [currentPage, userInfo, userToken]);
 
   useEffect(() => {
     if (isFocused) loadMessages(true);
