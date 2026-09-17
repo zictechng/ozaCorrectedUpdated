@@ -1,7 +1,7 @@
 ﻿import React, { useContext, useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  StatusBar, ActivityIndicator, RefreshControl,
+  StatusBar, ActivityIndicator, RefreshControl,Modal, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
@@ -69,18 +69,24 @@ const InboxMessageScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedMessage, setSelectedMessage] = useState(null);
 
-  const handleMarkRead = async (item) => {
-    try {
-      await client.get(
-        `/api/notification_read/${userInfo?.userData?._id}`,
-        { headers: { 'Authorization': 'Bearer ' + userToken } }
-      );
-      setMessages(prev => prev.map(m =>
-        m._id === item._id ? { ...m, alert_status: 0 } : m
-      ));
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch {}
+    const handleMarkRead = async (item) => {
+    // Show message detail modal
+    setSelectedMessage(item);
+    // Mark as read if unread
+    if (item.alert_status === 1) {
+      try {
+        await client.get(
+          `/api/notification_read/${userInfo?.userData?._id}`,
+          { headers: { 'Authorization': 'Bearer ' + userToken } }
+        );
+        setMessages(prev => prev.map(m =>
+          m._id === item._id ? { ...m, alert_status: 0 } : m
+        ));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } catch {}
+    }
   };
 
   // ── Load Messages ─────────────────────────────
@@ -221,6 +227,50 @@ const InboxMessageScreen = () => {
           <View style={{ height: spacing.xs }} />
         )}
       />
+          {/* ── Message Detail Modal ─────────────────── */}
+      <Modal
+        visible={!!selectedMessage}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedMessage(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.bgCard }]}>
+            {/* Modal Header */}
+            <View style={[styles.modalHeader, { borderBottomColor: colors.dividerColor }]}>
+              <Text style={[styles.modalTitle, { color: colors.textBlack }]} numberOfLines={1}>
+                {selectedMessage?.alert_name || 'Notification'}
+              </Text>
+              <TouchableOpacity
+                style={[styles.modalCloseBtn, { backgroundColor: colors.bgLight }]}
+                onPress={() => setSelectedMessage(null)}>
+                <Ionicons name="close" size={20} color={colors.textBlack} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.modalBody}>
+              {/* Date */}
+              <Text style={[styles.modalDate, { color: colors.textSecColor }]}>
+                {selectedMessage?.alert_date
+                  ? moment(selectedMessage.alert_date).format('DD MMM YYYY • hh:mm A')
+                  : '—'}
+              </Text>
+
+              {/* Message body */}
+              <Text style={[styles.modalMessage, { color: colors.textBlack }]}>
+                {selectedMessage?.alert_nature || selectedMessage?.alert_msg || 'No content'}
+              </Text>
+            </ScrollView>
+
+            {/* Close button */}
+            <TouchableOpacity
+              style={[styles.modalCloseFullBtn, { backgroundColor: colors.primaryColor1 }]}
+              onPress={() => setSelectedMessage(null)}>
+              <Text style={styles.modalCloseFullText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -361,10 +411,70 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 1,
   },
-  footerEndText: {
+    footerEndText: {
     fontFamily: '_regular',
     fontSize: typography.sm,
-    lineHeight: 20,
+    color: '#9CA3AF',
+    paddingHorizontal: spacing.sm,
+  },
+
+  // Message Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    borderTopLeftRadius: radius.xxl,
+    borderTopRightRadius: radius.xxl,
+    maxHeight: '75%',
+    paddingBottom: spacing.xl,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.xl,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontFamily: '_bold',
+    fontSize: typography.lg,
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  modalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBody: {
+    padding: spacing.xl,
+  },
+  modalDate: {
+    fontFamily: '_regular',
+    fontSize: typography.sm,
+    marginBottom: spacing.md,
+  },
+  modalMessage: {
+    fontFamily: '_regular',
+    fontSize: typography.base,
+    lineHeight: 24,
+  },
+  modalCloseFullBtn: {
+    marginHorizontal: spacing.xl,
+    marginTop: spacing.lg,
+    height: 48,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCloseFullText: {
+    fontFamily: '_bold',
+    fontSize: typography.base,
+    color: '#fff',
   },
 });
 

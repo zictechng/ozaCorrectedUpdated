@@ -34,8 +34,7 @@ const MessageCard = ({ item, onMarkRead }) => {
   const isUnread = item.alert_status === 1;
 
   const handlePress = () => {
-    if (isUnread && onMarkRead) onMarkRead(item);
-    navigation.navigate('messages', { item });
+    if (onMarkRead) onMarkRead(item);
   };
 
   return (
