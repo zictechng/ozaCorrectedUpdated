@@ -1,6 +1,7 @@
 ﻿import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import moment from 'moment';
 import useThemeStyles from '../hooks/useThemeStyles';
 import { spacing, radius, typography } from '../styles';
@@ -26,12 +27,31 @@ const getAlertConfig = (nature = '') => {
   return ALERT_ICONS[key] || ALERT_ICONS.default;
 };
 
-const MessageCard = ({ item }) => {
+const MessageCard = ({ item, onMarkRead }) => {
   const { colors } = useThemeStyles();
-  const config = getAlertConfig(item.alert_nature || item.alert_name || '');
+  const navigation = useNavigation();
+  const config  = getAlertConfig(item.alert_nature || item.alert_name || '');
+  const isUnread = item.alert_status === 1;
+
+  const handlePress = () => {
+    if (isUnread && onMarkRead) onMarkRead(item);
+    navigation.navigate('messages', { item });
+  };
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.bgCard, }]}>
+    <TouchableOpacity
+      style={[
+        styles.card,
+        { backgroundColor: colors.bgCard },
+        isUnread && { borderLeftWidth: 3, borderLeftColor: '#4C5FD5' },
+      ]}
+      onPress={handlePress}
+      activeOpacity={0.8}>
+      {/* Unread dot */}
+      {isUnread && (
+        <View style={[styles.unreadDot, { backgroundColor: '#4C5FD5' }]} />
+      )}
+
       {/* Icon */}
       <View style={[styles.iconBox, { backgroundColor: config.bg }]}>
         <Ionicons name={config.icon} size={22} color={config.color} />
@@ -40,7 +60,11 @@ const MessageCard = ({ item }) => {
       {/* Content */}
       <View style={styles.content}>
         <Text
-          style={[styles.title, { color: colors.textBlack }]}
+          style={[
+            styles.title,
+            { color: colors.textBlack },
+            isUnread && { fontFamily: '_bold' },
+          ]}
           numberOfLines={1}>
           {item.alert_name || 'Notification'}
         </Text>
@@ -53,7 +77,9 @@ const MessageCard = ({ item }) => {
           {moment(item.alert_date).format('DD MMM YYYY • hh:mm A')}
         </Text>
       </View>
-    </View>
+
+      <Ionicons name="chevron-forward" size={16} color={colors.textSecColor} />
+    </TouchableOpacity>
   );
 };
 
@@ -94,10 +120,19 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: spacing.xs,
   },
-  date: {
+    date: {
     fontFamily: '_regular',
     fontSize: typography.sm,
     lineHeight: 20,
+    marginTop: 2,
+  },
+  unreadDot: {
+    position: 'absolute',
+    top: spacing.md,
+    right: spacing.md,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });
 

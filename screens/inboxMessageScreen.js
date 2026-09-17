@@ -70,6 +70,19 @@ const InboxMessageScreen = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const handleMarkRead = async (item) => {
+    try {
+      await client.get(
+        `/api/notification_read/${userInfo?.userData?._id}`,
+        { headers: { 'Authorization': 'Bearer ' + userToken } }
+      );
+      setMessages(prev => prev.map(m =>
+        m._id === item._id ? { ...m, alert_status: 0 } : m
+      ));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch {}
+  };
+
   // ── Load Messages ─────────────────────────────
   const loadMessages = useCallback(async (reset = false) => {
     if (isLoading || (isListEnd && !reset)) return;
@@ -85,7 +98,7 @@ const InboxMessageScreen = () => {
         setCurrentPage(page + 1);
         setIsListEnd(false);
         // Count unread — assume all unread if no read flag
-        const unread = res.data.filter(m => !m.is_read).length;
+        const unread = res.data.filter(m => m.alert_status === 1).length;
         setUnreadCount(prev => reset ? unread : prev + unread);
       } else {
         setIsListEnd(true);
@@ -176,7 +189,9 @@ const InboxMessageScreen = () => {
       <FlatList
         data={messages}
         keyExtractor={(item, index) => item._id || index.toString()}
-        renderItem={({ item }) => <MessageCard item={item} />}
+        renderItem={({ item }) => (
+          <MessageCard item={item} onMarkRead={handleMarkRead} />
+        )}
         ListEmptyComponent={
           !isLoading ? <EmptyState colors={colors} /> : null
         }
