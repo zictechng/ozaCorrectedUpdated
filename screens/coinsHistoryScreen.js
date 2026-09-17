@@ -259,7 +259,7 @@ const CoinsHistoryScreen = ({ navigation }) => {
 
       {/* ── History Header ────────────────── */}
       <Text style={[styles.historyTitle, { color: colors.textBlack }]}>
-        Transaction History
+        Coin History
       </Text>
     </>
   );
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   heroCoins: { fontFamily: '_bold', fontSize: 36, color: '#fff', lineHeight: 44 },
   heroValueRow: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: radius.lg, padding: spacing.md },
   heroValueItem: { flex: 1, alignItems: 'center' },
-  heroValueLabel: { fontFamily: '_regular', fontSize: typography.xs, color: 'rgba(255,255,255,0.75)', marginBottom: 2 },
+  heroValueLabel: { fontFamily: '_regular', fontSize: typography.sm, color: 'rgba(255,255,255,0.75)', marginBottom: 2 },
   heroValueAmount: { fontFamily: '_bold', fontSize: typography.base, color: '#fff' },
   heroValueDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.2)', marginHorizontal: spacing.sm },
 
@@ -461,8 +461,8 @@ const styles = StyleSheet.create({
   coinItemDate: { fontFamily: '_regular', fontSize: typography.xs, lineHeight: 18 },
   coinItemRight: { alignItems: 'flex-end', flexShrink: 0 },
   coinItemAmount: { fontFamily: '_bold', fontSize: typography.xl, lineHeight: 26 },
-  coinItemUnit: { fontFamily: '_regular', fontSize: typography.xs, lineHeight: 18 },
-  coinItemBalance: { fontFamily: '_regular', fontSize: typography.xs, lineHeight: 18, marginTop: 2 },
+  coinItemUnit: { fontFamily: '_regular', fontSize: typography.sm, lineHeight: 18 },
+  coinItemBalance: { fontFamily: '_regular', fontSize: typography.sm, lineHeight: 18, marginTop: 2 },
 
   // Empty
   emptyState: { alignItems: 'center', padding: spacing.xxxl, gap: spacing.md },
