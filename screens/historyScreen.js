@@ -190,6 +190,7 @@ const HistoryScreen = ({ navigation }) => {
   const [allPage, setAllPage] = useState(1);
   const [allLoading, setAllLoading] = useState(false);
   const [allEnd, setAllEnd] = useState(false);
+  const [summary, setSummary] = useState({ totalCredit: 0, totalDebit: 0, totalCount: 0 });
 
   // PayPal transactions
   const [paypalData, setPaypalData] = useState([]);
@@ -373,12 +374,28 @@ const loadBills = async (reset = false) => {
     setIsRefreshing(false);
   }, [activeTab]);
 
+   const fetchSummary = useCallback(async () => {
+    try {
+      const res = await client.get(
+        `/api/user_transaction_summary/${userInfo?.userData?._id}`,
+        { headers: { 'Authorization': 'Bearer ' + userToken } }
+      );
+      if (res.data.msg === '201') {
+        setSummary({
+          totalCredit: res.data.totalCredit || 0,
+          totalDebit:  res.data.totalDebit  || 0,
+          totalCount:  res.data.totalCount  || 0,
+        });
+      }
+    } catch {}
+  }, [userInfo, userToken]);
+
   useEffect(() => {
     if (isFocused) {
-      loadAll();
-      loadPaypal();
-      loadPayoneer();
-      loadBills();
+      setAllData([]);
+      setAllPage(1);
+      setAllEnd(false);
+      fetchSummary();
     }
   }, [isFocused]);
 
@@ -396,13 +413,8 @@ const loadBills = async (reset = false) => {
   const { data, loading, end, onEnd } = getActiveData();
 
   // ── Summary Stats ─────────────────────────────
-  const totalCredit = allData
-    .filter(t => t.tran_type === 'Credit')
-    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
-
-  const totalDebit = allData
-    .filter(t => t.tran_type === 'Debit')
-    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const totalCredit = summary.totalCredit;
+  const totalDebit  = summary.totalDebit;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
