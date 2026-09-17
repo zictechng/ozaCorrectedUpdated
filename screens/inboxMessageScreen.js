@@ -73,21 +73,23 @@ const InboxMessageScreen = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [selectedMessage, setSelectedMessage] = useState(null);
 
-    const handleMarkRead = async (item) => {
+  const handleMarkRead = async (item) => {
     // Show message detail modal
     setSelectedMessage(item);
-    // Mark as read if unread
+    // Mark this specific notification as read
     if (item.alert_status === 1) {
       try {
         await client.get(
-          `/api/notification_read/${userInfo?.userData?._id}`,
+          `/api/notification_read_single/${item._id}`,
           { headers: { 'Authorization': 'Bearer ' + userToken } }
         );
+        // Update local state — only this message
         setMessages(prev => prev.map(m =>
           m._id === item._id ? { ...m, alert_status: 0 } : m
         ));
         setUnreadCount(prev => Math.max(0, prev - 1));
         setReadCount(prev => prev + 1);
+        setSelectedMessage(prev => prev ? { ...prev, alert_status: 0 } : prev);
       } catch {}
     }
   };
@@ -103,22 +105,23 @@ const InboxMessageScreen = () => {
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (Array.isArray(res.data) && res.data.length > 0) {
-        setMessages(prev => reset ? res.data : [...prev, ...res.data]);
+        setMessages(prev => {
+          const updatedMessages = reset ? res.data : [...prev, ...res.data];
+          
+          // Recalculate counts accurately from the complete message list loaded so far
+          const total = updatedMessages.length;
+          const unread = updatedMessages.filter(m => m.alert_status === 1).length;
+          const read = updatedMessages.filter(m => m.alert_status === 0).length;
+
+          setTotalCount(total);
+          setUnreadCount(unread);
+          setReadCount(read);
+
+          return updatedMessages;
+        });
+
         setCurrentPage(page + 1);
         setIsListEnd(false);
-        // Count unread — assume all unread if no read flag
-        // Only count from THIS page's data to avoid stale state
-        const pageUnread = res.data.filter(m => m.alert_status === 1).length;
-        const pageRead   = res.data.filter(m => m.alert_status === 0).length;
-        if (reset) {
-          setUnreadCount(pageUnread);
-          setReadCount(pageRead);
-          setTotalCount(pageUnread + pageRead);
-        } else {
-          setUnreadCount(prev => prev + pageUnread);
-          setReadCount(prev => prev + pageRead);
-          setTotalCount(prev => prev + pageUnread + pageRead);
-        }
       } else {
         setIsListEnd(true);
       }
