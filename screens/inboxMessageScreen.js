@@ -107,14 +107,18 @@ const InboxMessageScreen = () => {
         setCurrentPage(page + 1);
         setIsListEnd(false);
         // Count unread — assume all unread if no read flag
-        const allLoaded = reset
-          ? res.data
-          : [...messages, ...res.data];
-        const unread = allLoaded.filter(m => m.alert_status === 1).length;
-        const read   = allLoaded.filter(m => m.alert_status === 0).length;
-        setUnreadCount(unread);
-        setReadCount(read);
-        setTotalCount(unread + read);
+        // Only count from THIS page's data to avoid stale state
+        const pageUnread = res.data.filter(m => m.alert_status === 1).length;
+        const pageRead   = res.data.filter(m => m.alert_status === 0).length;
+        if (reset) {
+          setUnreadCount(pageUnread);
+          setReadCount(pageRead);
+          setTotalCount(pageUnread + pageRead);
+        } else {
+          setUnreadCount(prev => prev + pageUnread);
+          setReadCount(prev => prev + pageRead);
+          setTotalCount(prev => prev + pageUnread + pageRead);
+        }
       } else {
         setIsListEnd(true);
       }
