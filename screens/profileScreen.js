@@ -275,6 +275,30 @@ const ProfileScreen = ({ navigation }) => {
           <InfoRow icon="home-outline" label="Address" value={userInfo?.userData?.address} />
         </View>
 
+        {/* ── Incomplete Registration Banner ─────── */}
+        {!isComplete && (
+          <TouchableOpacity
+            style={[styles.incompleteBanner, {
+              backgroundColor: colors.warningLight,
+              borderColor: '#FDE68A',
+            }]}
+            onPress={() => navigation.navigate('SignupSteps')}
+            activeOpacity={0.85}>
+            <View style={styles.incompleteBannerLeft}>
+              <Ionicons name="alert-circle" size={22} color={colors.warningColor} />
+              <View style={styles.incompleteBannerInfo}>
+                <Text style={[styles.incompleteBannerTitle, { color: colors.textBlack }]}>
+                  Complete Your Profile
+                </Text>
+                <Text style={[styles.incompleteBannerDesc, { color: colors.textSecColor }]}>
+                  Verify your account to remove restrictions and unlock all features
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.warningColor} />
+          </TouchableOpacity>
+        )}
+
         {/* ── Coins & Rewards Card ──────────────── */}
         <View style={[styles.coinsCard, { backgroundColor: colors.bgCard }]}>
           <View style={styles.coinsHeader}>
@@ -326,30 +350,7 @@ const ProfileScreen = ({ navigation }) => {
           )}
         </View>
 
-        {/* ── Incomplete Registration Banner ─────── */}
-        {!isComplete && (
-          <TouchableOpacity
-            style={[styles.incompleteBanner, {
-              backgroundColor: colors.warningLight,
-              borderColor: '#FDE68A',
-            }]}
-            onPress={() => navigation.navigate('SignupSteps')}
-            activeOpacity={0.85}>
-            <View style={styles.incompleteBannerLeft}>
-              <Ionicons name="alert-circle" size={22} color={colors.warningColor} />
-              <View style={styles.incompleteBannerInfo}>
-                <Text style={[styles.incompleteBannerTitle, { color: colors.textBlack }]}>
-                  Complete Your Profile
-                </Text>
-                <Text style={[styles.incompleteBannerDesc, { color: colors.textSecColor }]}>
-                  Verify your account to remove restrictions and unlock all features
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.warningColor} />
-          </TouchableOpacity>
-        )}
-
+        
         {/* ── Account Actions ───────────────────── */}
         <View style={[styles.sectionCard, { backgroundColor: colors.bgCard }]}>
           <Text style={[styles.sectionTitle, { color: colors.textBlack, borderBottomColor: colors.dividerColor }]}>

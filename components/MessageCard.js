@@ -19,8 +19,6 @@ const ALERT_TYPES = [
   { keys: ['paypal'],                        label: 'PayPal',             icon: 'logo-paypal',                color: '#003087', bg: '#E8F0FE' },
   { keys: ['bonus', 'coins', 'reward'],      label: 'Bonus & Rewards',    icon: 'gift-outline',               color: '#F0A500', bg: '#FFF3CD' },
   { keys: ['referral', 'refer'],             label: 'Referral',           icon: 'people-outline',             color: '#EC4899', bg: '#FCE7F3' },
-  { keys: ['approved', 'approval'],          label: 'Approved',           icon: 'checkmark-circle-outline',   color: '#10B981', bg: '#D1FAE5' },
-  { keys: ['rejected', 'decline', 'cancelled'], label: 'Rejected',        icon: 'close-circle-outline',       color: '#EF4444', bg: '#FEE2E2' },
   { keys: ['document rejected', 'rejected', 'decline'],  label: 'Document Rejected', icon: 'close-circle-outline',      color: '#EF4444', bg: '#FEE2E2' },
   { keys: ['document approved', 'approved', 'approval'], label: 'Document Approved', icon: 'checkmark-circle-outline',  color: '#10B981', bg: '#D1FAE5' },
   { keys: ['document', 'kyc', 'identity'],   label: 'Document',           icon: 'document-text-outline',      color: '#8B5CF6', bg: '#EDE9FE' },

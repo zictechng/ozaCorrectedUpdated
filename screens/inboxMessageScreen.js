@@ -96,7 +96,7 @@ const InboxMessageScreen = () => {
 
   // ── Load Messages ─────────────────────────────
   const loadMessages = useCallback(async (reset = false) => {
-    if (isLoading || (isListEnd && !reset)) return;
+    
     setIsLoading(true);
     const page = reset ? 1 : currentPage;
     try {
