@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ALERT_TYPE, Toast, Dialog } from 'react-native-alert-notification';
 
 import { spacing, radius, typography, shadows } from '../styles';
+import BillScreenHeader from '../components/BillScreenHeader';
 import useThemeStyles from '../hooks/useThemeStyles';
 import { AuthContext } from '../contextAPI/authContext';
 import { noticeData } from '../components/errorNotice';
@@ -140,52 +141,17 @@ const WithdrawScreen = ({ navigation }) => {
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled">
 
-            {/* ── Header ──────────────────────── */}
-            <View style={[styles.header, { backgroundColor: colors.bgColor }]}>
-              <TouchableOpacity
-                style={[styles.backBtn, { backgroundColor: colors.bgLight }]}
-                onPress={() => navigation.goBack()}>
-                <Ionicons name="arrow-back" size={22} color={colors.textBlack} />
-              </TouchableOpacity>
-              <Text style={[styles.headerTitle, { color: colors.textBlack }]}>
-                Withdraw Funds
-              </Text>
-              <View style={styles.backBtn} />
-            </View>
-
-            {/* ── Hero Banner ──────────────────── */}
-                        {/* ── Hero Banner with Balance ─────── */}
-            <LinearGradient
-              colors={['#F59E0B', '#D97706']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.heroBanner}>
-              <View style={styles.heroCircle1} />
-              <View style={styles.heroCircle2} />
-
-              <View style={styles.heroTop}>
-                <View style={[styles.heroIconBox, { backgroundColor: 'rgba(255,255,255,0.95)' }]}>
-                  <Ionicons name="arrow-down-circle-outline" size={28} color="#F59E0B" />
-                </View>
-                <View style={styles.heroText}>
-                  <Text style={styles.heroTitle}>Withdraw to Bank</Text>
-                  <Text style={styles.heroDesc}>
-                    Withdraw your bonus wallet to your linked bank account
-                  </Text>
-                </View>
-              </View>
-
-              {/* Balance row — matching bill screen style */}
-                            
-              <View style={styles.balanceRow}>
-                <View style={styles.balanceBox}>
-                  <Text style={styles.balanceLabel}>Bonus Wallet Balance</Text>
-                  <Text style={styles.balanceAmount}>
-                    ₦{walletBalance.toLocaleString()}
-                  </Text>
-                </View>
-              </View>
-            </LinearGradient>
+            {/* ── Hero Banner ─────────────────── */}
+            <BillScreenHeader
+              navigation={navigation}
+              title="Withdraw Funds"
+              description="Withdraw your bonus wallet balance to your registered bank account"
+              icon="arrow-down-circle-outline"
+              gradientColors={['#F59E0B', '#D97706']}
+              serviceStatus="active"
+              balance={`₦${Number(walletBalance).toLocaleString()}`}
+              balanceLabel="Bonus Wallet Balance"
+            />
 
             {/* ── Balance Card ──────────────────── */}
             <View style={[styles.balanceCard, {
