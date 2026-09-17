@@ -67,10 +67,13 @@ const MessageCard = ({ item, onMarkRead }) => {
           numberOfLines={1}>
           {item.alert_name || 'Notification'}
         </Text>
-        <Text
+          <Text
           style={[styles.message, { color: colors.textSecColor }]}
-          numberOfLines={3}>
+          numberOfLines={2}>
           {item.alert_nature || ''}
+        </Text>
+        <Text style={[styles.readMore, { color: colors.primaryColor1 }]}>
+          {isUnread ? 'Tap to read →' : 'View message →'}
         </Text>
         <Text style={[styles.date, { color: colors.textSecColor2 }]}>
           {moment(item.alert_date).format('DD MMM YYYY • hh:mm A')}
@@ -119,11 +122,17 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: spacing.xs,
   },
-    date: {
+      date: {
     fontFamily: '_regular',
     fontSize: typography.sm,
     lineHeight: 20,
     marginTop: 2,
+  },
+  readMore: {
+    fontFamily: '_semiBold',
+    fontSize: typography.sm,
+    marginTop: 4,
+    lineHeight: 20,
   },
   unreadDot: {
     position: 'absolute',

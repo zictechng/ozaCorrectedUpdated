@@ -69,6 +69,8 @@ const InboxMessageScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [readCount, setReadCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [selectedMessage, setSelectedMessage] = useState(null);
 
     const handleMarkRead = async (item) => {
@@ -85,6 +87,7 @@ const InboxMessageScreen = () => {
           m._id === item._id ? { ...m, alert_status: 0 } : m
         ));
         setUnreadCount(prev => Math.max(0, prev - 1));
+        setReadCount(prev => prev + 1);
       } catch {}
     }
   };
@@ -104,8 +107,14 @@ const InboxMessageScreen = () => {
         setCurrentPage(page + 1);
         setIsListEnd(false);
         // Count unread — assume all unread if no read flag
-        const unread = res.data.filter(m => m.alert_status === 1).length;
-        setUnreadCount(prev => reset ? unread : prev + unread);
+        const allLoaded = reset
+          ? res.data
+          : [...messages, ...res.data];
+        const unread = allLoaded.filter(m => m.alert_status === 1).length;
+        const read   = allLoaded.filter(m => m.alert_status === 0).length;
+        setUnreadCount(unread);
+        setReadCount(read);
+        setTotalCount(unread + read);
       } else {
         setIsListEnd(true);
       }
@@ -173,7 +182,7 @@ const InboxMessageScreen = () => {
         <View style={styles.summaryItem}>
           <Ionicons name="mail-outline" size={18} color="rgba(255,255,255,0.8)" />
           <Text style={styles.summaryLabel}>Total Messages</Text>
-          <Text style={styles.summaryValue}>{messages.length}</Text>
+          <Text style={styles.summaryValue}>{totalCount}</Text>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryItem}>
@@ -185,16 +194,14 @@ const InboxMessageScreen = () => {
         <View style={styles.summaryItem}>
           <Ionicons name="checkmark-done-outline" size={18} color="rgba(255,255,255,0.8)" />
           <Text style={styles.summaryLabel}>Read</Text>
-          <Text style={styles.summaryValue}>
-            {Math.max(messages.length - unreadCount, 0)}
-          </Text>
+          <Text style={styles.summaryValue}>{readCount}</Text>
         </View>
       </LinearGradient>
 
       {/* ── Messages FlatList ──────────────── */}
       <FlatList
         data={messages}
-        keyExtractor={(item, index) => item._id || index.toString()}
+        keyExtractor={(item, index) => `${item._id || 'msg'}_${index}`}
         renderItem={({ item }) => (
           <MessageCard item={item} onMarkRead={handleMarkRead} />
         )}
