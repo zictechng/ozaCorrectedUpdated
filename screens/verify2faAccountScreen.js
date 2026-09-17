@@ -188,7 +188,7 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
       );
       if (res.data.msg === '200') {
         setOtpVerified(true);
-        Toast.show({ type: ALERT_TYPE.SUCCESS, title: 'OTP Verified ✅', textBody: 'Code confirmed. Please take your selfie now.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
+        Toast.show({ type: ALERT_TYPE.SUCCESS, title: 'OTP Verified ✅', textBody: 'Code confirmed. Please upload your selfie now.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       } else {
         Toast.show({ type: ALERT_TYPE.DANGER, title: 'Wrong Code', textBody: res.data.message || 'Incorrect code. Please check your email and try again.', titleStyle: noticeData[0].errorTitleStyle, textBodyStyle: noticeData[0].errorMessageStyle });
       }
@@ -341,10 +341,12 @@ const Verify2faAccountScreen = ({ route, navigation }) => {
         {/* ── Info notice ───────────────────────── */}
         <View style={[styles.noticeCard, { backgroundColor: colors.bgLight, borderColor: colors.dividerColor }]}>
           <Ionicons name="information-circle-outline" size={18} color={colors.primaryColor1} />
-          <Text style={[styles.noticeText, { color: colors.textSecColor }]}>
-            We'll send a one-time code to your email. Write the code{' '}
-            <Text style={{ fontWeight: 'bold', color: colors.textBlack }}>clearly</Text> on a paper, then{' '}
-            <Text style={{ fontWeight: 'bold', color: colors.textBlack }}>take a selfie</Text> with it to verify it's really you — takes under a minute.
+            <Text style={[styles.noticeText, { color: colors.textSecColor }]}>
+            We'll send a{' '}
+            <Text style={{ fontWeight: 'bold', color: colors.textBlack }}>6-digit code</Text>
+            {' '}to your email. Enter the code below to confirm your identity, then{' '}
+            <Text style={{ fontWeight: 'bold', color: colors.textBlack }}>take a selfie</Text>
+            {' '}and upload it to complete your account ownership verification.
           </Text>
         </View>
 
@@ -715,7 +717,7 @@ const styles = StyleSheet.create({
   },
   selfiePlaceholderSub: {
     fontFamily: '_regular',
-    fontSize: typography.sm,
+    fontSize: typography.base,
     lineHeight: 18,
     opacity: 0.7,
   },
