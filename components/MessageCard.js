@@ -2,7 +2,6 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import moment from 'moment';
 import useThemeStyles from '../hooks/useThemeStyles';
 import { spacing, radius, typography } from '../styles';
 
@@ -84,7 +83,7 @@ const MessageCard = React.memo(({ item, onMarkRead }) => {
           {isUnread ? 'Tap to read →' : 'View message →'}
         </Text>
         <Text style={[styles.date, { color: colors.textSecColor2 }]}>
-          {moment(item.alert_date).format('DD MMM YYYY • hh:mm A')}
+         {item.formattedDate || '—'}
         </Text>
       </View>
 

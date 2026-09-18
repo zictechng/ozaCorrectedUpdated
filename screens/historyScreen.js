@@ -17,6 +17,14 @@ import client from '../contextAPI/client';
 import { NumberValueFormat } from '../components/formatValue';
 import { NumberDollarValueFormat } from '../components/formatDollarValue';
 
+// Pre-format dates once on data load — keeps moment out of render loop
+const formatTxDates = (data) => data.map(item => ({
+  ...item,
+  formattedDate: item.creditOn
+    ? moment(item.creditOn).format('DD MMM YYYY • hh:mm A')
+    : '—',
+}));
+
 // ─────────────────────────────────────────────────
 // FILTER TABS CONFIG
 // ─────────────────────────────────────────────────
@@ -221,9 +229,15 @@ const loadAll = async (reset = false) => {
       { headers: { 'Authorization': 'Bearer ' + userToken } }
     );
     if (res.data.length > 0) {
+      const formatted = res.data.map(item => ({
+        ...item,
+        formattedDate: item.creditOn
+          ? moment(item.creditOn).format('DD MMM YYYY • hh:mm A')
+          : '—',
+      }));
       setAllData(prev => {
-        const combined = reset ? res.data : [...prev, ...res.data];
-        const seen = new Set();                                    // ✅ deduplicate
+        const combined = reset ? formatted : [...prev, ...formatted];
+        const seen = new Set();
         return combined.filter(item => {
           if (seen.has(item._id)) return false;
           seen.add(item._id);
@@ -539,7 +553,12 @@ const loadBills = async (reset = false) => {
         onEndReachedThreshold={0.5}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
-        windowSize={5}
+        getItemLayout={(_, index) => ({
+          length: 72,
+          offset: 72 * index,
+          index,
+        })}
+        windowSize={11}
         maxToRenderPerBatch={10}
         initialNumToRender={10}
         removeClippedSubviews={true}

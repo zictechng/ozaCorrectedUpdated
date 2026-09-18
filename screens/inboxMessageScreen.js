@@ -111,8 +111,19 @@ const InboxMessageScreen = () => {
         { headers: { 'Authorization': 'Bearer ' + userToken } }
       );
       if (Array.isArray(res.data) && res.data.length > 0) {
+        // Pre-format dates once here — avoids moment() running on every render
+        const formattedData = res.data.map(item => ({
+          ...item,
+          formattedDate: item.alert_date
+            ? moment(item.alert_date).format('DD MMM YYYY • hh:mm A')
+            : '—',
+          formattedTimeAgo: item.alert_date
+            ? moment(item.alert_date).fromNow()
+            : '—',
+        }));
+
         setMessages(prev => {
-          const updatedMessages = reset ? res.data : [...prev, ...res.data];
+          const updatedMessages = reset ? formattedData : [...prev, ...formattedData];
           
           // Recalculate counts accurately from the complete message list loaded so far
           const total = updatedMessages.length;
@@ -216,7 +227,12 @@ const InboxMessageScreen = () => {
         data={messages}
         keyExtractor={(item, index) => `${item._id || 'msg'}_${index}`}
         renderItem={renderMessage}
-        windowSize={5}
+        getItemLayout={(_, index) => ({
+          length: 90,
+          offset: 90 * index,
+          index,
+        })}
+        windowSize={11}
         maxToRenderPerBatch={10}
         initialNumToRender={10}
         removeClippedSubviews={true}
