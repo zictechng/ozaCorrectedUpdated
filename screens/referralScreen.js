@@ -387,7 +387,9 @@ const ReferralScreen = () => {
       <FlatList
         data={referrals}
         keyExtractor={(item, index) => item._id || index.toString()}
-        renderItem={({ item }) => <ReferralCard item={item} />}
+        renderItem={useCallback(({ item }) => (
+          <ReferralItem item={item} colors={colors} />
+        ), [colors])}
         ListHeaderComponent={<ListHeader />}
         ListEmptyComponent={
           !isLoading ? (

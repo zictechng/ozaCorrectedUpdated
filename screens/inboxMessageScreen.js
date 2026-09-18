@@ -73,7 +73,8 @@ const InboxMessageScreen = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [selectedMessage, setSelectedMessage] = useState(null);
 
-  const handleMarkRead = async (item) => {
+  
+  const handleMarkRead = useCallback(async (item) => {
     // Show message detail modal
     setSelectedMessage(item);
     // Mark this specific notification as read
@@ -92,7 +93,12 @@ const InboxMessageScreen = () => {
         setSelectedMessage(prev => prev ? { ...prev, alert_status: 0 } : prev);
       } catch {}
     }
-  };
+  }, [userInfo, userToken]);
+
+  const renderMessage = useCallback(({ item }) => (
+    <MessageCard item={item} onMarkRead={handleMarkRead} />
+  ), [handleMarkRead]);
+
 
   // ── Load Messages ─────────────────────────────
   const loadMessages = useCallback(async (reset = false) => {
@@ -209,9 +215,7 @@ const InboxMessageScreen = () => {
       <FlatList
         data={messages}
         keyExtractor={(item, index) => `${item._id || 'msg'}_${index}`}
-        renderItem={({ item }) => (
-          <MessageCard item={item} onMarkRead={handleMarkRead} />
-        )}
+        renderItem={renderMessage}
         windowSize={5}
         maxToRenderPerBatch={10}
         initialNumToRender={10}

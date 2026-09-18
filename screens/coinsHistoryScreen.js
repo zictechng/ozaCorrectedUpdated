@@ -307,7 +307,9 @@ const CoinsHistoryScreen = ({ navigation }) => {
         <FlatList
           data={history}
           keyExtractor={(item, index) => `${item._id || 'coin'}_${index}`}
-          renderItem={({ item }) => <CoinItem item={item} colors={colors} />}
+          renderItem={useCallback(({ item }) => (
+          <CoinItem item={item} colors={colors} />
+        ), [colors])}
           ListHeaderComponent={<ListHeader />}
           ListFooterComponent={<ListFooter />}
           ListEmptyComponent={

@@ -412,6 +412,17 @@ const loadBills = async (reset = false) => {
 
   const { data, loading, end, onEnd } = getActiveData();
 
+  // ── Memoized render function ───────────────────
+  const renderTransaction = useCallback(({ item }) => (
+    <TransactionItem
+      item={item}
+      onPress={() => navigation.navigate('TranDetails', {
+        record_id: item._id,
+        is_bills: activeTab === 4,
+      })}
+    />
+  ), [activeTab, navigation]);
+
   // ── Summary Stats ─────────────────────────────
   const totalCredit = summary.totalCredit;
   const totalDebit  = summary.totalDebit;
@@ -517,15 +528,7 @@ const loadBills = async (reset = false) => {
       <FlatList
         data={data}
         keyExtractor={(item, index) => `${item._id?.toString() ?? 'item'}-${index}`}
-        renderItem={({ item }) => (
-          <TransactionItem
-            item={item}
-            onPress={() => navigation.navigate('TranDetails', {
-              record_id: item._id,
-              is_bills: activeTab === 4,
-            })}
-          />
-        )}
+        renderItem={renderTransaction}
         ListEmptyComponent={
           !loading ? <EmptyState tab={activeTab} colors={colors} /> : null
         }
