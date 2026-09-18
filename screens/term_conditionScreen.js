@@ -35,7 +35,7 @@ const TermsConditionsScreen = () => {
       const res = await client.get('/api/fetchAboutCompany');
       if (res.data.msg === '200') {
         setFetchInfo(res.data.infoData);
-        console.log("Terms: ", res.data.infoData.company_term_conditions)
+        //console.log("Terms: ", res.data.infoData.company_term_conditions)
       } else {
         setHasError(true);
       }

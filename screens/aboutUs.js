@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  StatusBar, Linking, Image,
+  StatusBar, Linking, Image, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -122,6 +122,7 @@ const AboutUsScreen = ({ navigation }) => {
   const androidLink   = appInfo?.app_download_android_link || '';
   const iosLink       = appInfo?.app_download_ios_link || '';
   const website     = appInfo?.app_website || '';
+  const rateUsLink  = Platform.OS === 'ios' ? iosLink : androidLink;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
@@ -271,19 +272,11 @@ const AboutUsScreen = ({ navigation }) => {
             url={website}
             colors={colors}
           />
-          {androidLink ? (
+          {rateUsLink ? (
             <LinkRow
-              icon="logo-google-playstore"
-              label="Download on Google Play"
-              url={androidLink}
-              colors={colors}
-            />
-          ) : null}
-          {iosLink ? (
-            <LinkRow
-              icon="logo-apple"
-              label="Download on App Store"
-              url={iosLink}
+              icon="star-outline"
+              label="Rate Us on the App Store"
+              url={rateUsLink}
               colors={colors}
             />
           ) : null}
