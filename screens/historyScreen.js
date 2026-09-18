@@ -30,7 +30,7 @@ const TABS = [
 // ─────────────────────────────────────────────────
 // TRANSACTION ITEM COMPONENT — Reusable
 // ─────────────────────────────────────────────────
-const TransactionItem = ({ item, onPress }) => {
+const TransactionItem = React.memo(({ item, onPress }) => {
   const { colors } = useThemeStyles();
   const isDebit = item.tran_type === 'Debit';
   const isCredit = item.tran_type === 'Credit';
@@ -50,7 +50,7 @@ const TransactionItem = ({ item, onPress }) => {
     return isDebit
       ? { name: 'arrow-up-outline', color: '#EF4444', bg: '#FEE2E2' }
       : { name: 'arrow-down-outline', color: '#10B981', bg: '#D1FAE5' };
-  };
+};
 
   // ── Add this helper above TransactionItem ─────────────────
 const formatAmount = (item) => {
@@ -129,7 +129,7 @@ const formatAmount = (item) => {
       </View>
     </TouchableOpacity>
   );
-};
+});
 
 // ─────────────────────────────────────────────────
 // EMPTY STATE COMPONENT
@@ -536,6 +536,11 @@ const loadBills = async (reset = false) => {
         onEndReachedThreshold={0.5}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+        windowSize={5}
+        maxToRenderPerBatch={10}
+        initialNumToRender={10}
+        removeClippedSubviews={true}
+        updateCellsBatchingPeriod={50}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}

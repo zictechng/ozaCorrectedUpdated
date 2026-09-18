@@ -323,6 +323,11 @@ const CoinsHistoryScreen = ({ navigation }) => {
           contentContainerStyle={styles.listContent}
           onEndReached={() => !isListEnd && loadHistory()}
           onEndReachedThreshold={0.3}
+          windowSize={5}
+          maxToRenderPerBatch={10}
+          initialNumToRender={10}
+          removeClippedSubviews={true}
+          updateCellsBatchingPeriod={50}
           refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={['#F59E0B']} />
           }

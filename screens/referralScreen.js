@@ -411,6 +411,11 @@ const ReferralScreen = () => {
         onEndReached={() => loadReferrals()}
         onEndReachedThreshold={0.5}
         showsVerticalScrollIndicator={false}
+        windowSize={5}
+        maxToRenderPerBatch={10}
+        initialNumToRender={10}
+        removeClippedSubviews={true}
+        updateCellsBatchingPeriod={50}
         contentContainerStyle={[
           styles.listContent,
           referrals.length === 0 && { flexGrow: 1 },

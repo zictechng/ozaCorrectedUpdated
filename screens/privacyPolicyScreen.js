@@ -64,14 +64,7 @@ const PrivacyPolicyScreen = () => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
           * { box-sizing: border-box; margin: 0; padding: 0; }
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            font-size: 15px;
-            line-height: 1.7;
-            padding: 16px;
-            background-color: ${isDark ? '#1E2132' : '#ffffff'};
-            color: ${isDark ? '#E5E7EB' : '#1F2937'};
-          }
+          body {\n font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;\n font-size: 15px;\n line-height: 1.8;\n padding: 20px 20px 40px;\n background-color: ${isDark ? '#1E2132' : '#ffffff'};\n color: ${isDark ? '#E5E7EB' : '#1F2937'};\n  -webkit-overflow-scrolling: touch;\n  overflow-y: auto;\n }\n
           h1, h2, h3, h4, h5, h6 {
             color: ${isDark ? '#F9FAFB' : '#111827'};
             margin-bottom: 12px;
@@ -216,12 +209,19 @@ const PrivacyPolicyScreen = () => {
 
         {/* Policy Content via WebView */}
         {isPolicyAvailable && (
+
           <WebView
             originWhitelist={['*']}
             source={{ html: buildHtmlContent(fetchInfo.company_privacy_policy) }}
             javaScriptEnabled={true}
             domStorageEnabled={true}
+            startInLoadingState={true}
             showsVerticalScrollIndicator={false}
+            decelerationRate="normal"
+            scrollEnabled={true}
+            bounces={true}
+            onError={() => setHasError(true)}
+            onHttpError={() => setHasError(true)}
             style={[styles.webview, { backgroundColor: colors.bgCard }]}
             renderLoading={() => (
               <View style={styles.centerState}>
@@ -331,11 +331,8 @@ const styles = StyleSheet.create({
   // Content Card
   contentCard: {
     flex: 1,
-    marginHorizontal: spacing.xl,
     marginBottom: spacing.sm,
-    borderRadius: radius.xl,
-    overflow: 'hidden',
-    ...shadows.card,
+    backgroundColor: 'transparent',
   },
   webview: {
     flex: 1,

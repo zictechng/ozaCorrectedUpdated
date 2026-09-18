@@ -35,7 +35,7 @@ const getAlertConfig = (nature = '') => {
   return match || { label: 'Notification', icon: 'notifications-outline', color: '#4C5FD5', bg: '#EEF2FF' };
 };
 
-const MessageCard = ({ item, onMarkRead }) => {
+const MessageCard = React.memo(({ item, onMarkRead }) => {
   const { colors } = useThemeStyles();
   const navigation = useNavigation();
   const config  = getAlertConfig(item.alert_nature || item.alert_name || '');
@@ -91,7 +91,7 @@ const MessageCard = ({ item, onMarkRead }) => {
       <Ionicons name="chevron-forward" size={16} color={colors.textSecColor} />
     </TouchableOpacity>
   );
-};
+});
 
 const styles = StyleSheet.create({
   card: {

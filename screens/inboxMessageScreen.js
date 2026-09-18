@@ -212,6 +212,11 @@ const InboxMessageScreen = () => {
         renderItem={({ item }) => (
           <MessageCard item={item} onMarkRead={handleMarkRead} />
         )}
+        windowSize={5}
+        maxToRenderPerBatch={10}
+        initialNumToRender={10}
+        removeClippedSubviews={true}
+        updateCellsBatchingPeriod={50}
         ListEmptyComponent={
           !isLoading ? <EmptyState colors={colors} /> : null
         }
