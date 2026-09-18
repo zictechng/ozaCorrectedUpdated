@@ -88,7 +88,7 @@ const formatAmount = (item) => {
           {item.transac_nature || 'Transaction'}
         </Text>
         <Text style={[styles.transactionDate, { color: colors.textSecColor }]}>
-          {moment(item.creditOn).format('DD MMM YYYY • hh:mm A')}
+          {item.formattedDate || '—'}
         </Text>
         <View style={styles.transactionStatusRow}>
           <View style={[
@@ -267,9 +267,10 @@ const loadPaypal = async (reset = false) => {
       { headers: { 'Authorization': 'Bearer ' + userToken } }
     );
     if (res.data.length > 0) {
+      const formatted = formatTxDates(res.data);
       setPaypalData(prev => {
-        const combined = reset ? res.data : [...prev, ...res.data];
-        const seen = new Set();                                    // ✅ deduplicate
+        const combined = reset ? formatted : [...prev, ...formatted];
+        const seen = new Set();
         return combined.filter(item => {
           if (seen.has(item._id)) return false;
           seen.add(item._id);
@@ -298,10 +299,11 @@ const loadPayoneer = async (reset = false) => {
       `/api/all_historyMobilePayooner/${userInfo.userData._id}?page=${page}`,
       { headers: { 'Authorization': 'Bearer ' + userToken } }
     );
-    if (res.data.length > 0) {
+     if (res.data.length > 0) {
+      const formatted = formatTxDates(res.data);
       setPayoneerData(prev => {
-        const combined = reset ? res.data : [...prev, ...res.data];
-        const seen = new Set();                                    // ✅ deduplicate
+        const combined = reset ? formatted : [...prev, ...formatted];
+        const seen = new Set();
         return combined.filter(item => {
           if (seen.has(item._id)) return false;
           seen.add(item._id);
@@ -341,6 +343,9 @@ const loadBills = async (reset = false) => {
       creditOn:            b.createdAt,
       currency_level:      '1',
       transac_category:    b.service_type,
+      formattedDate:       b.createdAt
+        ? moment(b.createdAt).format('DD MMM YYYY • hh:mm A')
+        : '—',
     }));
     if (bills.length > 0) {
       setBillsData(prev => {
