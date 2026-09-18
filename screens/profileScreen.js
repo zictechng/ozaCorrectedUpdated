@@ -108,7 +108,10 @@ const ProfileScreen = ({ navigation }) => {
   const copyReferralCode = async () => {
     try {
       const appName = appSettingDetails?.app_name || 'OtaMobile';
-      const downloadLink = appSettingDetails?.app_download_link || 'https://zictech-ng.com';
+        const downloadLink = appSettingDetails?.app_download_android_link
+        || appSettingDetails?.app_download_ios_link
+        || appSettingDetails?.app_download_link
+        || 'https://otamobile.com';
       const bonus = businessRate?.signup_bonus_rate ? `$${businessRate.signup_bonus_rate}` : 'a bonus';
       const message = `${appName} — earn ${bonus} instantly!\nUse my referral code: ${userInfo?.userData?.tag_id}\nDownload: ${downloadLink}`;
       await Clipboard.setStringAsync(message);

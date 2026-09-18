@@ -119,6 +119,9 @@ const AboutUsScreen = ({ navigation }) => {
   const appName = appInfo?.app_name || 'OtaMobile';
   const appVersion = appInfo?.app_version || '1.0.0';
   const appDesc = appInfo?.app_desc || 'Nigeria\'s most trusted platform for digital asset trading and instant bill payments. Fast, secure and reliable.';
+  const androidLink   = appInfo?.app_download_android_link || '';
+  const iosLink       = appInfo?.app_download_ios_link || '';
+  const website     = appInfo?.app_website || '';
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgColor }]}>
@@ -262,12 +265,28 @@ const AboutUsScreen = ({ navigation }) => {
             screen="contacts"
             colors={colors}
           />
-          <LinkRow
+            <LinkRow
             icon="globe-outline"
             label="Visit Our Website"
-            url={''}
+            url={website}
             colors={colors}
           />
+          {androidLink ? (
+            <LinkRow
+              icon="logo-google-playstore"
+              label="Download on Google Play"
+              url={androidLink}
+              colors={colors}
+            />
+          ) : null}
+          {iosLink ? (
+            <LinkRow
+              icon="logo-apple"
+              label="Download on App Store"
+              url={iosLink}
+              colors={colors}
+            />
+          ) : null}
         </View>
 
         {/* ── App Version ───────────────────────── */}
