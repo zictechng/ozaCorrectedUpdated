@@ -166,16 +166,20 @@ const ReferralScreen = () => {
   // ── Share Referral Code ───────────────────────
   const shareReferralCode = async () => {
     try {
-      const appName = appDetails?.infoData?.app_name || 'OtaMobile';
-      const bonus = businessRate?.signup_bonus_rate
+      const appName     = appDetails?.infoData?.app_name || 'OtaMobile';
+      const bonus       = businessRate?.signup_bonus_rate
         ? `$${businessRate.signup_bonus_rate}`
         : 'a bonus';
-      const tagId = userInfo?.userData?.tag_id || '';
+      const tagId       = userInfo?.userData?.tag_id || '';
+      const downloadLink = appDetails?.infoData?.app_download_android_link
+        || appDetails?.infoData?.app_download_ios_link
+        || appDetails?.infoData?.app_download_link
+        || 'https://otamobile.com';
       const message = [
         `🎉 Join ${appName} and earn ${bonus} instantly!`,
         ``,
         `Use my referral code: ${tagId}`,
-        `Sign up here: https://ozaapp.com`,
+        `Download here: ${downloadLink}`,
         ``,
         `Buy & sell PayPal, Payoneer, Bitcoin.`,
         `Pay bills, buy data & airtime at the cheapest rates.`,
