@@ -377,6 +377,22 @@ const SettingScreen = () => {
             iconColor={colors.textSecColor}
             onPress={() => navigation.navigate('Terms_Conditions')}
           />
+
+          {appSettingDetails?.app_download_android_link ? (
+            <MenuItem
+              icon="star-outline"
+              label="Rate Our App"
+              subtitle="Enjoying the app? Leave us a review"
+              iconBg="#FEF3C7"
+              iconColor="#F59E0B"
+              onPress={() => Linking.openURL(
+                Platform.OS === 'ios'
+                  ? (appSettingDetails?.app_download_ios_link || appSettingDetails?.app_download_android_link)
+                  : appSettingDetails?.app_download_android_link
+              )}
+            />
+          ) : null}
+          
         </SectionCard>
 
         {/* Danger Zone */}
