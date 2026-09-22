@@ -166,7 +166,7 @@ const ReferralScreen = () => {
   // ── Share Referral Code ───────────────────────
   const shareReferralCode = async () => {
     try {
-      const appName     = appDetails?.infoData?.app_name || 'OtaMobile';
+      const appName     = appDetails?.infoData?.app_name || 'Sendmoor';
       const bonus       = businessRate?.signup_bonus_rate
         ? `$${businessRate.signup_bonus_rate}`
         : 'a bonus';
@@ -174,7 +174,7 @@ const ReferralScreen = () => {
       const downloadLink = appDetails?.infoData?.app_download_android_link
         || appDetails?.infoData?.app_download_ios_link
         || appDetails?.infoData?.app_download_link
-        || 'https://otamobile.com';
+        || 'https://sendmoor.com';
       const message = [
         `🎉 Join ${appName} and earn ${bonus} instantly!`,
         ``,

@@ -107,11 +107,11 @@ const ProfileScreen = ({ navigation }) => {
 
   const copyReferralCode = async () => {
     try {
-      const appName = appSettingDetails?.app_name || 'OtaMobile';
+      const appName = appSettingDetails?.app_name || 'Sendmoor';
         const downloadLink = appSettingDetails?.app_download_android_link
         || appSettingDetails?.app_download_ios_link
         || appSettingDetails?.app_download_link
-        || 'https://otamobile.com';
+        || 'https://sendmoor.com';
       const bonus = businessRate?.signup_bonus_rate ? `$${businessRate.signup_bonus_rate}` : 'a bonus';
       const message = `${appName} — earn ${bonus} instantly!\nUse my referral code: ${userInfo?.userData?.tag_id}\nDownload: ${downloadLink}`;
       await Clipboard.setStringAsync(message);
@@ -406,7 +406,7 @@ const ProfileScreen = ({ navigation }) => {
         
 
         <Text style={[styles.appVersion, { color: colors.textSecColor }]}>
-          {appSettingDetails?.app_name || 'Ota Mobile'} • v{appSettingDetails?.app_version || '1.0.1'}
+          {appSettingDetails?.app_name || 'Sendmoor'} • v{appSettingDetails?.app_version || '1.0.1'}
           </Text>
         <View style={{ height: spacing.xxxl }} />
 

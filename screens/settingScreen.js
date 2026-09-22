@@ -356,7 +356,7 @@ const SettingScreen = () => {
           <MenuItem
             icon="people-outline"
             label="About Us"
-            subtitle="Learn more about OtaMobile"
+            subtitle={`Learn more about ${appSettingDetails?.app_name || 'Sendmoor'}`}
             iconBg={colors.bgLight}
             iconColor={colors.primaryColor1}
             onPress={() => navigation.navigate('About')}

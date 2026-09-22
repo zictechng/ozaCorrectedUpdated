@@ -17,7 +17,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "your.new.package.name",
+      "bundleIdentifier": "com.sendmoor.app",
       "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "We need access to your camera",
@@ -45,7 +45,7 @@
         "android.permission.ACCESS_MEDIA_LOCATION",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.doc_mobile.online",
+      "package": "com.sendmoor.app",
       "versionCode": 1
     },
     "plugins": [
@@ -71,7 +71,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/app_icon.png",
           "color": "#4C5FD5",
           "sounds": []
         }

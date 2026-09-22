@@ -206,7 +206,7 @@ const LandPageScreen = () => {
   const currentSlide = SLIDES[activeSlide];
   const appName = appDetails?.infoData?.app_name
     || appSettingDetails?.app_name
-    || 'OtaMobile';
+    || 'Sendmoor';
 
   // ── Animate slide content ─────────────────────
   const animateContent = useCallback(() => {

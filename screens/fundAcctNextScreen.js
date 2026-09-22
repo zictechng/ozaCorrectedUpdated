@@ -85,7 +85,7 @@ const FundAccountNextScreen = ({ route, navigation }) => {
   const copyBank = async (acctNumber, acctName, bankName) => {
     try {
       await Clipboard.setStringAsync(
-        `${appInfo.app_name || 'OtaMobile'}\nAccount Name: ${acctName}\nAccount Number: ${acctNumber}\nBank Name: ${bankName}`
+        `${appInfo.app_name || 'Sendmoor'}\nAccount Name: ${acctName}\nAccount Number: ${acctNumber}\nBank Name: ${bankName}`
       );
       if (Platform.OS === 'android') {
         ToastAndroid.show('Bank details copied!', ToastAndroid.SHORT);

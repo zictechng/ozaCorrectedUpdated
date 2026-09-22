@@ -141,7 +141,7 @@ const LoginScreen = ({ navigation }) => {
                 <Ionicons name="wallet-outline" size={32} color={colors.primaryColor1} /> 
               </View>
               <Text style={[styles.brandName, { color: colors.textBlack }]}>              
-                {appDetails.infoData?.app_name || 'OtaMobile'}
+                {appDetails.infoData?.app_name || 'Sendmoor'}
               </Text>
               <Text style={[styles.brandTagline, { color: colors.textSecColor }]}>        
                 Your trusted virtual funds companion

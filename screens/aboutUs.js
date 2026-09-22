@@ -116,7 +116,7 @@ const AboutUsScreen = ({ navigation }) => {
     });
   }, []);
 
-  const appName = appInfo?.app_name || 'OtaMobile';
+  const appName = appInfo?.app_name || 'Sendmoor';
   const appVersion = appInfo?.app_version || '1.0.0';
   const appDesc = appInfo?.app_desc || 'Nigeria\'s most trusted platform for digital asset trading and instant bill payments. Fast, secure and reliable.';
   const androidLink   = appInfo?.app_download_android_link || '';
