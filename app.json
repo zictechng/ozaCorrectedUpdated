@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Ota Mobile",
-    "slug": "doc_mobile",
+    "name": "Sendmoor",
+    "slug": "sendmoor_mobile",
     "description": "The fastest and most secure way to buy & sell PayPal, Payoneer and Bitcoin. Pay electricity bills, buy airtime, data bundles, TV subscriptions and exam scratch cards at the cheapest rates in Nigeria.",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/app_icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash.png",

@@ -82,13 +82,13 @@ const SLIDES = [
     gradientColors: ['#8B5CF6', '#6D28D9'],
     accentColor: '#8B5CF6',
     title: 'Safe &\nSecure',
-    desc: 'Your funds and data are protected with bank-level security and end-to-end encryption.',
-    pills: ['Encrypted', 'KYC Verified', '2FA Login'],
+    desc: 'Your transaction and data are protected with top security.',
+    pills: ['Secured', 'KYC Verified', '2FA Login'],
     cardType: 'security',
     cardData: {
       label: 'Account Security',
       amount: '100% Secure',
-      sub: '2FA • KYC • Encrypted',
+      sub: '2FA • KYC • Secured',
       badge: 'Verified',
       badgeColor: '#10B981',
     },
@@ -171,14 +171,14 @@ const SocialProof = ({ colors }) => (
     </View>
     <View style={styles.socialProofInfo}>
       <Text style={[styles.socialProofTitle, { color: colors.textBlack }]}>
-        10,000+ users trust us
+        Many users trust us
       </Text>
       <View style={styles.starsRow}>
         {[1, 2, 3, 4, 5].map((s) => (
           <Ionicons key={s} name="star" size={12} color="#F59E0B" />
         ))}
         <Text style={[styles.ratingText, { color: colors.textSecColor }]}>
-          4.8 rating
+          4.8 rating service delivery
         </Text>
       </View>
     </View>

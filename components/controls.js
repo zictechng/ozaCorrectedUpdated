@@ -20,6 +20,7 @@ import { ALERT_TYPE, Toast } from "react-native-alert-notification";
 import { noticeData } from "./errorNotice";
 import { colors } from "../styles";
 import { Ionicons, FontAwesome, MaterialIcons} from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const CheckRegistrationStage = () => {
   const { userInfo, setUserInfo } = useContext(AuthContext);
@@ -76,7 +77,7 @@ export const GetLocalStorage = async () => {
     userInfoDetails = JSON.parse(userInfoDetails);
     if (userInfoDetails) {
       setUserInfo(userInfoDetails);
-      console.log("User Details fetch local storage ");
+      //console.log("User Details fetch local storage ");
     }
     return userInfoDetails;
   } catch (error) {
@@ -260,7 +261,7 @@ export const accessCheck = async (data, userToken) => {
   myId = data;
   let userAccessToken = "";
   if (myId == "" || myId == null) {
-    console.log("Access denied", myId);
+    //console.log("Access denied", myId);
     return "404";
   }
   try {
@@ -294,13 +295,14 @@ export const applicationDetails = async () => {
     //console.log('response ', JSON.stringify(res.data))
     if (res.data.msg == "200") {
       //console.log('Yes ', res.data)
+      await AsyncStorage.setItem('AppSettingInfo', JSON.stringify(res.data));
       return res.data;
     } else if (res.data.status == "404") {
       //console.log('Access Login failed ', res.data.status)
       return res.data.status;
     }
   } catch (e) {
-    console.log(e.message);
+    console.log('applicationDetails error:', e.message);
   }
 };
 

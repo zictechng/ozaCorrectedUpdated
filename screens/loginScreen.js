@@ -27,7 +27,7 @@ import useThemeStyles from '../hooks/useThemeStyles';
 import { AuthContext } from '../contextAPI/authContext';
 import { noticeData } from '../components/errorNotice';
 import IsValidEmail from '../components/checkEmailFormat';
-import { _AppSystemSettings } from '../components/controls';
+import { _AppSystemSettings, accessCheck, applicationDetails} from '../components/controls';
 
 const { width, height } = Dimensions.get('window');
 
@@ -47,10 +47,24 @@ const LoginScreen = ({ navigation }) => {
   const [isLoginDisabled, setIsLoginDisabled] = useState(false);
 
   const _getAppLocalInfo = async () => {
-    AsyncStorage.getItem('AppSettingInfo').then(res => {
-      if (res !== null) setAppDetails(JSON.parse(res));
-    }).catch(err => console.log(err.message));
-  };
+  try {
+    // First try reading from cache
+    const cached = await AsyncStorage.getItem('AppSettingInfo');
+    if (cached !== null) {
+      setAppDetails(JSON.parse(cached));
+    }
+
+    // Always fetch fresh from API and update cache + state
+    const res = await applicationDetails();
+    if (res && res.msg === '200') {
+      await AsyncStorage.setItem('AppSettingInfo', JSON.stringify(res));
+      setAppDetails(res);
+      //console.log("Access denied", res);
+    }
+  } catch (err) {
+    console.log('AppSettings error:', err.message);
+  }
+};
 
   _AppSystemSettings().then((res) => {
     const isStopped = res?.app_stop_login_status === true || res?.app_stop_login_status === 'true';
@@ -130,7 +144,7 @@ const LoginScreen = ({ navigation }) => {
                 {appDetails.infoData?.app_name || 'OtaMobile'}
               </Text>
               <Text style={[styles.brandTagline, { color: colors.textSecColor }]}>        
-                Your trusted financial companion
+                Your trusted virtual funds companion
               </Text>
             </View>
 
