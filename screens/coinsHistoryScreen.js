@@ -86,23 +86,9 @@ const CoinsHistoryScreen = ({ navigation }) => {
   const [isRedeeming, setIsRedeeming]   = useState(false);
   const [coinSettings, setCoinSettings] = useState(null);
 
-  useEffect(() => {
-    if (isFocused) {
-      loadHistory(true);
-      fetchSettings();
-    }
-  }, [isFocused]);
 
-  const fetchSettings = async () => {
-    try {
-      const res = await client.get('/api/rewards_settings', {
-        headers: { 'Authorization': 'Bearer ' + userToken },
-      });
-      if (res.data.msg === '200') setCoinSettings(res.data.settings);
-    } catch {}
-  };
 
-  const loadHistory = useCallback(async (reset = false) => {
+const loadHistory = useCallback(async (reset = false) => {
     if (!reset && isListEnd) return;
     if (reset) setIsLoading(true);
     const page = reset ? 1 : currentPage;
@@ -129,6 +115,24 @@ const CoinsHistoryScreen = ({ navigation }) => {
     }
   }, [currentPage, isListEnd, userInfo, userToken]);
 
+
+  useEffect(() => {
+    if (isFocused) {
+      loadHistory(true);
+      fetchSettings();
+    }
+  }, [isFocused]);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await client.get('/api/rewards_settings', {
+        headers: { 'Authorization': 'Bearer ' + userToken },
+      });
+      if (res.data.msg === '200') setCoinSettings(res.data.settings);
+    } catch {}
+  };
+
+  
   const handleRefresh = () => {
     setIsRefreshing(true);
     setCurrentPage(1);
@@ -307,9 +311,9 @@ const CoinsHistoryScreen = ({ navigation }) => {
         <FlatList
           data={history}
           keyExtractor={(item, index) => `${item._id || 'coin'}_${index}`}
-          renderItem={useCallback(({ item }) => (
-          <CoinItem item={item} colors={colors} />
-        ), [colors])}
+          renderItem={({ item }) => (
+            <CoinItem item={item} colors={colors} />
+            )}
           ListHeaderComponent={<ListHeader />}
           ListFooterComponent={<ListFooter />}
           ListEmptyComponent={
